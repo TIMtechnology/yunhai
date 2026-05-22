@@ -14,6 +14,12 @@
 
 [立即体验 →](https://yunhai.timkj.com/) · [数据来源说明](https://yunhai.timkj.com/docs/data-sources.html) · [预测模型](https://yunhai.timkj.com/docs/prediction-model.html)
 
+<br />
+
+![日出云海预测仪表盘](docs/images/dashboard.jpg)
+
+*本溪五女山 · 点将台 — 5 天时间轴、双场景概率与场景因子雷达图*
+
 </div>
 
 ---
