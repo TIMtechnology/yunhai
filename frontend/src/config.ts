@@ -1,5 +1,8 @@
 export const TIANDITU_KEY = import.meta.env.VITE_TIANDITU_KEY ?? ''
 
+/** 开源仓库（README 与页头入口保持一致） */
+export const GITHUB_REPO_URL = 'https://github.com/TIMtechnology/yunhai'
+
 export const GRADE_COLORS: Record<string, string> = {
   '极佳': '#34D399',
   '良好': '#38BDF8',
