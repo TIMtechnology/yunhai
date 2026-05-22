@@ -1,0 +1,43 @@
+{
+  "id": "wutaishan",
+  "name": "五台山",
+  "aliases": ["五台山风景区", "文殊五台山"],
+  "region": "山西省忻州市",
+  "peak_elevation": 3061,
+  "seasonality": {
+    "cloudsea_months": [6, 7, 8, 9, 10],
+    "sunrise_months": [5, 6, 7, 8, 9],
+    "sunrise_best": "summer"
+  },
+  "rules": { "rh_threshold": 74 },
+  "cloud_region": { "span_lng": 2.4, "span_lat": 1.6 },
+  "viewpoints": [
+    {
+      "id": "dongtai",
+      "name": "东台顶",
+      "lat": 39.0412,
+      "lng": 113.5718,
+      "elevation": 2795,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "五台山看日出首选"
+    },
+    {
+      "id": "beitai",
+      "name": "北台顶",
+      "lat": 39.0812,
+      "lng": 113.5685,
+      "elevation": 3061,
+      "tags": ["cloudsea"],
+      "note": "华北最高，云海频发"
+    },
+    {
+      "id": "tayuan",
+      "name": "塔院寺",
+      "lat": 39.0075,
+      "lng": 113.5935,
+      "elevation": 1700,
+      "tags": ["cloudsea"],
+      "note": "台怀镇核心，常见云雾"
+    }
+  ]
+}

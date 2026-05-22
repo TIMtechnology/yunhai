@@ -1,0 +1,43 @@
+{
+  "id": "huashan",
+  "name": "华山",
+  "aliases": ["华山风景区", "西岳华山"],
+  "region": "陕西省渭南市华阴市",
+  "peak_elevation": 2154,
+  "seasonality": {
+    "cloudsea_months": [10, 11, 12, 1, 2, 3],
+    "sunrise_months": [4, 5, 6, 9, 10],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": { "rh_threshold": 76 },
+  "cloud_region": { "span_lng": 1.8, "span_lat": 1.2 },
+  "viewpoints": [
+    {
+      "id": "dongfeng",
+      "name": "东峰",
+      "lat": 34.4892,
+      "lng": 110.0809,
+      "elevation": 2096,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "华山最佳日出观景点"
+    },
+    {
+      "id": "xifeng",
+      "name": "西峰",
+      "lat": 34.4778,
+      "lng": 110.0785,
+      "elevation": 2082,
+      "tags": ["cloudsea"],
+      "note": "日落与云海"
+    },
+    {
+      "id": "nanfeng",
+      "name": "南峰",
+      "lat": 34.4762,
+      "lng": 110.0825,
+      "elevation": 2154,
+      "tags": ["cloudsea"],
+      "note": "华山最高峰"
+    }
+  ]
+}

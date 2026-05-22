@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+pydantic==2.10.4
+pydantic-settings==2.7.0
+redis==5.2.1
+python-dateutil==2.9.0.post0
+Pillow==11.1.0

@@ -1,0 +1,50 @@
+{
+  "id": "daheishan",
+  "name": "大连大黑山",
+  "aliases": ["大黑山", "大连大黑山", "金州大黑山"],
+  "region": "辽宁省大连市金州区",
+  "peak_elevation": 663.1,
+  "seasonality": {
+    "cloudsea_months": [4, 5, 6, 9, 10, 11],
+    "sunrise_months": [4, 5, 6, 7, 8, 9, 10],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 70
+  },
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.0
+  },
+  "viewpoints": [
+    {
+      "id": "zhufeng",
+      "name": "主峰",
+      "lat": 39.0572,
+      "lng": 121.7908,
+      "elevation": 663,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "金州区大黑山主峰，海拔663m"
+    },
+    {
+      "id": "tanggong",
+      "name": "唐王宫道院",
+      "lat": 39.0545,
+      "lng": 121.7875,
+      "elevation": 513,
+      "tags": ["sunrise"],
+      "note": "大黑山西麓唐王殿道院附近"
+    },
+    {
+      "id": "beijiangtai",
+      "name": "北疆台",
+      "lat": 39.0595,
+      "lng": 121.7935,
+      "elevation": 620,
+      "tags": ["cloudsea"],
+      "note": "主峰北侧观景台，雨后常见云海"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "taishan",
+  "name": "泰山",
+  "aliases": ["泰山风景区", "东岳泰山"],
+  "region": "山东省泰安市",
+  "peak_elevation": 1532,
+  "seasonality": {
+    "cloudsea_months": [10, 11, 12, 1, 2, 3],
+    "sunrise_months": [3, 4, 5, 9, 10],
+    "sunrise_best": "spring"
+  },
+  "rules": { "rh_threshold": 75 },
+  "cloud_region": { "span_lng": 2.0, "span_lat": 1.4 },
+  "viewpoints": [
+    {
+      "id": "riguan",
+      "name": "日观峰",
+      "lat": 36.2520,
+      "lng": 117.1015,
+      "elevation": 1545,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "泰山经典日出点"
+    },
+    {
+      "id": "tianjie",
+      "name": "天街",
+      "lat": 36.2495,
+      "lng": 117.0998,
+      "elevation": 1460,
+      "tags": ["cloudsea"],
+      "note": "云雾缭绕的标志性街景"
+    },
+    {
+      "id": "hongmen",
+      "name": "红门",
+      "lat": 36.2085,
+      "lng": 117.1285,
+      "elevation": 250,
+      "tags": ["sunrise"],
+      "note": "传统登山路线起点"
+    }
+  ]
+}

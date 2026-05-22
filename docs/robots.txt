@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yunhai.timkj.com/sitemap.xml

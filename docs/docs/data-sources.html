@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据来源与更新说明 · 云海日出预测</title>
+  <meta name="description" content="Open-Meteo、Himawari 卫星、天地图 POI 等数据来源，以及预报刷新与逐小时更新机制说明。" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    var _hmt = _hmt || [];
+    (function () {
+      var hm = document.createElement('script');
+      hm.src = 'https://hm.baidu.com/hm.js?978cb06ac21ce440a4f199573e29cd66';
+      var s = document.getElementsByTagName('script')[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+  <style>
+    body { background: #f1f5f9; color: #334155; font-family: "PingFang SC", sans-serif; line-height: 1.7; }
+    .glass { background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    nav { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    nav a { color: #475569; }
+    nav a.active, nav a:hover { color: #0369a1; }
+    h1, h2 { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }
+    th { background: #f8fafc; color: #0f172a; font-weight: 600; }
+    pre { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; overflow-x: auto; font-size: 12px; color: #334155; }
+    a { color: #0284c7; }
+    .tip { background: #eff6ff; border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #1e40af; font-size: 14px; }
+    strong { color: #0f172a; }
+  </style>
+</head>
+<body>
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-4 text-sm">
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html" class="active font-semibold">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+  </nav>
+
+  <main class="mx-auto max-w-5xl px-6 py-10 space-y-8">
+    <header>
+      <h1 class="text-3xl font-bold mb-3">数据来源与更新说明</h1>
+      <p class="text-slate-600">本文说明页面上各数值从何而来、何时更新，以及「刷新页面后概率变化」的原因。</p>
+    </header>
+
+    <div class="tip">
+      <strong>核心结论：</strong>你在某时某刻打开或刷新页面，系统会实时请求<strong>当前最新</strong>的 Open-Meteo 未来 <strong>5 天 × 24 小时</strong>预报，并据此计算每个小时的云海/日出概率。数值模式通常每数小时同化一次新观测，因此<strong>同一目标时刻的概率会随时间推移而更新</strong>，近 24–48 小时变化最大。
+    </div>
+
+    <section class="glass overflow-x-auto">
+      <h2 class="text-lg font-semibold mb-4">数据源一览</h2>
+      <table>
+        <thead>
+          <tr><th>数据</th><th>来源</th><th>用途</th><th>更新频率</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>逐小时气象预报</strong></td>
+            <td><a href="https://open-meteo.com/">Open-Meteo</a>（ECMWF IFS 等数值模式）</td>
+            <td>湿度、分层云量、降水、风速、能见度 → 云海/日出评分</td>
+            <td>随模式运行更新；页面每次选点/刷新重新拉取</td>
+          </tr>
+          <tr>
+            <td><strong>观景点海拔</strong></td>
+            <td>Open-Meteo Elevation（Copernicus DEM 90m）</td>
+            <td>云底高度与观景点海拔匹配</td>
+            <td>静态地形，缓存 24h</td>
+          </tr>
+          <tr>
+            <td><strong>卫星红外云图</strong></td>
+            <td>NASA GIBS · Himawari Band13</td>
+            <td>地图云层蒙版 + 区域云量修正因子</td>
+            <td>观测型；无未来图，可回溯最近可用时刻</td>
+          </tr>
+          <tr>
+            <td><strong>地图 / POI</strong></td>
+            <td><a href="http://lbs.tianditu.gov.cn/">天地图 API 4.0</a>（浏览器端）</td>
+            <td>底图、POI 搜索、标记定位</td>
+            <td>实时检索</td>
+          </tr>
+          <tr>
+            <td><strong>精选观景点</strong></td>
+            <td>本地 JSON（五女山、大黑山等）</td>
+            <td>精确坐标、海拔、季节权重</td>
+            <td>随应用版本发布</td>
+          </tr>
+          <tr>
+            <td><strong>日出时刻</strong></td>
+            <td>Open-Meteo daily sunrise + 后端天文计算</td>
+            <td>日出窗口判定</td>
+            <td>随预报一并更新</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">Open-Meteo 请求内容</h2>
+      <p class="text-sm text-slate-600 mb-3">每次预测对观景点经纬度请求 <code>forecast_days=5</code>、时区 <code>Asia/Shanghai</code>，共 120 个逐小时点：</p>
+      <pre>GET https://api.open-meteo.com/v1/forecast
+  ?latitude=…&longitude=…
+  &hourly=temperature_2m,relative_humidity_2m,dew_point_2m,
+          precipitation,cloud_cover,cloud_cover_low,cloud_cover_mid,
+          cloud_cover_high,wind_speed_10m,visibility
+  &daily=sunrise,sunset
+  &forecast_days=5&timezone=Asia/Shanghai</pre>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">字段与预测的关系</h2>
+      <table>
+        <tr><th>字段</th><th>在界面中的体现</th></tr>
+        <tr><td><code>relative_humidity_2m</code></td><td>因子「近地面湿度」；云海主驱动</td></tr>
+        <tr><td><code>cloud_cover_low / mid / high</code></td><td>低/中/高云量因子；右侧天气快照</td></tr>
+        <tr><td><code>temperature_2m</code> + <code>dew_point_2m</code></td><td>估算云底高度 (T−Td)×125 m</td></tr>
+        <tr><td><code>precipitation</code></td><td>近 48h 累计降水 →「雨后放晴」因子</td></tr>
+        <tr><td><code>wind_speed_10m</code></td><td>风速因子（微风利于云海维持）</td></tr>
+        <tr><td><code>visibility</code></td><td>日出清晰度相关因子</td></tr>
+      </table>
+      <p class="text-sm text-slate-600 mt-4"><strong>注意：</strong><code>cloudsea.probability</code> 并非 Open-Meteo 直接提供，而是本系统根据上述字段<strong>本地计算</strong>的云海适宜度。</p>
+    </section>
+
+    <section class="glass space-y-4">
+      <h2 class="text-lg font-semibold">刷新与缓存</h2>
+      <ul class="text-sm text-slate-600 space-y-2 list-disc list-inside">
+        <li><strong>切换观景点 / POI / 拖动标记</strong>：立即发起新预测请求，获取最新 5 天预报。</li>
+        <li><strong>刷新浏览器页面</strong>：默认重新加载五女山；若已选其他地点需重新搜索。每次加载均拉取当时最新 Open-Meteo 数据。</li>
+        <li><strong>后端 Redis 缓存</strong>：同一坐标预报缓存约 30 分钟（生产环境可配），减轻 API 压力；缓存期内多次请求可能返回相同预报快照。</li>
+        <li><strong>时间轴某小时</strong>：展示的是该小时预报场下的概率；相邻小时因湿度/云量不同，概率可以相差很大。</li>
+        <li><strong>卫星云图</strong>：与逐小时预报独立；选中时刻若无观测则显示最近回溯图，并在蒙版标注 UTC 时间与回溯小时。</li>
+      </ul>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">为何每小时「可能会不一样」？</h2>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        有两层含义：<br/>
+        ① <strong>时间轴上不同小时</strong>：各小时对应不同的预报气象场（如 5:00 与 6:00 湿度、云量不同），概率自然不同。<br/>
+        ② <strong>不同日期重复查看同一小时</strong>：数值天气预报会随新观测不断修正。例如今天看「明早 6 点」与明天再看「明早 6 点」，模式可能已更新，概率会变化——这是预报本身的特性，不代表系统错误。
+      </p>
+    </section>
+  </main>
+</body>
+</html>

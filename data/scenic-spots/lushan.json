@@ -1,0 +1,46 @@
+{
+  "id": "lushan",
+  "name": "庐山",
+  "aliases": ["庐山风景区", "九江庐山"],
+  "region": "江西省九江市",
+  "peak_elevation": 1474,
+  "seasonality": {
+    "cloudsea_months": [3, 4, 5, 9, 10, 11],
+    "sunrise_months": [4, 5, 6, 9, 10],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": { "rh_threshold": 78 },
+  "cloud_region": {
+    "span_lng": 2.2,
+    "span_lat": 1.6
+  },
+  "viewpoints": [
+    {
+      "id": "hanpo",
+      "name": "含鄱口",
+      "lat": 29.5582,
+      "lng": 115.9915,
+      "elevation": 1280,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "庐山最著名日出观景点"
+    },
+    {
+      "id": "wulao",
+      "name": "五老峰",
+      "lat": 29.5485,
+      "lng": 116.0028,
+      "elevation": 1436,
+      "tags": ["cloudsea"],
+      "note": "俯瞰鄱阳湖云海"
+    },
+    {
+      "id": "longshou",
+      "name": "龙头山",
+      "lat": 29.5520,
+      "lng": 115.9850,
+      "elevation": 1200,
+      "tags": ["cloudsea", "sunrise"],
+      "note": "冬季云海高发"
+    }
+  ]
+}

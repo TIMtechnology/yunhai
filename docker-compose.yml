@@ -1,0 +1,24 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+    volumes:
+      - ./data/scenic-spots:/app/data/scenic-spots:ro
+    depends_on:
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend

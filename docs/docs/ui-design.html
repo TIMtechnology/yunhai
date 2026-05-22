@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>界面设计 · 云海日出预测</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f1f5f9; color: #334155; font-family: "PingFang SC", sans-serif; line-height: 1.7; }
+    .glass { background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    nav { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    nav a { color: #475569; }
+    nav a.active { color: #0369a1; font-weight: 600; }
+    h1, h2 { color: #0f172a; }
+    .swatch { width: 48px; height: 48px; border-radius: 12px; border: 1px solid #cbd5e1; }
+    a { color: #0284c7; }
+  </style>
+</head>
+<body>
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-4 text-sm">
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html" class="active">界面设计</a>
+    <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+  </nav>
+  <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
+    <h1 class="text-3xl font-bold">界面设计规范</h1>
+    <p class="text-slate-600">主应用采用深色「黎明观测」主题；<strong>使用指南等文档页采用浅色主题</strong>，便于长时间阅读说明文字。</p>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-4">主应用色板</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div><div class="swatch" style="background:#0B1220"></div><p class="text-xs mt-2">背景 #0B1220</p></div>
+        <div><div class="swatch" style="background:#38BDF8"></div><p class="text-xs mt-2">云海 #38BDF8</p></div>
+        <div><div class="swatch" style="background:#FB923C"></div><p class="text-xs mt-2">日出 #FB923C</p></div>
+        <div><div class="swatch" style="background:#34D399"></div><p class="text-xs mt-2">极佳 #34D399</p></div>
+      </div>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">布局</h2>
+      <p class="text-sm text-slate-600">三栏：<code>260px</code> 搜索 · 中央地图 · <code>380px</code> 预测面板；底部 5 天逐小时时间轴。</p>
+    </section>
+  </main>
+</body>
+</html>

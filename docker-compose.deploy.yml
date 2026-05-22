@@ -1,0 +1,23 @@
+# 服务器部署用（已预加载 yunhai:latest 镜像，无需 build）
+services:
+  redis:
+    image: docker.1ms.run/library/redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  yunhai:
+    image: yunhai:latest
+    ports:
+      - "8088:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+      - STATIC_DIR=/app/static
+      - TZ=Asia/Shanghai
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  redis_data:

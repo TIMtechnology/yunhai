@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>预测模型 · 云海日出预测</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f1f5f9; color: #334155; font-family: "PingFang SC", sans-serif; line-height: 1.7; }
+    .glass { background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    nav { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    nav a { color: #475569; }
+    nav a.active { color: #0369a1; font-weight: 600; }
+    h1, h2 { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; }
+    th { background: #f8fafc; color: #0f172a; }
+    a { color: #0284c7; }
+    code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-4 text-sm">
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html" class="active">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+  </nav>
+  <main class="mx-auto max-w-5xl px-6 py-10 space-y-8">
+    <h1 class="text-3xl font-bold">预测模型说明</h1>
+    <p class="text-slate-600">基于 Open-Meteo 逐小时场与可选 Himawari 卫星区域云量，采用加权模糊评分。每个预报小时独立计算，故时间轴各点概率可以不同。</p>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">云海评分因子</h2>
+      <table>
+        <tr><th>因子</th><th>权重</th><th>理想条件</th></tr>
+        <tr><td>近地面 RH</td><td>0.22</td><td>75–95%</td></tr>
+        <tr><td>中低层湿度代理</td><td>0.18</td><td>RH 高 + 中层云量适中</td></tr>
+        <tr><td>低云量</td><td>0.15</td><td>30–70%</td></tr>
+        <tr><td>风速</td><td>0.12</td><td>1–4 m/s</td></tr>
+        <tr><td>雨后放晴</td><td>0.13</td><td>近 48h 有降水后转晴</td></tr>
+        <tr><td>逆温代理</td><td>0.10</td><td>下层湿、上层相对干</td></tr>
+        <tr><td>海拔-云底匹配</td><td>0.10</td><td>观景点在估算云层内</td></tr>
+        <tr><td>卫星区域云量（可选）</td><td>动态</td><td>红外图像云量 vs 单点预报偏差修正</td></tr>
+      </table>
+      <p class="mt-4 text-sm text-slate-600">云底估算：<code>cloud_base ≈ (T - Td) × 125</code> 米。</p>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-orange-500 mb-3">日出评分因子</h2>
+      <table>
+        <tr><th>因子</th><th>权重</th><th>说明</th></tr>
+        <tr><td>日出窗口低云</td><td>0.35</td><td>日出 ±45min 低云量</td></tr>
+        <tr><td>中高云</td><td>0.20</td><td>厚云遮挡降分</td></tr>
+        <tr><td>降水</td><td>0.15</td><td>窗口内无降水</td></tr>
+        <tr><td>能见度</td><td>0.15</td><td>≥5 km 更佳</td></tr>
+        <tr><td>季节修正</td><td>0.05</td><td>精选景区最佳月份</td></tr>
+      </table>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">等级映射</h2>
+      <p class="text-sm text-slate-600">≥80 极佳 · 60–79 良好 · 40–59 一般 · 20–39 较差 · &lt;20 不宜</p>
+    </section>
+  </main>
+</body>
+</html>

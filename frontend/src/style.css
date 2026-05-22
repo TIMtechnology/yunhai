@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b1220;
+  --panel: rgba(15, 23, 42, 0.72);
+  --border: #1e293b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --cloudsea: #38bdf8;
+  --sunrise: #fb923c;
+  --header-h: 3.5rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+}
+
+.glass {
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+}

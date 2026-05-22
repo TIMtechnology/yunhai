@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>系统架构 · 云海日出预测</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    body { background: #f1f5f9; color: #334155; font-family: "PingFang SC", sans-serif; line-height: 1.7; }
+    .glass { background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    nav { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    nav a { color: #475569; }
+    nav a.active { color: #0369a1; font-weight: 600; }
+    h1, h2 { color: #0f172a; }
+    a { color: #0284c7; }
+    pre { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; overflow-x: auto; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-4 text-sm">
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html" class="active">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+  </nav>
+  <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
+    <h1 class="text-3xl font-bold">系统架构</h1>
+    <p class="text-slate-600">生产环境为单 Docker 镜像（linux/amd64）：FastAPI 托管 API + 静态前端，Open-Meteo 与 GIBS 卫星由后端请求，天地图 POI 由浏览器直连。</p>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-4">整体架构</h2>
+      <div class="mermaid">
+flowchart TB
+  subgraph client [Vue3 前端]
+    Map[天地图 MapPanel]
+    POI[浏览器 POI 搜索]
+    Predict[PredictPanel]
+    Timeline[5天逐小时时间轴]
+  end
+  subgraph server [FastAPI 后端]
+    Spots[精选景区 JSON]
+    Adapter[Open-Meteo]
+    GIBS[Himawari 红外 WMS]
+    Engine[模糊评分引擎]
+  end
+  client -->|/api| server
+  POI --> Tianditu[天地图 v2/search]
+  Adapter --> OpenMeteo[Open-Meteo API]
+  GIBS --> NASA[NASA GIBS]
+      </div>
+    </section>
+
+    <section class="glass space-y-4">
+      <h2 class="text-lg font-semibold">核心 API</h2>
+      <pre>GET  /api/spots/search?q=…          # 精选景区
+GET  /api/predict/{spot}/viewpoint/{vp}
+POST /api/predict  { lat, lng, … }      # 自定义/POI 坐标
+GET  /api/satellite/cloud?…             # Himawari 裁切云图
+GET  /health</pre>
+    </section>
+  </main>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</body>
+</html>

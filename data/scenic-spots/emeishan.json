@@ -1,0 +1,43 @@
+{
+  "id": "emeishan",
+  "name": "峨眉山",
+  "aliases": ["峨眉山风景区", "峨眉金顶"],
+  "region": "四川省乐山市",
+  "peak_elevation": 3079,
+  "seasonality": {
+    "cloudsea_months": [9, 10, 11, 12, 1, 2],
+    "sunrise_months": [3, 4, 5, 9, 10, 11],
+    "sunrise_best": "autumn"
+  },
+  "rules": { "rh_threshold": 82 },
+  "cloud_region": { "span_lng": 2.8, "span_lat": 2.0 },
+  "viewpoints": [
+    {
+      "id": "jinding",
+      "name": "金顶",
+      "lat": 29.5199,
+      "lng": 103.3271,
+      "elevation": 3079,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "峨眉山最高观景点"
+    },
+    {
+      "id": "wanfo",
+      "name": "万佛顶",
+      "lat": 29.5175,
+      "lng": 103.3365,
+      "elevation": 3099,
+      "tags": ["cloudsea"],
+      "note": "云海翻涌，视野开阔"
+    },
+    {
+      "id": "jieyin",
+      "name": "接引殿",
+      "lat": 29.5285,
+      "lng": 103.3420,
+      "elevation": 2540,
+      "tags": ["cloudsea"],
+      "note": "索道附近，常见云海"
+    }
+  ]
+}

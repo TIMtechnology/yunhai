@@ -1,0 +1,11 @@
+.git
+.gitignore
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+.env
+.DS_Store
+frontend/dist
+backend/.venv
+agent-transcripts

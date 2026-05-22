@@ -1,0 +1,28 @@
+# 生产部署：单应用镜像 + Redis 缓存（Redis 仅容器内网，不暴露宿主机端口）
+services:
+  redis:
+    image: docker.1ms.run/library/redis:7-alpine
+    platform: linux/amd64
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  yunhai:
+    build:
+      context: .
+      platform: linux/amd64
+    image: yunhai:latest
+    platform: linux/amd64
+    ports:
+      - "8088:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+      - STATIC_DIR=/app/static
+      - TZ=Asia/Shanghai
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  redis_data:

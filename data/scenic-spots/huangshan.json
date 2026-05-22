@@ -1,0 +1,46 @@
+{
+  "id": "huangshan",
+  "name": "黄山",
+  "aliases": ["黄山风景区", "徽州黄山"],
+  "region": "安徽省黄山市",
+  "peak_elevation": 1864,
+  "seasonality": {
+    "cloudsea_months": [11, 12, 1, 2, 3, 4],
+    "sunrise_months": [3, 4, 5, 9, 10, 11],
+    "sunrise_best": "winter_spring"
+  },
+  "rules": { "rh_threshold": 80 },
+  "cloud_region": {
+    "span_lng": 2.5,
+    "span_lat": 1.8
+  },
+  "viewpoints": [
+    {
+      "id": "guangmingding",
+      "name": "光明顶",
+      "lat": 30.1378,
+      "lng": 118.1672,
+      "elevation": 1860,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "黄山第二高峰，经典日出点"
+    },
+    {
+      "id": "shixin",
+      "name": "始信峰",
+      "lat": 30.1415,
+      "lng": 118.1588,
+      "elevation": 1668,
+      "tags": ["cloudsea", "sunrise"],
+      "note": "北海景区经典云海点"
+    },
+    {
+      "id": "danxia",
+      "name": "丹霞峰",
+      "lat": 30.1285,
+      "lng": 118.1542,
+      "elevation": 1690,
+      "tags": ["sunrise"],
+      "note": "西海方向日出视角"
+    }
+  ]
+}

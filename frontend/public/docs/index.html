@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>使用指南 · 云海日出观测概率预测</title>
+  <meta name="description" content="云海日出预测工具使用说明：选点、地图定位、时间轴、数据刷新与概率解读。" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    var _hmt = _hmt || [];
+    (function () {
+      var hm = document.createElement('script');
+      hm.src = 'https://hm.baidu.com/hm.js?978cb06ac21ce440a4f199573e29cd66';
+      var s = document.getElementsByTagName('script')[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+  <style>
+    body { background: #f1f5f9; color: #334155; font-family: "PingFang SC", "Noto Sans SC", sans-serif; line-height: 1.7; }
+    .glass { background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    nav { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    nav a { color: #475569; }
+    nav a.active, nav a:hover { color: #0369a1; }
+    h1, h2, h3 { color: #0f172a; }
+    a { color: #0284c7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 6px; font-size: .9em; }
+    .tip { background: #eff6ff; border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #1e40af; }
+    .warn { background: #fff7ed; border-left: 4px solid #fb923c; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #9a3412; }
+    ol li, ul li { margin-bottom: .5rem; }
+    strong { color: #0f172a; }
+  </style>
+</head>
+<body>
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-4 text-sm">
+    <a href="index.html" class="active font-semibold">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+  </nav>
+
+  <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
+    <header>
+      <p class="text-sky-600 text-sm font-medium mb-2">PC 端 · 气象景观规划工具</p>
+      <h1 class="text-4xl font-bold mb-4">云海 · 日出观测概率预测</h1>
+      <p class="text-lg text-slate-600 leading-relaxed">
+        帮助你在出发前判断某座山、某个观景点<strong>未来 5 天（120 小时）</strong>内是否值得前往拍摄云海或等待日出。
+        内置五女山、大黑山、黄山、庐山等精选观景点，也支持通过<strong>天地图 POI</strong>搜索全国任意地点。
+      </p>
+    </header>
+
+    <div class="tip text-sm">
+      <strong>数据时效：</strong>每次选点或刷新页面都会重新请求最新预报。你看到的概率对应当前时刻 Open-Meteo 返回的<strong>近 5 天逐小时数据</strong>，不同小时、不同时间打开页面，数值可能略有变化——这是数值天气预报正常更新，并非 bug。
+    </div>
+
+    <section class="glass p-6">
+      <h2 class="text-xl font-semibold mb-4">快速上手（5 步）</h2>
+      <ol class="list-decimal list-inside space-y-3 text-slate-700">
+        <li><strong>搜索地点</strong>：左侧输入景区名（如「云台山」「大黑山」）或点击快捷按钮。绿色标签为<strong>天地图 POI</strong>，紫色为<strong>精选观景点</strong>。</li>
+        <li><strong>选择观景点</strong>：精选景区可切换多个内置观景点（如五女山「点将台」）；POI 结果则直接使用该 POI 坐标。</li>
+        <li><strong>微调定位</strong>：地图右上角「定位控制」可<strong>拖动标记</strong>或开启「点击放置」，修正 GPS 偏差后自动重新预测。</li>
+        <li><strong>查看概率</strong>：右侧显示云海 / 日出双概率环、场景判断与因子拆解；底部时间轴点击某小时即可跳转。</li>
+        <li><strong>可选云图</strong>：顶栏开启「云层蒙版」可叠加 Himawari 红外卫星图（随地图缩放自动裁切）。</li>
+      </ol>
+    </section>
+
+    <section class="glass p-6">
+      <h2 class="text-xl font-semibold mb-4">界面说明</h2>
+      <div class="overflow-x-auto text-sm text-slate-600">
+        <pre class="bg-slate-100 rounded-xl p-4 text-xs leading-relaxed">┌──────────────────────────────────────────────────────────────┐
+│ 顶栏：云层蒙版开关 · 使用指南 · 加载状态                        │
+├──────────┬──────────────────────────────┬───────────────────────┤
+│ 左栏     │ 中央天地图 + 定位控制         │ 右栏                  │
+│ 搜索/POI │ Marker · 卫星云图裁切         │ 概率环 · 因子 · 场景  │
+├──────────┴──────────────────────────────┴───────────────────────┤
+│ 底部：5 天逐小时时间轴（点击小时跳转 · 蓝=云海 / 橙=日出）         │
+└──────────────────────────────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section class="grid md:grid-cols-2 gap-4">
+      <div class="glass p-5">
+        <h3 class="text-sky-600 font-semibold mb-2">云海概率</h3>
+        <p class="text-sm text-slate-600">综合湿度、低/中云量、风速、雨后放晴、逆温代理、海拔与云底匹配，以及可选的卫星区域云量修正，输出 0–100 分与五级适宜等级（极佳→不宜）。</p>
+      </div>
+      <div class="glass p-5">
+        <h3 class="text-orange-500 font-semibold mb-2">日出概率</h3>
+        <p class="text-sm text-slate-600">在日出前后约 45 分钟窗口，评估低云遮挡、中高云、降水与能见度，结合天文日出时刻给出观测成功率。</p>
+      </div>
+    </section>
+
+    <section class="glass p-6 space-y-4">
+      <h2 class="text-xl font-semibold">常见问题</h2>
+      <div>
+        <h3 class="font-medium text-slate-800">为什么刷新页面后概率变了？</h3>
+        <p class="text-sm text-slate-600 mt-1">预报数据来自 Open-Meteo 数值模式（ECMWF 等），模式会定期同化最新观测并更新未来 5 天逐小时场。你刷新页面 = 重新拉取<strong>当前最新</strong>预报，因此同一时刻（如明早 6 点）的概率可能随模式更新而微调，尤其在 24–48 小时内变化更明显。</p>
+      </div>
+      <div>
+        <h3 class="font-medium text-slate-800">每个小时的数值从哪来？</h3>
+        <p class="text-sm text-slate-600 mt-1">每个小时对应 Open-Meteo 该时刻的湿度、分层云量、风速、降水等，再经本地模糊评分引擎算出云海/日出概率。详见 <a href="data-sources.html">数据来源说明</a>。</p>
+      </div>
+      <div>
+        <h3 class="font-medium text-slate-800">大黑山 / 其他地点定位不准怎么办？</h3>
+        <p class="text-sm text-slate-600 mt-1">优先在搜索结果中选<strong>天地图 POI</strong>（绿色标签），或在精选景区下方使用「天地图定位建议」。仍不准时，用地图<strong>拖动标记</strong>到正确位置，系统会按新坐标重新预测。</p>
+      </div>
+      <div>
+        <h3 class="font-medium text-slate-800">卫星云图为什么显示「回溯 N 小时」？</h3>
+        <p class="text-sm text-slate-600 mt-1">Himawari 红外图只有历史观测。若所选时刻尚无卫星图，系统会自动向前查找最近可用图，并在蒙版说明中标注回溯小时数。</p>
+      </div>
+    </section>
+
+    <div class="warn text-sm">
+      <strong>免责声明：</strong>本工具概率为参考值，基于免费气象数据与简化模型，<strong>不替代</strong>官方气象预警与景区安全提示。高山天气多变，出行请留意当地预报与景区公告。
+    </div>
+  </main>
+</body>
+</html>
