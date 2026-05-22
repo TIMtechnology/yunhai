@@ -4,7 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from app.adapters.gibs_wms import fetch_himawari_best_effort
-from app.adapters.open_meteo import fetch_forecast, parse_daily_astronomy, slice_hourly_window
+from app.adapters.open_meteo import fetch_elevation, fetch_forecast, parse_daily_astronomy, slice_hourly_window
 from app.engine.utils import parse_shanghai_time
 from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
 from app.engine.cloudsea_scorer import score_cloudsea
