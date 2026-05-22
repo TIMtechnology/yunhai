@@ -81,7 +81,7 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/timkj/yunhai.git
+git clone https://github.com/TIMtechnology/yunhai.git
 cd yunhai
 ```
 
