@@ -15,9 +15,16 @@ services:
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
       - STATIC_DIR=/app/static
       - TZ=Asia/Shanghai
+      - ANALYTICS_ENABLED=true
+      - ANALYTICS_ADMIN_TOKEN=5fcd3e41983ef57e93cbee9769b05e375222c4e29677b21e
+      - ANALYTICS_RETENTION_DAYS=90
+      - ANALYTICS_DB_PATH=/app/data/analytics/analytics.db
+    volumes:
+      - analytics_data:/app/data/analytics
     depends_on:
       - redis
     restart: unless-stopped
 
 volumes:
   redis_data:
+  analytics_data:

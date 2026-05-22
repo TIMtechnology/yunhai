@@ -5,10 +5,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
+from app.middleware.analytics import AnalyticsMiddleware
+from app.routers.analytics import router as analytics_router
 from app.routers.api import router
+from app.services.analytics_store import init_store, purge_expired
 from app.services.spot_loader import load_spots
 
-app = FastAPI(title="云海日出预测 API", version="1.0.0")
+_docs_url = None if settings.analytics_enabled else "/docs"
+_redoc_url = None if settings.analytics_enabled else "/redoc"
+_openapi_url = None if settings.analytics_enabled else "/openapi.json"
+
+app = FastAPI(
+    title="云海日出预测 API",
+    version="1.0.0",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,12 +31,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+if settings.analytics_enabled:
+    app.add_middleware(AnalyticsMiddleware)
+
 app.include_router(router)
+app.include_router(analytics_router)
 
 
 @app.on_event("startup")
 async def startup():
     load_spots()
+    if settings.analytics_enabled:
+        init_store()
+        purge_expired()
 
 
 @app.get("/health")

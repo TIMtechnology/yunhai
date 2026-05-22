@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { GITHUB_REPO_URL } from './config'
+import { trackPageVisit } from './services/analytics'
 import { useAppStore } from './stores/app'
 import ForecastTimeline from './components/ForecastTimeline.vue'
 import MapPanel from './components/MapPanel.vue'
@@ -34,6 +35,7 @@ const mapTarget = computed(() => {
 const currentHour = computed(() => store.currentHour())
 
 onMounted(() => {
+  trackPageVisit()
   store.selectSpot('wunvshan')
 })
 
