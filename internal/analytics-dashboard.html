@@ -127,13 +127,17 @@
       return q.toString();
     }
 
-    async function apiGet(path) {
+    async function apiGet(path, extraParams = {}) {
       const base = document.getElementById('apiBase').value.replace(/\/$/, '');
       const token = document.getElementById('adminToken').value.trim();
-      const qs = isoRange();
-      const url = `${base}${path}${qs ? '?' + qs : ''}`;
+      const [pathOnly, pathQuery] = path.split('?');
+      const q = new URLSearchParams(pathQuery || '');
+      new URLSearchParams(isoRange()).forEach((v, k) => q.set(k, v));
+      Object.entries(extraParams).forEach(([k, v]) => q.set(k, String(v)));
+      const qs = q.toString();
+      const url = `${base}${pathOnly}${qs ? '?' + qs : ''}`;
       const res = await fetch(url, { headers: { 'X-Analytics-Token': token } });
-      if (!res.ok) throw new Error(`${path} ${res.status}`);
+      if (!res.ok) throw new Error(`${pathOnly} ${res.status}`);
       return res.json();
     }
 
@@ -173,7 +177,7 @@
           apiGet('/api/internal/analytics/searches'),
           apiGet('/api/internal/analytics/spots'),
           apiGet('/api/internal/analytics/api-stats'),
-          apiGet('/api/internal/analytics/events?limit=80'),
+          apiGet('/api/internal/analytics/events', { limit: 80 }),
         ]);
 
         document.getElementById('vTotal').textContent = summary.total_events;
