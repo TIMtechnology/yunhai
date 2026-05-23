@@ -13,7 +13,7 @@
     nav a.active { color: #0369a1; font-weight: 600; }
     h1, h2 { color: #0f172a; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { border: 1px solid #cbd5e1; padding: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
     th { background: #f8fafc; color: #0f172a; }
     a { color: #0284c7; }
     code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
@@ -30,22 +30,55 @@
   </nav>
   <main class="mx-auto max-w-5xl px-6 py-10 space-y-8">
     <h1 class="text-3xl font-bold">预测模型说明</h1>
-    <p class="text-slate-600">基于 Open-Meteo 逐小时场与可选 Himawari 卫星区域云量，采用加权模糊评分。每个预报小时独立计算，故时间轴各点概率可以不同。</p>
+    <p class="text-slate-600">基于 Open-Meteo 逐小时场（含 850/925/700/500 hPa 气压层）与可选 Himawari 卫星区域云量，采用加权模糊评分。每个预报小时独立计算，故时间轴各点概率可以不同。</p>
 
     <section class="glass">
-      <h2 class="text-lg font-semibold text-sky-600 mb-3">云海评分因子</h2>
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">Phase A · 垂直场因子（文献化）</h2>
+      <p class="text-sm text-slate-600 mb-4">
+        主要依据：
+        <a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032" target="_blank" rel="noopener">《基于多源立体探测和模糊逻辑算法的北京高山云海预报研究》</a>
+        ——「下湿上干」、850 hPa 以下 RH&gt;80%、925–850 hPa 逆温、模糊逻辑加权。
+      </p>
       <table>
-        <tr><th>因子</th><th>权重</th><th>理想条件</th></tr>
-        <tr><td>近地面 RH</td><td>0.22</td><td>75–95%</td></tr>
-        <tr><td>中低层湿度代理</td><td>0.18</td><td>RH 高 + 中层云量适中</td></tr>
-        <tr><td>低云量</td><td>0.15</td><td>30–70%</td></tr>
-        <tr><td>风速</td><td>0.12</td><td>1–4 m/s</td></tr>
-        <tr><td>雨后放晴</td><td>0.13</td><td>近 48h 有降水后转晴</td></tr>
-        <tr><td>逆温代理</td><td>0.10</td><td>下层湿、上层相对干</td></tr>
-        <tr><td>海拔-云底匹配</td><td>0.10</td><td>观景点在估算云层内</td></tr>
-        <tr><td>卫星区域云量（可选）</td><td>动态</td><td>红外图像云量 vs 单点预报偏差修正</td></tr>
+        <tr><th>因子</th><th>权重</th><th>理想条件</th><th>文献 DOI</th></tr>
+        <tr>
+          <td><strong>RH_850</strong> · 850 hPa 湿度</td>
+          <td>0.18</td>
+          <td>≥80%，理想 80–95%</td>
+          <td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/j.issn.1006-9585.2025.25032</a></td>
+        </tr>
+        <tr>
+          <td><strong>RH_700</strong> · 上干代理</td>
+          <td>0.12</td>
+          <td>700 hPa RH 偏低（&lt;60% 更佳），对应 850 hPa 以上相对干燥</td>
+          <td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/j.issn.1006-9585.2025.25032</a></td>
+        </tr>
+        <tr>
+          <td><strong>T_inversion_850_925</strong></td>
+          <td>0.12</td>
+          <td>ΔT = T<sub>850</sub> − T<sub>925</sub> &gt; 0，理想约 2–8°C</td>
+          <td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/j.issn.1006-9585.2025.25032</a></td>
+        </tr>
       </table>
-      <p class="mt-4 text-sm text-slate-600">云底估算：<code>cloud_base ≈ (T - Td) × 125</code> 米。</p>
+      <p class="mt-3 text-xs text-slate-500">Open-Meteo 请求变量：<code>relative_humidity_850hPa</code>、<code>relative_humidity_700hPa</code>、<code>temperature_850hPa</code>、<code>temperature_925hPa</code> 等。</p>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">云海评分因子（完整）</h2>
+      <table>
+        <tr><th>因子</th><th>权重</th><th>理想条件</th><th>文献 DOI</th></tr>
+        <tr><td>850 hPa 湿度</td><td>0.18</td><td>≥80%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>700 hPa 上干</td><td>0.12</td><td>RH &lt; 60%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>925–850 hPa 逆温</td><td>0.12</td><td>ΔT 正值，约 4°C</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>近地面 RH（2 m）</td><td>0.10</td><td>75–95%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>中低层湿度代理</td><td>0.10</td><td>RH 高 + 中层云量适中</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>低云量</td><td>0.12</td><td>30–70%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>风速</td><td>0.08</td><td>1–4 m/s</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>雨后放晴</td><td>0.10</td><td>近 48h 有降水后转晴</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>海拔-云底匹配</td><td>0.08</td><td>观景点在估算云层内</td><td>经验公式</td></tr>
+        <tr><td>卫星区域云量（可选）</td><td>0.06</td><td>仅<strong>当天已发生</strong>时段：近实况 vs 单点预报轻量校正；<strong>不参与未来日期</strong></td><td>—</td></tr>
+      </table>
+      <p class="mt-4 text-sm text-slate-600">云底估算：<code>cloud_base ≈ (T - Td) × 125</code> 米。若气压层变量缺失，回退为旧版「逆温代理」因子。</p>
     </section>
 
     <section class="glass">

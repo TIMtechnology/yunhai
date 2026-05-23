@@ -49,6 +49,7 @@ class FactorDetail(BaseModel):
     label: str
     description: str
     value: str = ""
+    reference: str = ""
 
 
 class PredictionScore(BaseModel):

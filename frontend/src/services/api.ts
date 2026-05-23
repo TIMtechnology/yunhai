@@ -65,6 +65,7 @@ export interface FactorDetail {
   label: string
   description: string
   value: string
+  reference?: string
 }
 
 export interface PredictionScore {

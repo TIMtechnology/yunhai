@@ -20,6 +20,7 @@ from app.models.schemas import (
     ScenarioPrediction,
     WeatherSnapshot,
 )
+from app.services.cache import cache_get, cache_set
 from app.services.spot_loader import get_spot
 
 TZ = ZoneInfo("Asia/Shanghai")
@@ -58,6 +59,25 @@ def _is_near_sunrise(target: datetime, sunrise_at: datetime | None) -> bool:
     if sunrise_at is None:
         return 4 <= target.astimezone(TZ).hour <= 7
     return abs((target.astimezone(TZ) - sunrise_at.astimezone(TZ)).total_seconds()) <= 2700
+
+
+def _satellite_context_for_hour(
+    ctx: dict | None,
+    target: datetime,
+    now: datetime,
+) -> dict | None:
+    """Himawari 为近实况，仅用于当天已发生时段的预报校正，不参与未来日期评分。"""
+    if not ctx:
+        return None
+    target_local = target.astimezone(TZ)
+    now_local = now.astimezone(TZ)
+    if target_local.date() != now_local.date():
+        return None
+    target_hour = target_local.replace(minute=0, second=0, microsecond=0)
+    now_hour = now_local.replace(minute=0, second=0, microsecond=0)
+    if target_hour > now_hour:
+        return None
+    return ctx
 
 
 def _closest_hour_index(entries: list[tuple[int, HourPrediction]], moment: datetime) -> tuple[int, HourPrediction] | None:
@@ -140,19 +160,31 @@ async def _fetch_satellite_context(lat: float, lng: float, spot) -> dict | None:
     lng_span, lat_span = resolve_bbox_span(None, None, region)
     bbox = compute_bbox(lat, lng, lng_span, lat_span)
     now = datetime.now(TZ)
+    cache_key = (
+        f"sat_ctx:{bbox['west']:.3f}:{bbox['south']:.3f}:"
+        f"{bbox['east']:.3f}:{bbox['north']:.3f}:{now.strftime('%Y%m%d%H')}"
+    )
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached if cached else None
+
     try:
         result = await fetch_himawari_best_effort(bbox, now, lookback_hours=12)
     except Exception:
+        cache_set(cache_key, {}, ttl=300)
         return None
     if not result:
+        cache_set(cache_key, {}, ttl=300)
         return None
     analysis = analyze_ir_image(result["content"])
-    return {
+    payload = {
         **analysis,
         "datetime_utc": result["datetime_utc"],
         "lookback_hours": result.get("lookback_hours") or 0,
         "source": result.get("source", "gibs_himawari_b13"),
     }
+    cache_set(cache_key, payload)
+    return payload
 
 
 async def run_prediction(req: PredictRequest) -> PredictResponse:
@@ -163,6 +195,7 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     spot = get_spot(req.spot_id) if req.spot_id else None
     cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
     sunrise_months = spot.seasonality.get("sunrise_months") if spot else None
+    now = datetime.now(TZ)
     satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
 
     forecast = await fetch_forecast(req.lat, req.lng, days=5)
@@ -180,6 +213,10 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     cloud_high = hourly.get("cloud_cover_high", [])
     winds = hourly.get("wind_speed_10m", [])
     visibilities = hourly.get("visibility", [])
+    rh_850_series = hourly.get("relative_humidity_850hPa", [])
+    rh_700_series = hourly.get("relative_humidity_700hPa", [])
+    t_850_series = hourly.get("temperature_850hPa", [])
+    t_925_series = hourly.get("temperature_925hPa", [])
 
     results: list[HourPrediction] = []
     for idx, t_str in enumerate(times):
@@ -197,6 +234,11 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
         vis = visibilities[idx] if idx < len(visibilities) and visibilities[idx] is not None else None
         recent = _recent_precip(precips, idx)
 
+        rh_850 = rh_850_series[idx] if idx < len(rh_850_series) else None
+        rh_700 = rh_700_series[idx] if idx < len(rh_700_series) else None
+        t_850 = t_850_series[idx] if idx < len(t_850_series) else None
+        t_925 = t_925_series[idx] if idx < len(t_925_series) else None
+
         day_key = t_str[:10]
         sunrise_at = astronomy.get(day_key, {}).get("sunrise")
 
@@ -213,7 +255,11 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             elevation=elevation,
             month=month,
             cloudsea_months=cloudsea_months,
-            satellite_context=satellite_context,
+            satellite_context=_satellite_context_for_hour(satellite_context, t, now),
+            rh_850=rh_850,
+            rh_700=rh_700,
+            t_850=t_850,
+            t_925=t_925,
         )
 
         sunrise = score_sunrise_window(

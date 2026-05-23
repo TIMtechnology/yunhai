@@ -105,7 +105,11 @@
   ?latitude=…&longitude=…
   &hourly=temperature_2m,relative_humidity_2m,dew_point_2m,
           precipitation,cloud_cover,cloud_cover_low,cloud_cover_mid,
-          cloud_cover_high,wind_speed_10m,visibility
+          cloud_cover_high,wind_speed_10m,visibility,
+          temperature_850hPa,relative_humidity_850hPa,
+          temperature_925hPa,relative_humidity_925hPa,
+          temperature_700hPa,relative_humidity_700hPa,
+          temperature_500hPa,relative_humidity_500hPa
   &daily=sunrise,sunset
   &forecast_days=5&timezone=Asia/Shanghai</pre>
     </section>
@@ -114,7 +118,10 @@
       <h2 class="text-lg font-semibold mb-3">字段与预测的关系</h2>
       <table>
         <tr><th>字段</th><th>在界面中的体现</th></tr>
-        <tr><td><code>relative_humidity_2m</code></td><td>因子「近地面湿度」；云海主驱动</td></tr>
+        <tr><td><code>relative_humidity_850hPa</code></td><td>Phase A 因子「850 hPa 湿度」</td></tr>
+        <tr><td><code>relative_humidity_700hPa</code></td><td>Phase A 因子「700 hPa 上干」</td></tr>
+        <tr><td><code>temperature_850hPa</code> + <code>temperature_925hPa</code></td><td>Phase A 逆温 ΔT = T850 − T925</td></tr>
+        <tr><td><code>relative_humidity_2m</code></td><td>因子「近地面湿度」</td></tr>
         <tr><td><code>cloud_cover_low / mid / high</code></td><td>低/中/高云量因子；右侧天气快照</td></tr>
         <tr><td><code>temperature_2m</code> + <code>dew_point_2m</code></td><td>估算云底高度 (T−Td)×125 m</td></tr>
         <tr><td><code>precipitation</code></td><td>近 48h 累计降水 →「雨后放晴」因子</td></tr>

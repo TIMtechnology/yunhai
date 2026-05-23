@@ -34,6 +34,15 @@ withDefaults(
         />
       </div>
       <p v-if="!compact" class="text-xs leading-relaxed text-slate-500">{{ factor.description }}</p>
+      <p v-if="!compact && factor.reference" class="mt-1 text-[11px] leading-relaxed text-slate-600">
+        文献：
+        <a
+          :href="`https://doi.org/${factor.reference}`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sky-500 hover:underline"
+        >{{ factor.reference }}</a>
+      </p>
     </div>
   </div>
 </template>
