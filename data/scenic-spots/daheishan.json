@@ -4,6 +4,7 @@
   "aliases": ["大黑山", "大连大黑山", "金州大黑山"],
   "region": "辽宁省大连市金州区",
   "peak_elevation": 663.1,
+  "coord_sys": "WGS84",
   "seasonality": {
     "cloudsea_months": [4, 5, 6, 9, 10, 11],
     "sunrise_months": [4, 5, 6, 7, 8, 9, 10],
@@ -22,29 +23,29 @@
     {
       "id": "zhufeng",
       "name": "主峰",
-      "lat": 39.0572,
-      "lng": 121.7908,
+      "lat": 39.09811,
+      "lng": 121.78396,
       "elevation": 663,
       "tags": ["sunrise", "cloudsea"],
-      "note": "金州区大黑山主峰，海拔663m"
+      "note": "金州区大黑山主峰，海拔663m（WGS84）"
     },
     {
       "id": "tanggong",
       "name": "唐王宫道院",
-      "lat": 39.0545,
-      "lng": 121.7875,
+      "lat": 39.04972,
+      "lng": 121.77917,
       "elevation": 513,
       "tags": ["sunrise"],
-      "note": "大黑山西麓唐王殿道院附近"
+      "note": "大黑山西麓唐王殿道院附近（WGS84）"
     },
     {
       "id": "beijiangtai",
       "name": "北疆台",
-      "lat": 39.0595,
-      "lng": 121.7935,
+      "lat": 39.05083,
+      "lng": 121.78528,
       "elevation": 620,
       "tags": ["cloudsea"],
-      "note": "主峰北侧观景台，雨后常见云海"
+      "note": "主峰北侧观景台，雨后常见云海（WGS84）"
     }
   ]
 }

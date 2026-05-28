@@ -260,6 +260,7 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             rh_700=rh_700,
             t_850=t_850,
             t_925=t_925,
+            visibility=vis,
         )
 
         sunrise = score_sunrise_window(

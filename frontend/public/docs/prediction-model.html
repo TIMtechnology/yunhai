@@ -64,21 +64,38 @@
     </section>
 
     <section class="glass">
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">Phase B · 准确率修正（实地验证驱动）</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        依据
+        <a href="https://doi.org/10.13718/j.cnki.xdzk.2023.06.017">梵净山云海识别（10.13718/j.cnki.xdzk.2023.06.017）</a>：
+        相对湿度必要但非充分；无低云时高湿多对应雾而非观赏级云海。
+      </p>
+      <ul class="text-sm text-slate-600 list-disc list-inside space-y-1">
+        <li><strong>低云门控</strong>：综合评分 × (0.22 + 0.78×低云信号)；低云 &lt;10% 时总分上限约 32%</li>
+        <li><strong>雾 vs 云海</strong>：高湿 + 低能见度 + 极低低云 → 单独降权因子</li>
+        <li><strong>海拔-云底</strong>：低云 &lt;15% 时不给满分（无云则云底估算无效）</li>
+        <li><strong>逆温文案</strong>：ΔT≤0 时描述改为「无逆温」，不再误导</li>
+        <li><strong>场景标签</strong>：「日出云海」需低云 ≥30%；「较可能日出云海」需低云 ≥20%</li>
+      </ul>
+    </section>
+
+    <section class="glass">
       <h2 class="text-lg font-semibold text-sky-600 mb-3">云海评分因子（完整）</h2>
       <table>
         <tr><th>因子</th><th>权重</th><th>理想条件</th><th>文献 DOI</th></tr>
-        <tr><td>850 hPa 湿度</td><td>0.18</td><td>≥80%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>700 hPa 上干</td><td>0.12</td><td>RH &lt; 60%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>925–850 hPa 逆温</td><td>0.12</td><td>ΔT 正值，约 4°C</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>近地面 RH（2 m）</td><td>0.10</td><td>75–95%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>中低层湿度代理</td><td>0.10</td><td>RH 高 + 中层云量适中</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>低云量</td><td>0.12</td><td>30–70%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>风速</td><td>0.08</td><td>1–4 m/s</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>雨后放晴</td><td>0.10</td><td>近 48h 有降水后转晴</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
-        <tr><td>海拔-云底匹配</td><td>0.08</td><td>观景点在估算云层内</td><td>经验公式</td></tr>
-        <tr><td>卫星区域云量（可选）</td><td>0.06</td><td>仅<strong>当天已发生</strong>时段：近实况 vs 单点预报轻量校正；<strong>不参与未来日期</strong></td><td>—</td></tr>
+        <tr><td>低云量（直接证据）</td><td>0.20</td><td>20–70%；&lt;10% 强降权</td><td><a href="https://doi.org/10.13718/j.cnki.xdzk.2023.06.017">10.13718/…2023.06.017</a></td></tr>
+        <tr><td>850 hPa 湿度</td><td>0.16</td><td>≥80%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>700 hPa 上干</td><td>0.10</td><td>RH &lt; 60%</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>925–850 hPa 逆温</td><td>0.12</td><td>ΔT 正值，约 4°C</td><td><a href="https://doi.org/10.11676/qxxb2023.20220188">10.11676/…2023.20220188</a></td></tr>
+        <tr><td>近地面 RH（2 m）</td><td>0.08</td><td>75–95%（非充分条件）</td><td><a href="https://doi.org/10.13718/j.cnki.xdzk.2023.06.017">10.13718/…2023.06.017</a></td></tr>
+        <tr><td>中低层湿度代理</td><td>0.08</td><td>RH 高 + 中层云量适中</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>风速</td><td>0.06</td><td>1–4 m/s</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>雨后放晴</td><td>0.08</td><td>近 48h 有降水后转晴</td><td><a href="https://doi.org/10.3878/j.issn.1006-9585.2025.25032">10.3878/…2025.25032</a></td></tr>
+        <tr><td>海拔-云底匹配</td><td>0.06</td><td>有低云时观景点在云层内</td><td><a href="https://doi.org/10.13718/j.cnki.xdzk.2023.06.017">10.13718/…2023.06.017</a></td></tr>
+        <tr><td>雾 vs 云海</td><td>0.06</td><td>区分雾/轻雾与层状云海</td><td><a href="https://doi.org/10.13718/j.cnki.xdzk.2023.06.017">10.13718/…2023.06.017</a></td></tr>
+        <tr><td>卫星区域云量（可选）</td><td>0.06</td><td>仅<strong>当天已发生</strong>时段轻量校正</td><td>—</td></tr>
       </table>
-      <p class="mt-4 text-sm text-slate-600">云底估算：<code>cloud_base ≈ (T - Td) × 125</code> 米。若气压层变量缺失，回退为旧版「逆温代理」因子。</p>
+      <p class="mt-4 text-sm text-slate-600">精选观景点坐标统一为 <strong>WGS84/CGCS2000</strong>（与天地图一致）；若从高德/百度导入需先做 GCJ-02 转换。</p>
     </section>
 
     <section class="glass">

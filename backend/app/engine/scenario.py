@@ -22,7 +22,7 @@ def weather_text(
         return "多云"
     if total <= 25 and rh < 70:
         return "晴到少云"
-    if rh >= 85:
+    if rh >= 85 and cloud_low < 15:
         return "湿度大·易起雾"
     return "多云间晴"
 
@@ -37,8 +37,9 @@ def build_scenario(
     cloud_high: float,
     is_sunrise_window: bool = False,
 ) -> dict:
-    """参考四明山气象景观分级：联合云海+日出+天气给出观赏场景。"""
+    """联合云海+日出+天气给出观赏场景；云海标签需低云直接证据。"""
     total_cloud = (cloud_low + cloud_mid + cloud_high) / 3
+    has_cloudsea_evidence = cloud_low >= 25 or (cloud_low >= 15 and cloud_mid >= 30)
 
     if precip >= 1.0:
         return _scenario(
@@ -58,26 +59,51 @@ def build_scenario(
             min(cloudsea_prob, sunrise_prob) - 10,
         )
 
-    # 日出窗口优先判断「日出云海」
     if is_sunrise_window or (cloudsea_prob >= 55 and sunrise_prob >= 55):
-        if cloudsea_prob >= 70 and sunrise_prob >= 70:
+        if (
+            cloudsea_prob >= 70
+            and sunrise_prob >= 70
+            and has_cloudsea_evidence
+            and cloud_low >= 30
+        ):
             return _scenario(
                 "sunrise_cloudsea",
                 "日出云海",
-                "大概率同时看到日出金光与山间云海，推荐前往。",
+                "低云与垂直场条件配合，大概率可见日出金光与山间云海。",
                 1,
                 int((cloudsea_prob * 0.55 + sunrise_prob * 0.45)),
             )
-        if cloudsea_prob >= 55 and sunrise_prob >= 50:
+        if (
+            cloudsea_prob >= 55
+            and sunrise_prob >= 50
+            and has_cloudsea_evidence
+            and cloud_low >= 20
+        ):
             return _scenario(
                 "sunrise_cloudsea_fair",
                 "较可能日出云海",
-                "具备日出与云海同时出现的条件，值得早起碰运气。",
+                "具备一定云海与日出条件，值得早起碰运气。",
                 2,
                 int((cloudsea_prob + sunrise_prob) / 2),
             )
+        if sunrise_prob >= 60 and not has_cloudsea_evidence:
+            if cloud_low <= 20 and total_cloud <= 40:
+                return _scenario(
+                    "clear_sunrise",
+                    "晴日日出",
+                    "低云偏少，较可能看到日出，但形成观赏级云海概率低。",
+                    2,
+                    sunrise_prob,
+                )
+            return _scenario(
+                "sunrise_only",
+                "可看日出",
+                "日出条件尚可，但低云不足，难见云海。",
+                2,
+                sunrise_prob,
+            )
 
-    if cloudsea_prob >= 65 and sunrise_prob < 45:
+    if cloudsea_prob >= 65 and sunrise_prob < 45 and has_cloudsea_evidence:
         if cloud_low >= 60:
             return _scenario(
                 "cloudsea_block_sun",
@@ -94,7 +120,7 @@ def build_scenario(
             cloudsea_prob,
         )
 
-    if sunrise_prob >= 65 and cloudsea_prob < 45:
+    if sunrise_prob >= 65 and (cloudsea_prob < 45 or not has_cloudsea_evidence):
         if cloud_low <= 25 and total_cloud <= 35:
             return _scenario(
                 "clear_sunrise",

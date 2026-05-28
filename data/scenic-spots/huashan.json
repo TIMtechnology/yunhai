@@ -4,6 +4,7 @@
   "aliases": ["华山风景区", "西岳华山"],
   "region": "陕西省渭南市华阴市",
   "peak_elevation": 2154,
+  "coord_sys": "WGS84",
   "seasonality": {
     "cloudsea_months": [10, 11, 12, 1, 2, 3],
     "sunrise_months": [4, 5, 6, 9, 10],
@@ -15,29 +16,29 @@
     {
       "id": "dongfeng",
       "name": "东峰",
-      "lat": 34.4892,
-      "lng": 110.0809,
+      "lat": 34.48722,
+      "lng": 110.0925,
       "elevation": 2096,
       "tags": ["sunrise", "cloudsea"],
-      "note": "华山最佳日出观景点"
+      "note": "华山最佳日出观景点（WGS84）"
     },
     {
       "id": "xifeng",
       "name": "西峰",
-      "lat": 34.4778,
-      "lng": 110.0785,
+      "lat": 34.47778,
+      "lng": 110.07861,
       "elevation": 2082,
       "tags": ["cloudsea"],
-      "note": "日落与云海"
+      "note": "日落与云海（WGS84）"
     },
     {
       "id": "nanfeng",
       "name": "南峰",
-      "lat": 34.4762,
-      "lng": 110.0825,
+      "lat": 34.47611,
+      "lng": 110.08278,
       "elevation": 2154,
       "tags": ["cloudsea"],
-      "note": "华山最高峰"
+      "note": "华山最高峰（WGS84）"
     }
   ]
 }
