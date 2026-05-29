@@ -84,7 +84,8 @@ def load_dataset(db_path: Path, *, approved_only: bool = False) -> tuple[np.ndar
     y_rows: list[float] = []
     meta: list[dict] = []
 
-    for label in labels:
+    for raw in labels:
+        label = dict(raw)
         day = label["date"]
         target = label_to_target(label["status"])
         lat, lng, elev = LAT, LNG, ELEV
