@@ -7,9 +7,11 @@ Phase 0 实现：通过 Open-Meteo Elevation API 批量采样周边格点，
 from __future__ import annotations
 
 import math
+from datetime import date as date_cls
 from typing import Any, Optional
 
 from app.adapters.open_meteo import estimate_cloud_base, fetch_elevation, fetch_elevations_batch
+from app.engine.solar import sunrise_azimuth_deg
 from app.services.cache import cache_get, cache_set
 
 EARTH_R_M = 6_371_000
@@ -42,6 +44,108 @@ def _grid_points(lat: float, lng: float, *, radius_km: float, spacing_km: float)
             if dn * dn + de * de <= radius_m * radius_m + 1:
                 points.append(_offset_latlng(lat, lng, dn, de))
     return points
+
+
+def _offset_by_bearing(lat: float, lng: float, distance_m: float, azimuth_deg: float) -> tuple[float, float]:
+    """沿方位角（正北顺时针）前进 distance_m。"""
+    az = math.radians(azimuth_deg)
+    dn = distance_m * math.cos(az)
+    de = distance_m * math.sin(az)
+    return _offset_latlng(lat, lng, dn, de)
+
+
+def _sample_sector_profile_points(
+    lat: float,
+    lng: float,
+    *,
+    azimuth_deg: float,
+    max_km: float = 30.0,
+    step_km: float = 1.5,
+    sector_half_deg: float = 45.0,
+) -> list[tuple[float, float, float, float]]:
+    """返回 (distance_km, azimuth_deg, lat, lng) 采样点。"""
+    bearings = [azimuth_deg, azimuth_deg - sector_half_deg, azimuth_deg + sector_half_deg]
+    points: list[tuple[float, float, float, float]] = []
+    seen: set[tuple[float, float]] = set()
+    n_steps = max(1, int(max_km / step_km))
+    for bearing in bearings:
+        for i in range(1, n_steps + 1):
+            dist_km = i * step_km
+            plat, plng = _offset_by_bearing(lat, lng, dist_km * 1000.0, bearing)
+            key = (round(plat, 5), round(plng, 5))
+            if key in seen:
+                continue
+            seen.add(key)
+            points.append((dist_km, bearing, plat, plng))
+    return points
+
+
+def _azimuth_cache_bucket(azimuth_deg: float, *, step_deg: float = 5.0) -> int:
+    """方位角分桶，相邻日期复用同一份 DEM 剖面缓存。"""
+    return int(round(azimuth_deg / step_deg) * step_deg) % 360
+
+
+async def fetch_sunrise_elevation_profile(
+    lat: float,
+    lng: float,
+    *,
+    azimuth_deg: float,
+    max_km: float = 30.0,
+    step_km: float = 2.5,
+) -> list[dict[str, Any]]:
+    """日出方向扇区 DEM 剖面（中心 ±45° 射线，默认 ~2.5 km 步长）。"""
+    az_bucket = _azimuth_cache_bucket(azimuth_deg)
+    cache_key = f"terrain:sunrise_profile:v2:{lat:.4f}:{lng:.4f}:{az_bucket}:{step_km}"
+    cached = cache_get(cache_key)
+    if cached:
+        return list(cached)
+
+    samples = _sample_sector_profile_points(
+        lat, lng, azimuth_deg=azimuth_deg, max_km=max_km, step_km=step_km
+    )
+    lats = [lat] + [p[2] for p in samples]
+    lngs = [lng] + [p[3] for p in samples]
+    elevs = await fetch_elevations_batch(lats, lngs)
+    center_elev = elevs[0]
+
+    profile: list[dict[str, Any]] = [
+        {
+            "distance_km": 0.0,
+            "azimuth_deg": round(azimuth_deg, 1),
+            "lat": lat,
+            "lng": lng,
+            "elev_m": round(center_elev, 1),
+        }
+    ]
+    for (dist, bearing, plat, plng), elev in zip(samples, elevs[1:]):
+        profile.append(
+            {
+                "distance_km": round(dist, 2),
+                "azimuth_deg": round(bearing, 1),
+                "lat": round(plat, 6),
+                "lng": round(plng, 6),
+                "elev_m": round(elev, 1),
+            }
+        )
+    profile.sort(key=lambda p: (p["distance_km"], p["azimuth_deg"]))
+    cache_set(cache_key, profile, ttl=86400 * 30)
+    return profile
+
+
+def _summarize_sunrise_profile(profile: list[dict[str, Any]], *, max_km: float = 15.0) -> dict[str, float]:
+    subset = [p for p in profile if float(p.get("distance_km") or 0) <= max_km]
+    elevs = [float(p["elev_m"]) for p in subset if p.get("elev_m") is not None]
+    if not elevs:
+        return {"elev_min_sunrise_15km_m": 0.0, "elev_max_sunrise_30km_m": 0.0, "sunrise_sector_relief_m": 0.0}
+    within_15 = [float(p["elev_m"]) for p in subset if float(p.get("distance_km") or 0) <= 15.0]
+    all_30 = [float(p["elev_m"]) for p in profile if float(p.get("distance_km") or 0) <= 30.0]
+    emin15 = min(within_15) if within_15 else min(elevs)
+    emax30 = max(all_30) if all_30 else max(elevs)
+    return {
+        "elev_min_sunrise_15km_m": round(emin15, 1),
+        "elev_max_sunrise_30km_m": round(emax30, 1),
+        "sunrise_sector_relief_m": round(emax30 - emin15, 1),
+    }
 
 
 def _window_stats(elevations: list[float]) -> dict[str, float | int]:
@@ -227,10 +331,26 @@ async def get_terrain_context(
     temp_c: float | None = None,
     dewpoint_c: float | None = None,
     visibility_m: float | None = None,
+    profile_date: date_cls | None = None,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
 ) -> dict[str, Any]:
+    from app.services.terrain_store import resolve_baked_terrain
+
+    profile_day = profile_date or date_cls.today()
+    baked_base, baked_profile = resolve_baked_terrain(
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+        lat=lat,
+        lng=lng,
+        profile_date=profile_day,
+    )
+
     cache_key = f"terrain:v0:{lat:.4f}:{lng:.4f}"
-    cached = cache_get(cache_key)
-    base: dict[str, Any] | None = dict(cached) if cached else None
+    base: dict[str, Any] | None = dict(baked_base) if baked_base else None
+    if base is None:
+        cached = cache_get(cache_key)
+        base = dict(cached) if cached else None
 
     if base is None:
         pts_1km = _grid_points(lat, lng, radius_km=1.0, spacing_km=0.35)
@@ -298,6 +418,10 @@ async def get_terrain_context(
         }
         cache_set(cache_key, base, ttl=86400 * 7)
 
+    if baked_base is not None:
+        base = dict(baked_base)
+        base["source"] = "terrain_snapshot"
+
     result = dict(base)
     elev_for_mode = float(elevation if elevation is not None else result["elev_viewpoint_m"])
     mode, mode_note = infer_viewing_mode(
@@ -311,6 +435,16 @@ async def get_terrain_context(
     if elevation is not None:
         result["elev_curated_m"] = elevation
         result["elev_curated_delta_m"] = round(elevation - float(result["elev_viewpoint_m"]), 1)
+
+    sunrise_az = sunrise_azimuth_deg(lat, lng, profile_day)
+    if baked_profile is not None:
+        elev_profile = baked_profile
+    else:
+        elev_profile = await fetch_sunrise_elevation_profile(lat, lng, azimuth_deg=sunrise_az)
+    result["profile_date"] = profile_day.isoformat()
+    result["sunrise_azimuth_deg"] = round(sunrise_az, 1)
+    result["elev_profile_sunrise"] = elev_profile
+    result.update(_summarize_sunrise_profile(elev_profile))
 
     resolved_base = cloud_base_m
     if resolved_base is None and temp_c is not None and dewpoint_c is not None:
@@ -349,8 +483,11 @@ def get_terrain_context_sync(
     lng: float,
     *,
     elevation: float | None = None,
+    profile_date: date_cls | None = None,
 ) -> dict[str, Any]:
     """训练脚本等同步环境使用。"""
     import asyncio
 
-    return asyncio.run(get_terrain_context(lat, lng, elevation=elevation))
+    return asyncio.run(
+        get_terrain_context(lat, lng, elevation=elevation, profile_date=profile_date)
+    )

@@ -3,6 +3,11 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   backend:
     build: ./backend
@@ -11,14 +16,17 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+      - TERRAIN_SNAPSHOTS_DIR=/app/data/terrain
       - CLOUDSEA_ENABLED=true
       - CLOUDSEA_ADMIN_TOKEN=dev-token
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
     volumes:
       - ./data/scenic-spots:/app/data/scenic-spots:ro
+      - ./data/terrain:/app/data/terrain:ro
       - ./data/cloudsea:/app/data/cloudsea
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   frontend:
     build: ./frontend

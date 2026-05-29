@@ -148,5 +148,11 @@ class TerrainContextResponse(BaseModel):
     viewing_mode_note: str
     viewing_mode_source: str
     sample_counts: dict
+    profile_date: Optional[str] = None
+    sunrise_azimuth_deg: Optional[float] = None
+    elev_profile_sunrise: Optional[List[dict]] = None
+    elev_min_sunrise_15km_m: Optional[float] = None
+    elev_max_sunrise_30km_m: Optional[float] = None
+    sunrise_sector_relief_m: Optional[float] = None
     cloud_layer: Optional[dict] = None
     problems_dem_solves: List[dict] = Field(default_factory=list)

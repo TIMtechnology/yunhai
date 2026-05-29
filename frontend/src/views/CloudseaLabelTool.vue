@@ -565,6 +565,14 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
         <div v-if="mlStatus && !mlStatus.ml_active" class="mt-2 rounded-lg border border-amber-700/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
           {{ mlStatus.message }}
         </div>
+        <div v-if="session?.viewing_mode === 'peak_overlook'" class="mt-2 rounded-lg border border-violet-700/50 bg-violet-950/30 px-3 py-2 text-xs text-violet-100">
+          <strong>峰顶俯瞰标注说明</strong>：请按<strong>日出方向、能见度范围内</strong>能看到的云海判断，而非仅脚下。
+          <ul class="mt-1 list-inside list-disc text-violet-200/90">
+            <li><strong>完整 (3)</strong>：可见范围内大面积谷地/坡地有清晰云海</li>
+            <li><strong>部分 (2)</strong>：仅部分山谷或远端有云，或云薄/间断</li>
+            <li><strong>无 (1)</strong>：可见方向均无观赏级云海（含人在云下、全晴无云）</li>
+          </ul>
+        </div>
         <div v-if="stats && !adminMode" class="mt-2 text-xs text-slate-400">
           今日已标注 {{ stats.labels_today }}/{{ stats.daily_cap }} · 累计通过 {{ stats.labels_approved }} · 待审 {{ stats.labels_pending }}
         </div>

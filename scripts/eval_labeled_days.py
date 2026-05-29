@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -12,8 +13,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
+# --db 须在 import app 之前生效，否则 meteo 缓存与标注库路径不一致
+_pre = argparse.ArgumentParser(add_help=False)
+_pre.add_argument("--db", default=str(ROOT / "data" / "cloudsea" / "cloudsea.prod.db"))
+_pre_args, _ = _pre.parse_known_args()
+os.environ["CLOUDSEA_DB_PATH"] = str(Path(_pre_args.db).resolve())
+
 from app.models.schemas import PredictRequest  # noqa: E402
-from app.services.predictor import run_backtest_prediction  # noqa: E402
+from app.services.cloudsea_store import init_store  # noqa: E402
+from app.services.predictor import run_backtest_prediction, warm_location_caches  # noqa: E402
 
 
 def load_labels(db_path: Path, spot_id: str | None, viewpoint_id: str | None) -> list[dict]:
@@ -66,11 +74,12 @@ async def eval_one(label: dict, *, lat: float, lng: float, elev: float, name: st
         "status": label["status"],
         "peak_prob": peak_prob,
         "scenario": summary.get("scenario"),
+        "data_source": (bt.get("meta") or {}).get("data_source"),
         "actual": actual,
         "predicted": predicted,
         "match": actual == predicted,
         "viewing_mode": loc.get("viewing_mode"),
-        "elev_max_5km": (loc.get("terrain") or {}).get("elev_max_5km_m"),
+        "observable_fraction": (loc.get("observable") or {}).get("observable_fraction"),
     }
 
 
@@ -83,6 +92,7 @@ async def main() -> None:
     parser.add_argument("--lng", type=float)
     parser.add_argument("--elevation", type=float)
     parser.add_argument("--name", default="评估点位")
+    parser.add_argument("--concurrency", type=int, default=2, help="并行回放天数（默认 2，避免打满 Open-Meteo 限流）")
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -96,9 +106,11 @@ async def main() -> None:
         print("无 approved 标注")
         sys.exit(0)
 
+    init_store()
+
     from app.services.spot_loader import get_viewpoint
 
-    results = []
+    resolved: list[tuple[dict, float, float, float, str]] = []
     for label in labels:
         lat = args.lat or label.get("lat")
         lng = args.lng or label.get("lng")
@@ -111,28 +123,43 @@ async def main() -> None:
         if lat is None or lng is None:
             print(f"skip {label['date']}: 无坐标")
             continue
-        results.append(
-            await eval_one(
-                label,
-                lat=float(lat),
-                lng=float(lng),
-                elev=float(elev),
-                name=str(name),
-            )
-        )
+        resolved.append((label, float(lat), float(lng), float(elev), str(name)))
 
-    if not results:
+    if not resolved:
         print("无有效评估日")
         return
 
+    _, warm_lat, warm_lng, warm_elev, _ = resolved[0]
+    print(f"预热点位缓存 {warm_lat:.4f},{warm_lng:.4f} …")
+    first_label = resolved[0][0]
+    await warm_location_caches(
+        lat=warm_lat,
+        lng=warm_lng,
+        elevation=warm_elev,
+        spot_id=first_label["spot_id"],
+        viewpoint_id=first_label["viewpoint_id"],
+    )
+
+    sem = asyncio.Semaphore(max(1, args.concurrency))
+
+    async def _run_one(item: tuple[dict, float, float, float, str]) -> dict:
+        label, lat, lng, elev, name = item
+        async with sem:
+            return await eval_one(label, lat=lat, lng=lng, elev=elev, name=name)
+
+    results = list(await asyncio.gather(*[_run_one(item) for item in resolved]))
+
     matches = sum(1 for r in results if r["match"])
     print(f"\n=== 标注回放评估 n={len(results)} 方向一致={matches}/{len(results)} ({matches/len(results):.0%}) ===")
-    print(f"观云模式: {results[0].get('viewing_mode')} | 5km峰: {results[0].get('elev_max_5km')} m\n")
+    print(f"观云模式: {results[0].get('viewing_mode')} | 可观测占比: {results[0].get('observable_fraction')}\n")
     for r in results:
         mark = "✓" if r["match"] else "✗"
+        obs_pct = r.get("observable_fraction")
+        obs_str = f"{obs_pct:.0%}" if obs_pct is not None else "—"
         print(
             f"{mark} {r['date']} 标注={r['status']:8} 峰值={r['peak_prob']:3}% "
-            f"预测={r['predicted']:12} 场景={r.get('scenario') or '-'}"
+            f"可观测={obs_str:4} 预测={r['predicted']:12} "
+            f"数据源={r.get('data_source') or '-':16} 场景={r.get('scenario') or '-'}"
         )
 
 

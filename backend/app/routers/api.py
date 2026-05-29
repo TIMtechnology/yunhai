@@ -104,8 +104,19 @@ async def terrain_context(
     temp_c: Optional[float] = None,
     dewpoint_c: Optional[float] = None,
     visibility_m: Optional[float] = None,
+    profile_date: Optional[str] = None,
+    spot_id: Optional[str] = None,
+    viewpoint_id: Optional[str] = None,
 ):
-    """DEM v0：周边地形统计 + 观云模式粗猜 + 可选云高–地形相对位置。"""
+    """DEM v0：周边地形统计 + 日出方向剖面 + 观云模式 + 可选云高–地形相对位置。"""
+    from datetime import date as date_cls
+
+    parsed_date = None
+    if profile_date:
+        try:
+            parsed_date = date_cls.fromisoformat(profile_date)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="profile_date 格式须为 YYYY-MM-DD") from exc
     return await get_terrain_context(
         lat,
         lng,
@@ -117,6 +128,9 @@ async def terrain_context(
         temp_c=temp_c,
         dewpoint_c=dewpoint_c,
         visibility_m=visibility_m,
+        profile_date=parsed_date,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
     )
 
 

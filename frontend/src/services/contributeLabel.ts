@@ -88,6 +88,9 @@ export interface LabelSession {
   data_source?: 'live_forecast' | 'historical_forecast'
   ml_status?: MlStatus
   rain_window?: RainWindowInfo
+  viewing_mode?: string
+  viewing_mode_note?: string
+  observable?: import('./api').ObservableSummary
 }
 
 export interface CalendarEntry {

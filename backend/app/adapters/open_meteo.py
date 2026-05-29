@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -71,6 +72,32 @@ async def fetch_elevation(lat: float, lng: float) -> float:
     return elevation
 
 
+ELEVATION_BATCH_CHUNK = 60
+ELEVATION_MAX_RETRIES = 4
+
+
+async def _fetch_elevation_chunk(
+    client: httpx.AsyncClient,
+    chunk: list[tuple[float, float]],
+) -> list[float]:
+    params = {
+        "latitude": ",".join(str(p[0]) for p in chunk),
+        "longitude": ",".join(str(p[1]) for p in chunk),
+    }
+    for attempt in range(ELEVATION_MAX_RETRIES):
+        resp = await client.get(ELEVATION_URL, params=params)
+        if resp.status_code == 429 and attempt < ELEVATION_MAX_RETRIES - 1:
+            await asyncio.sleep(min(2 ** attempt + 1, 12))
+            continue
+        resp.raise_for_status()
+        return [float(x) for x in resp.json()["elevation"]]
+    raise httpx.HTTPStatusError(
+        "elevation rate limit",
+        request=resp.request,
+        response=resp,
+    )
+
+
 async def fetch_elevations_batch(lats: list[float], lngs: list[float]) -> list[float]:
     """批量海拔（Copernicus GLO-90，与 Open-Meteo Elevation API 一致）。"""
     if len(lats) != len(lngs):
@@ -92,18 +119,14 @@ async def fetch_elevations_batch(lats: list[float], lngs: list[float]) -> list[f
             missing.append(p)
 
     if missing:
-        params = {
-            "latitude": ",".join(str(p[0]) for p in missing),
-            "longitude": ",".join(str(p[1]) for p in missing),
-        }
         async with httpx.AsyncClient(timeout=45.0) as client:
-            resp = await client.get(ELEVATION_URL, params=params)
-            resp.raise_for_status()
-            data = resp.json()
-        for p, elev in zip(missing, data["elevation"]):
-            val = float(elev)
-            cached_map[p] = val
-            cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400)
+            for start in range(0, len(missing), ELEVATION_BATCH_CHUNK):
+                chunk = missing[start : start + ELEVATION_BATCH_CHUNK]
+                values = await _fetch_elevation_chunk(client, chunk)
+                for p, elev in zip(chunk, values):
+                    val = float(elev)
+                    cached_map[p] = val
+                    cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400 * 7)
 
     return [cached_map[p] for p in pairs]
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.engine.cloudsea_scorer import cloudsea_visual_evidence
+from app.engine.observable_field import observable_cloudsea_evidence
 from app.engine.utils import clamp
 
 
@@ -42,8 +42,11 @@ def build_scenario(
     rh: float = 70.0,
     viewing_mode: str = "valley_fill",
     terrain: dict | None = None,
+    observable: dict | None = None,
 ) -> dict:
     """联合云海+日出+天气给出观赏场景；云海标签需低云或能见度补偿证据。"""
+    from app.engine.cloudsea_scorer import cloudsea_visual_evidence
+
     total_cloud = (cloud_low + cloud_mid + cloud_high) / 3
     effective_low, has_cloudsea_evidence = cloudsea_visual_evidence(
         cloud_low=cloud_low,
@@ -52,7 +55,9 @@ def build_scenario(
         elevation=elevation,
         rh=rh,
     )
-    if viewing_mode == "peak_overlook" and cloudsea_prob >= 50:
+    if observable and viewing_mode == "peak_overlook":
+        has_cloudsea_evidence = observable_cloudsea_evidence(observable)
+    elif viewing_mode == "peak_overlook" and cloudsea_prob >= 50:
         has_cloudsea_evidence = True
 
     if precip >= 1.0:
@@ -74,10 +79,16 @@ def build_scenario(
         )
 
     if viewing_mode == "peak_overlook" and cloudsea_prob >= 55 and has_cloudsea_evidence:
+        frac = float((observable or {}).get("observable_fraction") or 0)
+        vis_km = float((observable or {}).get("visible_range_km") or 0)
+        narrative = (
+            f"峰顶条件配合日出方向可见范围内约 {frac:.0%} 地形可填云"
+            f"（可见约 {vis_km:.0f} km），较可能看到脚下云海。"
+        )
         return _scenario(
             "above_cloudsea",
             "站在云海之上 · 俯瞰",
-            "峰顶条件配合谷地云系，较可能看到脚下云海（能见度以山顶为准）。",
+            narrative,
             1 if cloudsea_prob >= 70 else 2,
             cloudsea_prob,
         )

@@ -13,6 +13,33 @@ from app.config import settings
 
 _memory_cache: dict[str, tuple[float, Any]] = {}
 _redis_client = None
+_redis_available: bool | None = None
+
+
+def cache_ping() -> bool:
+    """检测 Redis 是否可用（结果进程内缓存）。"""
+    global _redis_available
+    if _redis_available is not None:
+        return _redis_available
+    client = _get_redis()
+    if not client:
+        _redis_available = False
+        return False
+    try:
+        client.ping()
+        _redis_available = True
+    except Exception:
+        _redis_available = False
+    return _redis_available
+
+
+def cache_status() -> dict[str, Any]:
+    backend = "redis" if cache_ping() else "memory"
+    return {
+        "backend": backend,
+        "redis_url": settings.redis_url if backend == "redis" else None,
+        "memory_entries": len(_memory_cache),
+    }
 
 
 def _get_redis():

@@ -38,6 +38,17 @@ def init_store() -> None:
     with _connect() as conn:
         conn.executescript(
             """
+            CREATE TABLE IF NOT EXISTS meteo_day_cache (
+                spot_id TEXT NOT NULL,
+                viewpoint_id TEXT NOT NULL,
+                date_key TEXT NOT NULL,
+                source TEXT NOT NULL,
+                hourly_json TEXT NOT NULL,
+                astronomy_json TEXT,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (spot_id, viewpoint_id, date_key, source)
+            );
+
             CREATE TABLE IF NOT EXISTS meteo_hourly (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 spot_id TEXT,
@@ -336,6 +347,118 @@ def save_meteo_hourly(
                 json.dumps(raw, ensure_ascii=False),
                 _now_iso(),
             ),
+        )
+
+
+def save_meteo_day_cache(
+    *,
+    spot_id: str,
+    viewpoint_id: str,
+    date_key: str,
+    source: str,
+    hourly: dict[str, Any],
+    astronomy: dict[str, Any] | None = None,
+) -> None:
+    """缓存整日 hourly + astronomy，标注回放可跳过 Open-Meteo 历史 API。"""
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO meteo_day_cache
+            (spot_id, viewpoint_id, date_key, source, hourly_json, astronomy_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                spot_id,
+                viewpoint_id,
+                date_key,
+                source,
+                json.dumps(hourly, ensure_ascii=False),
+                json.dumps(astronomy, ensure_ascii=False) if astronomy else None,
+                _now_iso(),
+            ),
+        )
+
+
+def load_meteo_day_cache(
+    spot_id: str,
+    viewpoint_id: str,
+    date_key: str,
+    *,
+    source: str = "historical_forecast",
+) -> dict[str, Any] | None:
+    with _connect() as conn:
+        row = conn.execute(
+            """
+            SELECT hourly_json, astronomy_json FROM meteo_day_cache
+            WHERE spot_id=? AND viewpoint_id=? AND date_key=? AND source=?
+            """,
+            (spot_id, viewpoint_id, date_key, source),
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        hourly = json.loads(row["hourly_json"])
+        astronomy = json.loads(row["astronomy_json"]) if row["astronomy_json"] else None
+    except json.JSONDecodeError:
+        return None
+    return {"hourly": hourly, "astronomy": astronomy}
+
+
+def load_full_day_meteo_rows(
+    spot_id: str,
+    viewpoint_id: str,
+    date_key: str,
+) -> list[dict[str, Any]]:
+    """优先 meteo_day_cache，否则聚合 meteo_hourly 逐时行。"""
+    bundle = load_meteo_day_cache(spot_id, viewpoint_id, date_key)
+    if bundle and bundle.get("hourly"):
+        from app.services.meteo_cache import hour_rows_from_hourly
+
+        return hour_rows_from_hourly(bundle["hourly"], date_key)
+
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT raw_json FROM meteo_hourly
+            WHERE spot_id=? AND viewpoint_id=? AND ts LIKE ?
+            ORDER BY ts
+            """,
+            (spot_id, viewpoint_id, f"{date_key}T%"),
+        ).fetchall()
+    parsed: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            raw = json.loads(row["raw_json"])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(raw, dict):
+            parsed.append(raw)
+    return parsed
+
+
+def save_meteo_hourly_batch(
+    *,
+    spot_id: Optional[str],
+    viewpoint_id: Optional[str],
+    lat: float,
+    lng: float,
+    elevation: Optional[float],
+    rows: list[dict[str, Any]],
+    source: str,
+) -> None:
+    for row in rows:
+        ts = str(row.get("time") or "")
+        if not ts:
+            continue
+        save_meteo_hourly(
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
+            lat=lat,
+            lng=lng,
+            elevation=elevation,
+            ts=ts,
+            source=source,
+            raw=row,
         )
 
 

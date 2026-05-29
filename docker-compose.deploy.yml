@@ -3,6 +3,12 @@ services:
   redis:
     image: docker.1ms.run/library/redis:7-alpine
     restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     volumes:
       - redis_data:/data
 
@@ -13,6 +19,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+      - TERRAIN_SNAPSHOTS_DIR=/app/data/terrain
       - STATIC_DIR=/app/static
       - TZ=Asia/Shanghai
       - ANALYTICS_ENABLED=true
@@ -30,10 +37,12 @@ services:
     volumes:
       - analytics_data:/app/data/analytics
       - cloudsea_data:/app/data/cloudsea
+      # DEM 快照内嵌镜像 data/terrain，勿挂载空卷覆盖
       # 精选景区 JSON 使用镜像内嵌数据；勿挂载空目录，否则会覆盖导致 /api/spots/* 全部 404
       # 精选落库（curate）写入需配合部署脚本同步，见 scripts/sync-scenic-spots.sh
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

@@ -134,6 +134,19 @@ export interface TerrainSummary {
   elev_max_5km_m?: number
   relief_5km_m?: number
   elev_viewpoint_m?: number
+  sunrise_azimuth_deg?: number
+  elev_min_sunrise_15km_m?: number
+}
+
+export interface ObservableSummary {
+  observable_fraction?: number
+  observable_depth_m?: number
+  visible_range_km?: number
+  fillable_points?: number
+  eligible_points?: number
+  sunrise_azimuth_deg?: number
+  note?: string
+  viewer_above_cloud?: boolean
 }
 
 export interface PredictResponse {
@@ -148,6 +161,7 @@ export interface PredictResponse {
     viewing_mode?: string
     viewing_mode_note?: string
     terrain?: TerrainSummary
+    observable?: ObservableSummary
   }
   hours: HourPrediction[]
   days: DaySummary[]

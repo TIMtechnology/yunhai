@@ -293,7 +293,13 @@ def predict_day_cloudsea(
         return None
 
     feature_names = artifact.get("feature_names") or DAY_FEATURE_NAMES
-    day_feat = aggregate_day_features(hour_rows, elevation=elevation, terrain=terrain)
+    use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
+    day_feat = aggregate_day_features(
+        hour_rows,
+        elevation=elevation,
+        terrain=terrain,
+        use_observable_field=use_observable,
+    )
     model = artifact["model"]
     x = np.array([[day_feat.get(n, 0.0) for n in feature_names]])
     prob = float(model.predict_proba(x)[0, 1])

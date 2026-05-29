@@ -5,6 +5,7 @@ import numpy as np
 from app.adapters.dem import estimate_cloud_top_m
 from app.adapters.open_meteo import estimate_cloud_base
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, _infer_effective_low_cloud
+from app.engine.observable_field import compute_observable_field
 
 FEATURE_NAMES = [
     "cloud_low",
@@ -62,8 +63,20 @@ TERRAIN_FEATURE_NAMES = [
     "hours_valley_fill",
 ]
 
+OBSERVABLE_FEATURE_NAMES = [
+    "observable_fraction_mean",
+    "observable_fraction_max",
+    "observable_depth_mean",
+    "sunrise_sector_relief_m",
+    "horizon_blocked",
+    "vis_limited_range_km_mean",
+    "hours_observable_gt_03",
+    "cloud_base_minus_valley_mean",
+]
+
 DAY_FEATURE_NAMES_V2 = list(DAY_FEATURE_NAMES)
-DAY_FEATURE_NAMES = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES
+DAY_FEATURE_NAMES_V3 = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES
+DAY_FEATURE_NAMES = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES + OBSERVABLE_FEATURE_NAMES
 
 _REQUIRED_METEO_KEYS = ("rh_700", "cloud_high", "inversion")
 
@@ -229,11 +242,81 @@ def _terrain_day_features(
     }
 
 
+def _observable_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float,
+    terrain: dict | None,
+    viewing_mode: str,
+) -> dict[str, float]:
+    defaults = {n: 0.0 for n in OBSERVABLE_FEATURE_NAMES}
+    if not hour_rows:
+        return defaults
+
+    fractions: list[float] = []
+    depths: list[float] = []
+    vis_ranges: list[float] = []
+    valley_gaps: list[float] = []
+    hours_gt = 0.0
+    horizon = 0.0
+    sector_relief = float((terrain or {}).get("sunrise_sector_relief_m") or 0.0)
+
+    for row in hour_rows:
+        temp = row.get("temp")
+        dew = row.get("dewpoint")
+        if temp is None or dew is None:
+            continue
+        cloud_base = estimate_cloud_base(float(temp), float(dew))
+        cloud_low = float(row.get("cloud_low") or 0)
+        cloud_mid = float(row.get("cloud_mid") or 0)
+        cloud_top = estimate_cloud_top_m(cloud_base, cloud_low, cloud_mid)
+        vis = row.get("visibility")
+        vis_m = float(vis) if vis is not None else None
+        obs = compute_observable_field(
+            viewer_elev_m=elevation,
+            cloud_base_m=cloud_base,
+            cloud_top_m=cloud_top,
+            visibility_m=vis_m,
+            elev_profile_sunrise=(terrain or {}).get("elev_profile_sunrise"),
+            viewing_mode=viewing_mode,
+            rh_850=row.get("rh_850"),
+            rh_700=row.get("rh_700"),
+            sunrise_azimuth_deg=(terrain or {}).get("sunrise_azimuth_deg"),
+            elev_max_5km_m=float((terrain or {}).get("elev_max_5km_m") or elevation),
+        )
+        frac = float(obs.get("observable_fraction") or 0.0)
+        fractions.append(frac)
+        depths.append(float(obs.get("observable_depth_m") or 0.0))
+        vis_ranges.append(float(obs.get("visible_range_km") or 0.0))
+        valley_gaps.append(float(obs.get("cloud_base_minus_valley_m") or 0.0))
+        if frac >= 0.3:
+            hours_gt += 1.0
+        if obs.get("horizon_blocked"):
+            horizon = 1.0
+        if obs.get("sunrise_sector_relief_m") is not None:
+            sector_relief = float(obs["sunrise_sector_relief_m"])
+
+    if not fractions:
+        return defaults
+
+    return {
+        "observable_fraction_mean": float(np.mean(fractions)),
+        "observable_fraction_max": float(np.max(fractions)),
+        "observable_depth_mean": float(np.mean(depths)),
+        "sunrise_sector_relief_m": sector_relief,
+        "horizon_blocked": horizon,
+        "vis_limited_range_km_mean": float(np.mean(vis_ranges)),
+        "hours_observable_gt_03": hours_gt,
+        "cloud_base_minus_valley_mean": float(np.mean(valley_gaps)),
+    }
+
+
 def aggregate_day_features(
     hour_rows: list[dict],
     *,
     elevation: float = 804.0,
     terrain: dict | None = None,
+    use_observable_field: bool = True,
 ) -> dict[str, float]:
     feats = [build_feature_row(r, elevation=elevation) for r in hour_rows]
     if not feats:
@@ -274,6 +357,19 @@ def aggregate_day_features(
         "effective_low_mean": float(np.mean([f["effective_low"] for f in feats])),
     }
     base.update(_terrain_day_features(hour_rows, elevation=elevation, terrain=terrain))
+    if use_observable_field:
+        viewing_mode = str((terrain or {}).get("viewing_mode") or "valley_fill")
+        base.update(
+            _observable_day_features(
+                hour_rows,
+                elevation=elevation,
+                terrain=terrain,
+                viewing_mode=viewing_mode,
+            )
+        )
+    else:
+        for name in OBSERVABLE_FEATURE_NAMES:
+            base[name] = 0.0
     return base
 
 

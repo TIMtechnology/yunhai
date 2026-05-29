@@ -6,7 +6,7 @@ from typing import Any, Optional
 from app.engine.cloudsea_ml import get_ml_status
 from app.engine.ml_eligibility import load_sunrise_window_meteo, sunrise_window_rain_summary
 from app.models.schemas import PredictRequest
-from app.services.cloudsea_store import get_label, save_meteo_hourly
+from app.services.cloudsea_store import get_label
 from app.services.community_store import (
     COMMUNITY_SPOT_ID,
     community_label_keys,
@@ -143,19 +143,9 @@ async def build_label_session_payload(
         target_date=target,
         window_start=window_start,
         window_end=window_end,
+        prefer_cached_meteo=True,
     )
     label = get_label(spot_id, viewpoint_id, date_key, window_start, window_end)
-    for row in backtest["raw_meteo"]:
-        save_meteo_hourly(
-            spot_id=spot_id,
-            viewpoint_id=viewpoint_id,
-            lat=req.lat,
-            lng=req.lng,
-            elevation=req.elevation,
-            ts=str(row["time"]),
-            source="historical_forecast",
-            raw=row,
-        )
     window_hours = [
         h
         for h in backtest["prediction"]["hours"]
@@ -167,6 +157,7 @@ async def build_label_session_payload(
     )
     rain_window = sunrise_window_rain_summary(meteo_rows)
     ml_status = get_ml_status(spot_id, viewpoint_id)
+    loc = backtest["prediction"].get("location") or {}
     return {
         **meta,
         "spot_id": spot_id,
@@ -183,4 +174,7 @@ async def build_label_session_payload(
         "elevation": req.elevation,
         "ml_status": ml_status,
         "rain_window": rain_window,
+        "viewing_mode": loc.get("viewing_mode"),
+        "viewing_mode_note": loc.get("viewing_mode_note"),
+        "observable": loc.get("observable"),
     }
