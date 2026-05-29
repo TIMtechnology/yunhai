@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from app.adapters.dem import estimate_cloud_top_m
+from app.adapters.open_meteo import estimate_cloud_base
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, _infer_effective_low_cloud
 
 FEATURE_NAMES = [
@@ -49,6 +51,20 @@ DAY_FEATURE_NAMES = [
     "effective_low_mean",
 ]
 
+TERRAIN_FEATURE_NAMES = [
+    "elev_view_m",
+    "elev_max_1km_m",
+    "elev_max_5km_m",
+    "relief_5km_m",
+    "is_peak_overlook",
+    "cloud_base_minus_peak_mean",
+    "hours_above_cloud",
+    "hours_valley_fill",
+]
+
+DAY_FEATURE_NAMES_V2 = list(DAY_FEATURE_NAMES)
+DAY_FEATURE_NAMES = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES
+
 _REQUIRED_METEO_KEYS = ("rh_700", "cloud_high", "inversion")
 
 
@@ -92,6 +108,8 @@ def build_meteo_hour_row(hourly: dict, idx: int, *, precip48: float | None = Non
         "inversion": inversion,
         "wind": _series_val(hourly.get("wind_speed_10m", []), idx),
         "precip48": precip48,
+        "temp": _series_val(hourly.get("temperature_2m", []), idx),
+        "dewpoint": _series_val(hourly.get("dew_point_2m", []), idx),
     }
 
 
@@ -168,7 +186,55 @@ def feature_vector(raw: dict, *, elevation: float = 804.0) -> list[float]:
     return [row[name] for name in FEATURE_NAMES]
 
 
-def aggregate_day_features(hour_rows: list[dict], *, elevation: float = 804.0) -> dict[str, float]:
+def _terrain_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float,
+    terrain: dict | None,
+) -> dict[str, float]:
+    defaults = {n: 0.0 for n in TERRAIN_FEATURE_NAMES}
+    if not terrain:
+        return defaults
+
+    elev_max_5km = float(terrain.get("elev_max_5km_m") or elevation)
+    viewing_mode = str(terrain.get("viewing_mode") or "valley_fill")
+    base_minus_peak: list[float] = []
+    above_hours = 0
+    valley_hours = 0
+
+    for row in hour_rows:
+        temp = row.get("temp")
+        dew = row.get("dewpoint")
+        if temp is None or dew is None:
+            continue
+        cloud_base = estimate_cloud_base(float(temp), float(dew))
+        cloud_low = float(row.get("cloud_low") or 0)
+        cloud_mid = float(row.get("cloud_mid") or 0)
+        cloud_top = estimate_cloud_top_m(cloud_base, cloud_low, cloud_mid)
+        base_minus_peak.append(cloud_base - elev_max_5km)
+        if elevation > cloud_top:
+            above_hours += 1
+        if cloud_base < elev_max_5km and elevation >= elev_max_5km - 200:
+            valley_hours += 1
+
+    return {
+        "elev_view_m": float(elevation),
+        "elev_max_1km_m": float(terrain.get("elev_max_1km_m") or 0),
+        "elev_max_5km_m": elev_max_5km,
+        "relief_5km_m": float(terrain.get("relief_5km_m") or 0),
+        "is_peak_overlook": 1.0 if viewing_mode == "peak_overlook" else 0.0,
+        "cloud_base_minus_peak_mean": float(np.mean(base_minus_peak)) if base_minus_peak else 0.0,
+        "hours_above_cloud": float(above_hours),
+        "hours_valley_fill": float(valley_hours),
+    }
+
+
+def aggregate_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float = 804.0,
+    terrain: dict | None = None,
+) -> dict[str, float]:
     feats = [build_feature_row(r, elevation=elevation) for r in hour_rows]
     if not feats:
         return {n: 0.0 for n in DAY_FEATURE_NAMES}
@@ -183,7 +249,7 @@ def aggregate_day_features(hour_rows: list[dict], *, elevation: float = 804.0) -
     winds = [f["wind"] for f in feats]
     inversions = [f["inversion"] for f in feats]
 
-    return {
+    base = {
         "cloud_mid_mean": float(np.mean(mids)),
         "cloud_mid_max": float(np.max(mids)),
         "cloud_low_mean": float(np.mean(lows)),
@@ -207,6 +273,8 @@ def aggregate_day_features(hour_rows: list[dict], *, elevation: float = 804.0) -
         "hour_count_fog": float(sum(f["is_fog_exclude"] for f in feats)),
         "effective_low_mean": float(np.mean([f["effective_low"] for f in feats])),
     }
+    base.update(_terrain_day_features(hour_rows, elevation=elevation, terrain=terrain))
+    return base
 
 
 def hour_raw_from_forecast(
@@ -224,6 +292,8 @@ def hour_raw_from_forecast(
     t_925_series: list | None = None,
     winds: list,
     precips: list,
+    temps: list | None = None,
+    dews: list | None = None,
 ) -> dict:
     precip48 = sum(p or 0 for p in precips[max(0, idx - 48) : idx + 1])
     t_850 = _series_val(t_850_series or [], idx)
@@ -243,4 +313,6 @@ def hour_raw_from_forecast(
         "inversion": inversion,
         "wind": winds[idx] if idx < len(winds) else 3,
         "precip48": precip48,
+        "temp": _series_val(temps or [], idx),
+        "dewpoint": _series_val(dews or [], idx),
     }

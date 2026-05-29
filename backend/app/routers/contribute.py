@@ -16,6 +16,8 @@ from app.services.community_store import (
     calendar_summary_extended,
     check_daily_quota,
     community_label_keys,
+    label_keys_for_location,
+    label_keys_for_location_id,
     get_community_location,
     get_community_location_by_curated_spot,
     get_contributor_stats,
@@ -104,7 +106,7 @@ def _resolve_label_target(
         loc = get_community_location(body.location_id)
         if not loc:
             raise HTTPException(status_code=404, detail="社区点位未找到")
-        spot_id, viewpoint_id = community_label_keys(body.location_id)
+        spot_id, viewpoint_id = label_keys_for_location(loc)
         return spot_id, viewpoint_id, body.location_id, loc
 
     if body.lat is not None and body.lng is not None:
@@ -116,7 +118,7 @@ def _resolve_label_target(
             elevation=body.elevation,
             source="poi",
         )
-        spot_id, viewpoint_id = community_label_keys(loc["id"])
+        spot_id, viewpoint_id = label_keys_for_location(loc)
         return spot_id, viewpoint_id, loc["id"], loc
 
     if body.spot_id and body.viewpoint_id:
@@ -258,7 +260,7 @@ async def contribute_label_session(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if location_id:
-        spot_id, viewpoint_id = community_label_keys(location_id)
+        spot_id, viewpoint_id = label_keys_for_location_id(location_id)
     elif lat is not None and lng is not None:
         loc = resolve_or_create_location(
             contributor_id=contributor_id,
@@ -269,7 +271,7 @@ async def contribute_label_session(
             source="poi",
         )
         location_id = loc["id"]
-        spot_id, viewpoint_id = community_label_keys(location_id)
+        spot_id, viewpoint_id = label_keys_for_location_id(location_id)
         name = loc["name"]
     elif not (spot_id and viewpoint_id):
         raise HTTPException(status_code=400, detail="参数不足")
@@ -298,7 +300,7 @@ async def contribute_calendar(
 ):
     await _rate_limit(request)
     if location_id:
-        spot_id, viewpoint_id = community_label_keys(location_id)
+        spot_id, viewpoint_id = label_keys_for_location_id(location_id)
     if not (spot_id and viewpoint_id):
         raise HTTPException(status_code=400, detail="需提供 location_id 或 spot_id+viewpoint_id")
     return {

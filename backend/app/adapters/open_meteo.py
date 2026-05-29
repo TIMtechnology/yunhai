@@ -65,15 +65,47 @@ async def fetch_elevation(lat: float, lng: float) -> float:
     if cached is not None:
         return float(cached)
 
-    params = {"latitude": lat, "longitude": lng}
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        resp = await client.get(ELEVATION_URL, params=params)
-        resp.raise_for_status()
-        data = resp.json()
-
-    elevation = float(data["elevation"][0])
+    elevs = await fetch_elevations_batch([lat], [lng])
+    elevation = elevs[0]
     cache_set(cache_key, elevation, ttl=86400)
     return elevation
+
+
+async def fetch_elevations_batch(lats: list[float], lngs: list[float]) -> list[float]:
+    """批量海拔（Copernicus GLO-90，与 Open-Meteo Elevation API 一致）。"""
+    if len(lats) != len(lngs):
+        raise ValueError("lats/lngs length mismatch")
+    if not lats:
+        return []
+
+    # 四舍五入减少重复请求
+    pairs = [(round(a, 5), round(b, 5)) for a, b in zip(lats, lngs)]
+    unique = list(dict.fromkeys(pairs))
+    cached_map: dict[tuple[float, float], float] = {}
+    missing: list[tuple[float, float]] = []
+    for p in unique:
+        ck = f"elev:{p[0]:.5f}:{p[1]:.5f}"
+        hit = cache_get(ck)
+        if hit is not None:
+            cached_map[p] = float(hit)
+        else:
+            missing.append(p)
+
+    if missing:
+        params = {
+            "latitude": ",".join(str(p[0]) for p in missing),
+            "longitude": ",".join(str(p[1]) for p in missing),
+        }
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            resp = await client.get(ELEVATION_URL, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+        for p, elev in zip(missing, data["elevation"]):
+            val = float(elev)
+            cached_map[p] = val
+            cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400)
+
+    return [cached_map[p] for p in pairs]
 
 
 def estimate_cloud_base(temp_c: float, dewpoint_c: float) -> float:

@@ -5,6 +5,12 @@ from app.engine.satellite_analyzer import build_satellite_factor
 from app.engine.utils import bell_score, clamp, grade_from_probability, range_score
 from app.models.schemas import FactorDetail, PredictionScore
 
+try:
+    from app.adapters.dem import estimate_cloud_top_m
+except ImportError:
+    def estimate_cloud_top_m(cloud_base_m, cloud_low_pct, cloud_mid_pct):  # type: ignore
+        return cloud_base_m + (cloud_low_pct / 100.0) * 450.0
+
 # 北京高山云海模糊逻辑预报（Phase A 垂直场因子）
 REF_BEIJING_CLOUDSEA = "10.3878/j.issn.1006-9585.2025.25032"
 # 梵净山：RH 与温度共同决定云海；无云量时高湿不等于可观赏云海
@@ -116,8 +122,20 @@ def cloudsea_plausibility_cap(
     t_925: float | None,
     visibility: float | None,
     archetype: str,
+    viewing_mode: str = "valley_fill",
+    elev_max_5km: float | None = None,
+    elevation: float | None = None,
+    cloud_base: float | None = None,
 ) -> int:
     """基于当前观测场的云海概率硬上限（0–100），用于约束 ML 与规则融合结果。"""
+    if viewing_mode == "peak_overlook" and elev_max_5km and elevation and cloud_base is not None:
+        if (
+            cloud_base < elev_max_5km
+            and elevation > elev_max_5km - 100
+            and rh_850 is not None
+            and rh_850 >= 62
+        ):
+            return 100
     # 五女山金标准型态（Type A/B）下，低 RH850 + 模式无云仍可能有观赏级云海，不做晴空干廓线上限
     if archetype in ("type_a", "type_b"):
         return 100
@@ -210,6 +228,55 @@ def _score_elevation_match(
     return bell_score(elevation - cloud_base, 200, 400)
 
 
+def _score_peak_overlook_geometry(
+    *,
+    elevation: float,
+    cloud_base: float,
+    cloud_top: float,
+    elev_max_5km: float,
+    rh_850: float | None,
+) -> tuple[float, str]:
+    """峰顶俯瞰：云在脚下谷地、人在云上时加分。"""
+    valley_peak = elev_max_5km
+    if elevation < cloud_base:
+        return 0.12, f"云底 {cloud_base:.0f}m 高于观景点，难以俯瞰"
+    below_viewer = cloud_top < elevation and cloud_base < valley_peak
+    if below_viewer:
+        gap = max(valley_peak - cloud_base, 0.0)
+        score = clamp(0.55 + bell_score(gap, 250, 350) * 0.35)
+        if rh_850 is not None and rh_850 >= 65:
+            score = max(score, 0.72)
+        return score, f"脚下谷地云底≈{cloud_base:.0f}m·5km峰{valley_peak:.0f}m"
+    if cloud_base < elevation < cloud_top:
+        return 0.45, "观景点处于云缘层"
+    if elevation > cloud_top:
+        return 0.35, "观景点在云上但谷地云系偏弱"
+    return 0.25, "峰顶几何条件一般"
+
+
+def _peak_valley_presence(
+    *,
+    rh_850: float | None,
+    rh_700: float | None,
+    cloud_base: float,
+    elev_max_5km: float,
+    elevation: float,
+    cloud_low: float,
+    cloud_mid: float,
+) -> float:
+    """峰顶模式：用谷地湿润与层结几何替代单点低云门控。"""
+    moisture = 0.0
+    if rh_850 is not None:
+        moisture = max(moisture, range_score(rh_850, 60, 90) * 0.55)
+    if rh_700 is not None:
+        moisture = max(moisture, range_score(rh_700, 55, 85) * 0.35)
+    geometry = 0.0
+    if cloud_base < elev_max_5km and elevation > elev_max_5km - 150:
+        geometry = clamp(0.45 + bell_score(elev_max_5km - cloud_base, 200, 400) * 0.45)
+    signal = max(cloud_low, cloud_mid * 0.35, moisture * 100 * 0.25)
+    return clamp(max(0.22 + 0.78 * clamp(signal / 35.0), geometry, moisture))
+
+
 def _cloud_presence_factor(cloud_low: float, cloud_mid: float) -> float:
     """综合低/中层云量，作为云海可见性的硬门控（0–1）。"""
     signal = max(cloud_low, cloud_mid * 0.4)
@@ -263,6 +330,8 @@ def score_cloudsea(
     t_850: float | None = None,
     t_925: float | None = None,
     visibility: float | None = None,
+    viewing_mode: str = "valley_fill",
+    terrain: dict | None = None,
 ) -> PredictionScore:
     archetype, archetype_note = _classify_cloudsea_archetype(
         cloud_low=cloud_low,
@@ -283,15 +352,28 @@ def score_cloudsea(
         archetype=archetype,
     )
     cloud_base = estimate_cloud_base(temp, dewpoint)
+    cloud_top = estimate_cloud_top_m(cloud_base, effective_low, cloud_mid)
+    elev_max_5km = float((terrain or {}).get("elev_max_5km_m") or elevation)
+    is_peak = viewing_mode == "peak_overlook"
 
     rh_score = range_score(rh, 75, 95)
     mid_score = clamp((rh / 100.0) * 0.6 + bell_score(cloud_mid, 45, 35) * 0.4)
     low_score = _score_low_cloud_direct(effective_low)
     wind_score = bell_score(wind, 2.5, 4.0)
     rain_score = clamp(precip_recent / 8.0) * 0.5 + (1.0 if precip <= 0.2 else 0.3) * 0.5
-    elev_score = _score_elevation_match(
-        cloud_low=effective_low, cloud_base=cloud_base, elevation=elevation
-    )
+    if is_peak:
+        elev_score, elev_desc = _score_peak_overlook_geometry(
+            elevation=elevation,
+            cloud_base=cloud_base,
+            cloud_top=cloud_top,
+            elev_max_5km=elev_max_5km,
+            rh_850=rh_850,
+        )
+    else:
+        elev_score = _score_elevation_match(
+            cloud_low=effective_low, cloud_base=cloud_base, elevation=elevation
+        )
+        elev_desc = f"云底≈{cloud_base:.0f}m / 观景点{elevation:.0f}m"
     fog_score = _fog_not_cloudsea_score(
         rh=rh,
         cloud_low=effective_low,
@@ -394,10 +476,10 @@ def score_cloudsea(
         ),
         "elevation_match": FactorDetail(
             score=elev_score,
-            weight=0.06,
-            label="海拔与云底",
-            description="有低云时观景点位于云底–云顶之间最理想；无云时该项降权",
-            value=f"云底≈{cloud_base:.0f}m / 观景点{elevation:.0f}m",
+            weight=0.08 if is_peak else 0.06,
+            label="海拔与云底" if not is_peak else "峰顶俯瞰几何",
+            description=elev_desc if is_peak else "有低云时观景点位于云底–云顶之间最理想；无云时该项降权",
+            value=f"云底≈{cloud_base:.0f}m / 云顶≈{cloud_top:.0f}m / 观景点{elevation:.0f}m / 5km峰{elev_max_5km:.0f}m",
             reference=REF_FANJINGSHAN,
         ),
         "fog_vs_cloudsea": FactorDetail(
@@ -442,6 +524,19 @@ def score_cloudsea(
     weighted = sum(f.score * f.weight for f in factors.values()) + season_bonus
 
     presence = _cloud_presence_factor(effective_low, cloud_mid)
+    if is_peak:
+        presence = max(
+            presence,
+            _peak_valley_presence(
+                rh_850=rh_850,
+                rh_700=rh_700,
+                cloud_base=cloud_base,
+                elev_max_5km=elev_max_5km,
+                elevation=elevation,
+                cloud_low=effective_low,
+                cloud_mid=cloud_mid,
+            ),
+        )
     if archetype == "type_a":
         presence = max(presence, 0.55)
     weighted *= 0.22 + 0.78 * presence
@@ -452,6 +547,11 @@ def score_cloudsea(
         weighted = max(weighted, 0.58)
     elif archetype == "type_b":
         weighted = max(weighted, 0.48)
+    elif is_peak and rh_850 is not None and rh_850 >= 62 and cloud_base < elev_max_5km:
+        if elevation > cloud_top or elevation > elev_max_5km - 120:
+            weighted = max(weighted, 0.50)
+        if rh_850 >= 72 and cloud_base < elev_max_5km - 200:
+            weighted = max(weighted, 0.58)
 
     if cloud_low < 10 and not vis_proxy_note and fog_score < 0.5 and archetype == "neutral":
         weighted = min(weighted, 0.32)

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DEM 地形上下文 · 演示</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <div class="max-w-4xl mx-auto p-6 space-y-6">
+    <header>
+      <h1 class="text-2xl font-bold">DEM v0 · 地形能解决什么问题</h1>
+      <p class="text-sm text-slate-600 mt-1">
+        基于 Copernicus GLO-90（Open-Meteo 网格采样）。对比五女山 / 大黑山 / 东灵山等典型场景。
+      </p>
+    </header>
+
+    <section class="bg-white rounded-xl shadow p-4 space-y-3">
+      <div class="flex flex-wrap gap-2">
+        <button type="button" data-preset="wunvshan" class="preset px-3 py-1.5 rounded-lg bg-sky-100 text-sky-800 text-sm">五女山·点将台</button>
+        <button type="button" data-preset="daheishan" class="preset px-3 py-1.5 rounded-lg bg-sky-100 text-sky-800 text-sm">大黑山·主峰</button>
+        <button type="button" data-preset="donglingshan" class="preset px-3 py-1.5 rounded-lg bg-sky-100 text-sky-800 text-sm">东灵山·峰顶</button>
+        <button type="button" data-preset="huangyakou" class="preset px-3 py-1.5 rounded-lg bg-sky-100 text-sky-800 text-sm">黄丫口</button>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <label>纬度 <input id="lat" type="number" step="0.00001" class="w-full border rounded px-2 py-1" /></label>
+        <label>经度 <input id="lng" type="number" step="0.00001" class="w-full border rounded px-2 py-1" /></label>
+        <label>手工海拔 m <input id="elev" type="number" class="w-full border rounded px-2 py-1" placeholder="可选" /></label>
+        <label>云底 m <input id="cloudBase" type="number" class="w-full border rounded px-2 py-1" placeholder="演示用" value="1200" /></label>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <label>低云 % <input id="cloudLow" type="number" class="w-full border rounded px-2 py-1" value="40" /></label>
+        <label>中云 % <input id="cloudMid" type="number" class="w-full border rounded px-2 py-1" value="20" /></label>
+        <label>气温 ℃ <input id="temp" type="number" class="w-full border rounded px-2 py-1" placeholder="可选" /></label>
+        <label>露点 ℃ <input id="dew" type="number" class="w-full border rounded px-2 py-1" placeholder="可选" /></label>
+      </div>
+      <button id="loadBtn" type="button" class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm">查询地形上下文</button>
+      <p id="status" class="text-xs text-slate-500"></p>
+    </section>
+
+    <section id="metrics" class="hidden bg-white rounded-xl shadow p-4">
+      <h2 class="font-semibold mb-3">地形指标</h2>
+      <div id="metricGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm"></div>
+    </section>
+
+    <section id="problems" class="hidden bg-white rounded-xl shadow p-4">
+      <h2 class="font-semibold mb-3">DEM 能回答的问题</h2>
+      <ul id="problemList" class="space-y-3 text-sm"></ul>
+    </section>
+
+    <section id="cloudLayer" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm"></section>
+
+    <section class="bg-slate-800 text-slate-200 rounded-xl p-4 text-sm leading-relaxed">
+      <h2 class="font-semibold text-white mb-2">与现网差距（为何需要 DEM）</h2>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>现网只有<strong>单点海拔</strong> + 云底公式，无法判断「云在谷底、人在山顶」</li>
+        <li>五女山规则对<strong>东灵山峰顶俯瞰</strong>会系统性偏低</li>
+        <li>莉景「附近 1 km 最高海拔」「100 km 概率场」都依赖<strong>地形场</strong>，不是单点</li>
+        <li>本演示为 Phase 0：API 网格采样；后续可换本地 GeoTIFF 切片提速</li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    const PRESETS = {
+      wunvshan: { name: '五女山·点将台', lat: 41.31976, lng: 125.40773, elev: 804 },
+      daheishan: { name: '大黑山·主峰', lat: 39.09811, lng: 121.78396, elev: 663 },
+      donglingshan: { name: '东灵山·峰顶', lat: 40.0201, lng: 115.4785, elev: 2303 },
+      huangyakou: { name: '黄丫口', lat: 40.633, lng: 122.509, elev: 200 },
+    }
+
+    function qs(id) { return document.getElementById(id) }
+
+    document.querySelectorAll('.preset').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const p = PRESETS[btn.dataset.preset]
+        qs('lat').value = p.lat
+        qs('lng').value = p.lng
+        qs('elev').value = p.elev
+        if (btn.dataset.preset === 'donglingshan') {
+          qs('cloudBase').value = 1500
+        } else {
+          qs('cloudBase').value = 600
+        }
+      })
+    })
+
+    qs('loadBtn').addEventListener('click', loadContext)
+    qs('lat').value = PRESETS.wunvshan.lat
+    qs('lng').value = PRESETS.wunvshan.lng
+    qs('elev').value = PRESETS.wunvshan.elev
+
+    async function loadContext() {
+      const params = new URLSearchParams({
+        lat: qs('lat').value,
+        lng: qs('lng').value,
+      })
+      const elev = qs('elev').value
+      if (elev) params.set('elevation', elev)
+      const cb = qs('cloudBase').value
+      if (cb) params.set('cloud_base_m', cb)
+      params.set('cloud_low_pct', qs('cloudLow').value || '0')
+      params.set('cloud_mid_pct', qs('cloudMid').value || '0')
+      if (qs('temp').value) params.set('temp_c', qs('temp').value)
+      if (qs('dew').value) params.set('dewpoint_c', qs('dew').value)
+
+      qs('status').textContent = '请求中…（首次约 2–5 s，含 Open-Meteo 批量海拔）'
+      try {
+        const resp = await fetch('/api/terrain/context?' + params.toString())
+        const data = await resp.json()
+        if (!resp.ok) throw new Error(data.detail || resp.statusText)
+        render(data)
+        qs('status').textContent = `来源 ${data.source} · ${data.dem_version} · 采样 1km=${data.sample_counts.radius_1km} / 5km=${data.sample_counts.radius_5km}`
+      } catch (e) {
+        qs('status').textContent = '失败: ' + e.message
+      }
+    }
+
+    function render(data) {
+      qs('metrics').classList.remove('hidden')
+      const items = [
+        ['观景点海拔 (DEM)', data.elev_viewpoint_m + ' m'],
+        ['1 km 最高', data.elev_max_1km_m + ' m'],
+        ['5 km 最高 / 最低', data.elev_max_5km_m + ' / ' + data.elev_min_5km_m + ' m'],
+        ['5 km 起伏', data.relief_5km_m + ' m'],
+        ['坡度 / 坡向', data.slope_deg + '° / ' + data.aspect_deg + '°'],
+        ['观云模式', data.viewing_mode],
+      ]
+      if (data.elev_curated_delta_m != null) {
+        items.push(['与手工海拔差', data.elev_curated_delta_m + ' m'])
+      }
+      qs('metricGrid').innerHTML = items.map(([k, v]) =>
+        `<div class="border rounded-lg p-2"><div class="text-slate-500 text-xs">${k}</div><div class="font-medium">${v}</div></div>`
+      ).join('')
+      qs('problems').classList.remove('hidden')
+      qs('problemList').innerHTML = (data.problems_dem_solves || []).map((p) =>
+        `<li class="border-l-4 border-sky-400 pl-3"><strong>${p.title}</strong>：${p.value}<br><span class="text-slate-600">${p.why}</span></li>`
+      ).join('')
+      const cl = data.cloud_layer
+      const box = qs('cloudLayer')
+      if (cl) {
+        box.classList.remove('hidden')
+        box.innerHTML = `<strong>${cl.layer_label}</strong> — ${cl.layer_note}<br>
+          云底 ${cl.cloud_base_m} m · 云顶 ${cl.cloud_top_m} m · 5km峰 ${data.elev_max_5km_m} m
+          ${cl.valley_fill_potential ? ' · <span class="text-emerald-700">山谷填云潜力</span>' : ''}
+          ${cl.fog_not_cloudsea ? ' · <span class="text-red-700">近地面雾型</span>' : ''}`
+      } else {
+        box.classList.add('hidden')
+      }
+    }
+  </script>
+</body>
+</html>

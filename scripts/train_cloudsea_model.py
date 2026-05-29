@@ -28,11 +28,15 @@ for _base in (ROOT / "backend", ROOT):
 from app.adapters.open_meteo import HOURLY_VARS  # noqa: E402
 from app.engine.cloudsea_features import (  # noqa: E402
     DAY_FEATURE_NAMES,
+    DAY_FEATURE_NAMES_V2,
+    TERRAIN_FEATURE_NAMES,
     aggregate_day_features,
     build_meteo_hour_row,
     label_to_target,
     meteo_row_complete,
 )
+from app.adapters.dem import get_terrain_context_sync  # noqa: E402
+from app.engine.viewing_mode import resolve_viewing_mode  # noqa: E402
 from app.engine.ml_eligibility import (  # noqa: E402
     min_labels_for_ml,
     spot_model_path,
@@ -108,6 +112,7 @@ def load_dataset(
     spot_id: str | None = None,
     viewpoint_id: str | None = None,
     exclude_rain: bool = True,
+    use_terrain: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, list[dict]]:
     """加载标注日特征。排除未审核、降水日（默认）与气象缺失样本。"""
     conn = sqlite3.connect(db_path)
@@ -137,6 +142,7 @@ def load_dataset(
     X_rows: list[list[float]] = []
     y_rows: list[float] = []
     meta: list[dict] = []
+    terrain_cache: dict[tuple[float, float, float], dict] = {}
 
     for raw in labels:
         label = dict(raw)
@@ -152,7 +158,27 @@ def load_dataset(
         if exclude_rain and sunrise_window_rain_summary(hour_rows)["has_rain"]:
             print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: rain in sunrise window")
             continue
-        day_feat = aggregate_day_features(hour_rows, elevation=elev)
+
+        terrain: dict | None = None
+        if use_terrain:
+            tkey = (round(lat, 4), round(lng, 4), round(elev, 1))
+            if tkey not in terrain_cache:
+                try:
+                    terrain_cache[tkey] = get_terrain_context_sync(lat, lng, elevation=elev)
+                except Exception as exc:
+                    print(f"warn terrain {tkey}: {exc}")
+                    terrain_cache[tkey] = {}
+            terrain = dict(terrain_cache[tkey])
+            mode, _, _ = resolve_viewing_mode(
+                spot_id=label["spot_id"],
+                viewpoint_id=label["viewpoint_id"],
+                elevation=elev,
+                terrain=terrain,
+                location_id=label.get("location_id"),
+            )
+            terrain["viewing_mode"] = mode
+
+        day_feat = aggregate_day_features(hour_rows, elevation=elev, terrain=terrain)
         X_rows.append([day_feat[n] for n in DAY_FEATURE_NAMES])
         y_rows.append(label_to_target(label["status"]))
         meta.append(
@@ -163,6 +189,7 @@ def load_dataset(
                 "lng": lng,
                 "spot_id": label["spot_id"],
                 "viewpoint_id": label["viewpoint_id"],
+                "viewing_mode": (terrain or {}).get("viewing_mode"),
             }
         )
 
@@ -205,9 +232,11 @@ def save_artifact(
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     artifact = {
-        "version": "cloudsea_ml_v3_spot",
+        "version": "cloudsea_ml_v3_terrain",
         "algorithm": "logistic_regression_day",
         "feature_names": DAY_FEATURE_NAMES,
+        "legacy_feature_names": DAY_FEATURE_NAMES_V2,
+        "terrain_feature_names": TERRAIN_FEATURE_NAMES,
         "aggregation": "sunrise_window_03_07",
         "spot_id": spot_id,
         "viewpoint_id": viewpoint_id,
@@ -230,6 +259,7 @@ def train_group(
     approved_only: bool,
     models_dir: Path,
     default_output: Path | None = None,
+    use_terrain: bool = True,
 ) -> dict | None:
     min_n = min_labels_for_ml()
     X, y, meta = load_dataset(
@@ -238,6 +268,7 @@ def train_group(
         spot_id=spot_id,
         viewpoint_id=viewpoint_id,
         exclude_rain=True,
+        use_terrain=use_terrain,
     )
     pos = int(y.sum()) if len(y) else 0
     print(f"\n=== {spot_id}/{viewpoint_id} ===")
@@ -317,10 +348,28 @@ def main() -> None:
     parser.add_argument("--approved-only", action="store_true")
     parser.add_argument("--spot-id")
     parser.add_argument("--viewpoint-id")
+    parser.add_argument("--no-terrain", action="store_true", help="训练时不加入 DEM 地形特征")
+    parser.add_argument(
+        "--compare-terrain",
+        action="store_true",
+        help="对比 v2 特征 vs v3 地形特征的 LOOCV",
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db)
     models_dir = Path(args.output).resolve().parent
+
+    if args.compare_terrain:
+        X2, y2, _ = load_dataset(db_path, approved_only=args.approved_only, use_terrain=False)
+        X3, y3, _ = load_dataset(db_path, approved_only=args.approved_only, use_terrain=True)
+        if len(y2) >= 5 and len(set(y2)) >= 2:
+            _, _, pred2 = train_eval(X2, y2)
+            print(f"LOOCV v2 (无地形): {accuracy_score(y2, pred2):.3f} n={len(y2)}")
+        if len(y3) >= 5 and len(set(y3)) >= 2:
+            _, _, pred3 = train_eval(X3, y3)
+            print(f"LOOCV v3 (含地形): {accuracy_score(y3, pred3):.3f} n={len(y3)}")
+        return
+
     groups: list[tuple[str, str]]
     if args.spot_id and args.viewpoint_id:
         groups = [(args.spot_id, args.viewpoint_id)]
@@ -337,6 +386,7 @@ def main() -> None:
             approved_only=args.approved_only,
             models_dir=models_dir,
             default_output=default_out,
+            use_terrain=not args.no_terrain,
         )
         if result:
             trained.append(result)

@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo
 
 from app.adapters.gibs_wms import fetch_himawari_best_effort
 from app.adapters.open_meteo import fetch_elevation, fetch_forecast, parse_daily_astronomy, slice_hourly_window, estimate_cloud_base
+from app.adapters.dem import get_terrain_context
+from app.engine.viewing_mode import resolve_viewing_mode
 from app.engine.utils import parse_shanghai_time
 from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
 from app.engine.cloudsea_features import hour_raw_from_forecast
@@ -207,6 +209,8 @@ def build_predictions_from_hourly(
     satellite_context: dict | None,
     now: datetime,
     hour_limit: int | None = None,
+    terrain: dict | None = None,
+    viewing_mode: str = "valley_fill",
 ) -> list[HourPrediction]:
     times: list[str] = hourly.get("time", [])
     if hour_limit is not None:
@@ -250,9 +254,16 @@ def build_predictions_from_hourly(
                     t_925_series=t_925_series,
                     winds=winds,
                     precips=precips,
+                    temps=temps,
+                    dews=dews,
                 )
             )
         return rows
+
+    terrain_ctx = dict(terrain) if terrain else {}
+    if terrain_ctx and viewing_mode:
+        terrain_ctx["viewing_mode"] = viewing_mode
+    elev_max_5km = float(terrain_ctx.get("elev_max_5km_m") or elevation)
 
     results: list[HourPrediction] = []
     for idx, t_str in enumerate(times):
@@ -299,6 +310,8 @@ def build_predictions_from_hourly(
             t_850=t_850,
             t_925=t_925,
             visibility=vis,
+            viewing_mode=viewing_mode,
+            terrain=terrain_ctx or None,
         )
         obs = build_observational_factors(
             cloud_low=low,
@@ -334,6 +347,10 @@ def build_predictions_from_hourly(
             t_925=t_925,
             visibility=vis,
             archetype=archetype,
+            viewing_mode=viewing_mode,
+            elev_max_5km=elev_max_5km,
+            elevation=elevation,
+            cloud_base=cloud_base,
         )
 
         use_ml = (
@@ -348,6 +365,7 @@ def build_predictions_from_hourly(
                     cloud_base_m=cloud_base,
                     spot_id=req.spot_id,
                     viewpoint_id=req.viewpoint_id,
+                    terrain=terrain_ctx or None,
                 )
             ml_score = ml_day_cache.get(day_key)
             if ml_score is not None:
@@ -394,6 +412,8 @@ def build_predictions_from_hourly(
             visibility=vis,
             elevation=elevation,
             rh=rh,
+            viewing_mode=viewing_mode,
+            terrain=terrain_ctx or None,
         )
 
         results.append(
@@ -426,6 +446,9 @@ def _build_response(
     results: list[HourPrediction],
     astronomy: dict[str, dict[str, datetime]],
     satellite_context: dict | None,
+    terrain: dict | None = None,
+    viewing_mode: str = "valley_fill",
+    viewing_mode_note: str = "",
 ) -> PredictResponse:
     days = _build_day_summaries(results, astronomy)
 
@@ -452,7 +475,16 @@ def _build_response(
         "spot_id": req.spot_id,
         "viewpoint_id": req.viewpoint_id,
         "ml_status": get_ml_status(req.spot_id, req.viewpoint_id),
+        "viewing_mode": viewing_mode,
+        "viewing_mode_note": viewing_mode_note,
     }
+    if terrain:
+        location["terrain"] = {
+            "elev_max_1km_m": terrain.get("elev_max_1km_m"),
+            "elev_max_5km_m": terrain.get("elev_max_5km_m"),
+            "relief_5km_m": terrain.get("relief_5km_m"),
+            "elev_viewpoint_m": terrain.get("elev_viewpoint_m"),
+        }
     if satellite_context:
         location["satellite_context"] = satellite_context
 
@@ -478,6 +510,15 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     now = datetime.now(TZ)
     satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
 
+    terrain = await get_terrain_context(req.lat, req.lng, elevation=elevation)
+    viewing_mode, viewing_mode_note, _ = resolve_viewing_mode(
+        spot_id=req.spot_id,
+        viewpoint_id=req.viewpoint_id,
+        elevation=elevation,
+        terrain=terrain,
+    )
+    terrain["viewing_mode"] = viewing_mode
+
     forecast = await fetch_forecast(req.lat, req.lng, days=5)
     hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
     astronomy = parse_daily_astronomy(forecast)
@@ -492,8 +533,19 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
         satellite_context=satellite_context,
         now=now,
         hour_limit=req.hours,
+        terrain=terrain,
+        viewing_mode=viewing_mode,
     )
-    return _build_response(req, elevation, results, astronomy, satellite_context)
+    return _build_response(
+        req,
+        elevation,
+        results,
+        astronomy,
+        satellite_context,
+        terrain=terrain,
+        viewing_mode=viewing_mode,
+        viewing_mode_note=viewing_mode_note,
+    )
 
 
 async def run_backtest_prediction(
@@ -562,6 +614,15 @@ async def run_backtest_prediction(
             tzinfo=TZ,
         )
 
+    terrain = await get_terrain_context(req.lat, req.lng, elevation=elevation)
+    viewing_mode, viewing_mode_note, _ = resolve_viewing_mode(
+        spot_id=req.spot_id,
+        viewpoint_id=req.viewpoint_id,
+        elevation=elevation,
+        terrain=terrain,
+    )
+    terrain["viewing_mode"] = viewing_mode
+
     results = build_predictions_from_hourly(
         req=req,
         elevation=elevation,
@@ -571,6 +632,8 @@ async def run_backtest_prediction(
         sunrise_months=sunrise_months,
         satellite_context=satellite_context,
         now=backtest_now,
+        terrain=terrain,
+        viewing_mode=viewing_mode,
     )
 
     window_hours = [
@@ -617,7 +680,16 @@ async def run_backtest_prediction(
             }
         )
 
-    response = _build_response(req, elevation, results, astronomy, None)
+    response = _build_response(
+        req,
+        elevation,
+        results,
+        astronomy,
+        None,
+        terrain=terrain,
+        viewing_mode=viewing_mode,
+        viewing_mode_note=viewing_mode_note,
+    )
     summary = None
     if peak:
         ph = parse_shanghai_time(peak.time).hour

@@ -100,14 +100,19 @@ def ml_calibration_weight(spot_id: str | None) -> float:
     return 0.45
 
 
-def _explain(model, day_feat: dict[str, float]) -> list[dict]:
+def _explain(
+    model,
+    day_feat: dict[str, float],
+    feature_names: list[str] | None = None,
+) -> list[dict]:
+    names = feature_names or DAY_FEATURE_NAMES
     scaler = model.named_steps["scaler"]
     clf = model.named_steps["clf"]
-    x = np.array([[day_feat[n] for n in DAY_FEATURE_NAMES]])
+    x = np.array([[day_feat.get(n, 0.0) for n in names]])
     xs = scaler.transform(x)[0]
     contribs = xs * clf.coef_[0]
     pairs = sorted(
-        zip(DAY_FEATURE_NAMES, contribs),
+        zip(names, contribs),
         key=lambda p: abs(p[1]),
         reverse=True,
     )
@@ -281,17 +286,19 @@ def predict_day_cloudsea(
     cloud_base_m: float = 0.0,
     spot_id: str | None = None,
     viewpoint_id: str | None = None,
+    terrain: dict | None = None,
 ) -> PredictionScore | None:
     artifact = resolve_ml_artifact(spot_id, viewpoint_id)
     if not artifact:
         return None
 
-    day_feat = aggregate_day_features(hour_rows, elevation=elevation)
+    feature_names = artifact.get("feature_names") or DAY_FEATURE_NAMES
+    day_feat = aggregate_day_features(hour_rows, elevation=elevation, terrain=terrain)
     model = artifact["model"]
-    x = np.array([[day_feat[n] for n in DAY_FEATURE_NAMES]])
+    x = np.array([[day_feat.get(n, 0.0) for n in feature_names]])
     prob = float(model.predict_proba(x)[0, 1])
     probability = int(round(prob * 100))
-    explains = _explain(model, day_feat)
+    explains = _explain(model, day_feat, feature_names)
 
     factors = {
         "ml_model": FactorDetail(

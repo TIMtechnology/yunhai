@@ -33,6 +33,16 @@ function openAnnotate() {
   <div class="flex h-full min-h-0 flex-col gap-2 overflow-hidden border-l border-slate-800 p-3">
     <template v-if="hour && store.prediction">
       <div
+        v-if="store.prediction.location.viewing_mode"
+        class="rounded-lg border border-sky-800/50 bg-sky-950/20 px-2 py-1.5 text-[10px] leading-snug text-sky-200"
+      >
+        观云模式 · {{ store.prediction.location.viewing_mode }}
+        <span v-if="store.prediction.location.terrain" class="text-sky-400">
+          · 1km峰 {{ store.prediction.location.terrain.elev_max_1km_m }}m · 5km峰
+          {{ store.prediction.location.terrain.elev_max_5km_m }}m
+        </span>
+      </div>
+      <div
         v-if="store.prediction.location.ml_status && !store.prediction.location.ml_status.ml_active"
         class="rounded-lg border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] leading-snug text-amber-200"
       >

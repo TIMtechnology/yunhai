@@ -40,6 +40,8 @@ def build_scenario(
     visibility: float | None = None,
     elevation: float = 0.0,
     rh: float = 70.0,
+    viewing_mode: str = "valley_fill",
+    terrain: dict | None = None,
 ) -> dict:
     """联合云海+日出+天气给出观赏场景；云海标签需低云或能见度补偿证据。"""
     total_cloud = (cloud_low + cloud_mid + cloud_high) / 3
@@ -50,6 +52,8 @@ def build_scenario(
         elevation=elevation,
         rh=rh,
     )
+    if viewing_mode == "peak_overlook" and cloudsea_prob >= 50:
+        has_cloudsea_evidence = True
 
     if precip >= 1.0:
         return _scenario(
@@ -67,6 +71,15 @@ def build_scenario(
             "有小雨，视野与日出均受影响，不建议专程观赏。",
             3,
             min(cloudsea_prob, sunrise_prob) - 10,
+        )
+
+    if viewing_mode == "peak_overlook" and cloudsea_prob >= 55 and has_cloudsea_evidence:
+        return _scenario(
+            "above_cloudsea",
+            "站在云海之上 · 俯瞰",
+            "峰顶条件配合谷地云系，较可能看到脚下云海（能见度以山顶为准）。",
+            1 if cloudsea_prob >= 70 else 2,
+            cloudsea_prob,
         )
 
     if is_sunrise_window or (cloudsea_prob >= 55 and sunrise_prob >= 55):

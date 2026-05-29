@@ -16,6 +16,7 @@ class Viewpoint(BaseModel):
     elevation: float
     tags: List[str] = Field(default_factory=list)
     note: str = ""
+    viewing_mode: Optional[str] = None
 
 
 class ScenicSpot(BaseModel):
@@ -124,3 +125,28 @@ class PredictResponse(BaseModel):
     hours: List[HourPrediction]
     days: List[DaySummary] = Field(default_factory=list)
     best_windows: Dict[str, List[Union[BestWindow, dict]]]
+
+
+class TerrainContextResponse(BaseModel):
+    lat: float
+    lng: float
+    source: str
+    dem_version: str
+    elev_viewpoint_m: float
+    elev_open_meteo_m: float
+    elev_curated_m: Optional[float] = None
+    elev_curated_delta_m: Optional[float] = None
+    elev_max_1km_m: float
+    elev_min_1km_m: float
+    elev_max_5km_m: float
+    elev_min_5km_m: float
+    relief_1km_m: float
+    relief_5km_m: float
+    slope_deg: float
+    aspect_deg: float
+    viewing_mode: str
+    viewing_mode_note: str
+    viewing_mode_source: str
+    sample_counts: dict
+    cloud_layer: Optional[dict] = None
+    problems_dem_solves: List[dict] = Field(default_factory=list)

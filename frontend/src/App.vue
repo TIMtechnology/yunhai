@@ -61,6 +61,8 @@ async function applyDeepLinkFromUrl() {
       const data = await fetchPublicLocation(loc)
       if (data.curated_spot_id) {
         await store.selectSpot(data.curated_spot_id)
+        const vp = store.currentSpot?.viewpoints[0]
+        if (vp) await store.selectViewpoint(vp)
         return
       }
       await store.predictAt(data.lat, data.lng, data.name, data.elevation, undefined)

@@ -11,6 +11,7 @@ from app.services.community_store import (
     COMMUNITY_SPOT_ID,
     community_label_keys,
     get_community_location,
+    label_keys_for_location,
 )
 from app.services.predictor import run_backtest_prediction
 from app.services.spot_loader import get_spot, get_viewpoint
@@ -36,22 +37,48 @@ def build_predict_request(
         loc = get_community_location(loc_id)
         if not loc:
             raise ValueError("社区点位未找到")
-        comm_spot_id, comm_viewpoint_id = community_label_keys(loc_id)
+        spot_id, viewpoint_id = label_keys_for_location(loc)
+        if spot_id == COMMUNITY_SPOT_ID:
+            req = PredictRequest(
+                lat=loc["lat"],
+                lng=loc["lng"],
+                elevation=loc.get("elevation"),
+                name=loc["name"],
+                spot_id=spot_id,
+                viewpoint_id=viewpoint_id,
+                hours=24,
+            )
+            meta.update(
+                {
+                    "mode": "community",
+                    "location_id": loc_id,
+                    "spot_id": spot_id,
+                    "viewpoint_id": viewpoint_id,
+                    "location_name": loc["name"],
+                }
+            )
+            return req, meta
+
+        spot = get_spot(spot_id)
+        vp = get_viewpoint(spot_id, viewpoint_id)
+        display = loc["name"]
+        if spot and vp:
+            display = f"{spot.name} · {vp.name}"
         req = PredictRequest(
             lat=loc["lat"],
             lng=loc["lng"],
-            elevation=loc.get("elevation"),
-            name=loc["name"],
-            spot_id=comm_spot_id,
-            viewpoint_id=comm_viewpoint_id,
+            elevation=loc.get("elevation") or (vp.elevation if vp else None),
+            name=display,
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
             hours=24,
         )
         meta.update(
             {
-                "mode": "community",
+                "mode": "curated",
                 "location_id": loc_id,
-                "spot_id": comm_spot_id,
-                "viewpoint_id": comm_viewpoint_id,
+                "spot_id": spot_id,
+                "viewpoint_id": viewpoint_id,
                 "location_name": loc["name"],
             }
         )

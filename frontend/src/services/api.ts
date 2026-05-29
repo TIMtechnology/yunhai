@@ -129,6 +129,13 @@ export interface MlStatus {
   message: string
 }
 
+export interface TerrainSummary {
+  elev_max_1km_m?: number
+  elev_max_5km_m?: number
+  relief_5km_m?: number
+  elev_viewpoint_m?: number
+}
+
 export interface PredictResponse {
   location: {
     lat: number
@@ -138,6 +145,9 @@ export interface PredictResponse {
     spot_id?: string
     viewpoint_id?: string
     ml_status?: MlStatus
+    viewing_mode?: string
+    viewing_mode_note?: string
+    terrain?: TerrainSummary
   }
   hours: HourPrediction[]
   days: DaySummary[]
