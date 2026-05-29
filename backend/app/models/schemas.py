@@ -29,6 +29,7 @@ class ScenicSpot(BaseModel):
     rules: dict = Field(default_factory=dict)
     cloud_region: Optional[CloudRegion] = None
     source: str = "curated"
+    community_location_id: Optional[str] = None
 
 
 class SpotSearchResult(BaseModel):

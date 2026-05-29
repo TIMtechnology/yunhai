@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date as date_cls, datetime as dt_cls
+from datetime import date as date_cls
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
@@ -17,6 +17,9 @@ from app.services.cloudsea_store import (
     save_prediction_run,
     upsert_label,
 )
+from app.services.community_store import COMMUNITY_SPOT_ID, get_community_location, list_review_queue, review_label
+from app.services.curate_service import curate_community_location, run_model_training
+from app.services.label_session import build_label_session_payload
 from app.services.predictor import run_backtest_prediction
 from app.services.spot_loader import get_spot, get_viewpoint
 
@@ -61,7 +64,7 @@ def _cors_headers(origin: str | None) -> dict[str, str]:
     if origin and (origin in DASHBOARD_ORIGINS or origin.endswith("yunhai.timkj.com")):
         return {
             "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Headers": "X-Cloudsea-Token, Content-Type",
+            "Access-Control-Allow-Headers": "X-Cloudsea-Token, X-Contributor-Id, Content-Type",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         }
     return {}
@@ -76,6 +79,18 @@ def _resolve_location(
     name: Optional[str],
 ) -> PredictRequest:
     if spot_id and viewpoint_id:
+        if spot_id == COMMUNITY_SPOT_ID:
+            loc = get_community_location(viewpoint_id)
+            if not loc:
+                raise HTTPException(status_code=404, detail="社区点位未找到")
+            return PredictRequest(
+                lat=loc["lat"],
+                lng=loc["lng"],
+                elevation=loc.get("elevation"),
+                name=loc["name"],
+                spot_id=None,
+                hours=24,
+            )
         vp = get_viewpoint(spot_id, viewpoint_id)
         if not vp:
             raise HTTPException(status_code=404, detail="观景点未找到")
@@ -164,41 +179,16 @@ async def label_session(
     window_end: int = 7,
     _: None = Depends(verify_cloudsea_token),
 ):
-    req = _resolve_location(spot_id, viewpoint_id, None, None, None, None)
-    target = date_cls.fromisoformat(date)
-    backtest = await run_backtest_prediction(
-        req=req,
-        target_date=target,
-        window_start=window_start,
-        window_end=window_end,
-    )
-    label = get_label(spot_id, viewpoint_id, date, window_start, window_end)
-    if spot_id and viewpoint_id:
-        for row in backtest["raw_meteo"]:
-            save_meteo_hourly(
-                spot_id=spot_id,
-                viewpoint_id=viewpoint_id,
-                lat=req.lat,
-                lng=req.lng,
-                elevation=req.elevation,
-                ts=str(row["time"]),
-                source="historical_forecast",
-                raw=row,
-            )
-    window_hours = [
-        h
-        for h in backtest["prediction"]["hours"]
-        if window_start <= dt_cls.fromisoformat(h["time"]).hour < window_end
-    ]
-    return {
-        "spot_id": spot_id,
-        "viewpoint_id": viewpoint_id,
-        "date": date,
-        "label": label,
-        "raw_meteo": backtest["raw_meteo"],
-        "sunrise_window_summary": backtest["sunrise_window_summary"],
-        "hours": window_hours,
-    }
+    try:
+        return await build_label_session_payload(
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
+            date_key=date,
+            window_start=window_start,
+            window_end=window_end,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/api/internal/cloudsea/calendar")
@@ -273,5 +263,52 @@ async def cloudsea_labels_upsert(body: LabelBody, _: None = Depends(verify_cloud
         window_end=body.window_end,
         confidence=body.confidence,
         notes=body.notes,
+        labeled_by="admin",
+        review_status="approved",
     )
     return {"label": row}
+
+
+class ReviewBody(BaseModel):
+    review_status: str = Field(..., pattern=r"^(approved|rejected)$")
+
+
+@router.get("/api/internal/cloudsea/review-queue")
+async def cloudsea_review_queue(
+    limit: int = 100,
+    _: None = Depends(verify_cloudsea_token),
+):
+    return {"items": list_review_queue(limit=limit)}
+
+
+@router.post("/api/internal/cloudsea/labels/{label_id}/review")
+async def cloudsea_review_label(
+    label_id: int,
+    body: ReviewBody,
+    _: None = Depends(verify_cloudsea_token),
+):
+    row = review_label(label_id, review_status=body.review_status, reviewed_by="admin")
+    if not row:
+        raise HTTPException(status_code=404, detail="标注未找到")
+    return {"label": row}
+
+
+@router.post("/api/internal/cloudsea/locations/{location_id}/curate")
+async def cloudsea_curate_location(
+    location_id: str,
+    _: None = Depends(verify_cloudsea_token),
+):
+    try:
+        result = curate_community_location(location_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return result
+
+
+@router.post("/api/internal/cloudsea/train")
+async def cloudsea_train_model(_: None = Depends(verify_cloudsea_token)):
+    try:
+        metrics = run_model_training()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return metrics

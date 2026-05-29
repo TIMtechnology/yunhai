@@ -6,6 +6,7 @@
 
 | 文件 | 说明 |
 |------|------|
+| [`DEPLOY.md`](DEPLOY.md) | **生产部署备忘**（SSH、Docker、发布/热补丁，避免连错机器） |
 | [`CLOUDSEA-LABEL.md`](CLOUDSEA-LABEL.md) | 云海标注工具使用、ML 训练说明 |
 | `analytics-dashboard.html` | 用户行为分析看板 |
 

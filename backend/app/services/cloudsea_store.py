@@ -91,6 +91,9 @@ def init_store() -> None:
                 """,
                 (spot_id, viewpoint_id, date_key, status, notes, _now_iso(), _now_iso()),
             )
+    from app.services.community_store import migrate_community_schema
+
+    migrate_community_schema()
 
 
 def upsert_label(
@@ -104,22 +107,55 @@ def upsert_label(
     confidence: str = "confirmed",
     notes: str = "",
     labeled_by: str = "manual",
+    location_id: Optional[str] = None,
+    lat: Optional[float] = None,
+    lng: Optional[float] = None,
+    location_name: Optional[str] = None,
+    contributor_id: Optional[str] = None,
+    review_status: str = "approved",
 ) -> dict[str, Any]:
     now = _now_iso()
     with _connect() as conn:
+        existing_row = conn.execute(
+            """
+            SELECT * FROM cloudsea_labels
+            WHERE spot_id=? AND viewpoint_id=? AND date=?
+              AND window_start=? AND window_end=?
+            """,
+            (spot_id, viewpoint_id, date_key, window_start, window_end),
+        ).fetchone()
+        existing = dict(existing_row) if existing_row else None
+        prev_status = existing.get("review_status") if existing else None
+        becoming_approved = review_status == "approved" and prev_status != "approved"
         conn.execute(
             """
             INSERT INTO cloudsea_labels
             (spot_id, viewpoint_id, date, window_start, window_end, status,
-             confidence, notes, labeled_by, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             confidence, notes, labeled_by, created_at, updated_at,
+             location_id, lat, lng, location_name, contributor_id,
+             review_status, reviewed_at, reviewed_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(spot_id, viewpoint_id, date, window_start, window_end)
             DO UPDATE SET
                 status=excluded.status,
                 confidence=excluded.confidence,
                 notes=excluded.notes,
                 labeled_by=excluded.labeled_by,
-                updated_at=excluded.updated_at
+                updated_at=excluded.updated_at,
+                location_id=COALESCE(excluded.location_id, cloudsea_labels.location_id),
+                lat=COALESCE(excluded.lat, cloudsea_labels.lat),
+                lng=COALESCE(excluded.lng, cloudsea_labels.lng),
+                location_name=COALESCE(excluded.location_name, cloudsea_labels.location_name),
+                contributor_id=COALESCE(excluded.contributor_id, cloudsea_labels.contributor_id),
+                review_status=excluded.review_status,
+                reviewed_at=CASE
+                    WHEN excluded.review_status='approved' THEN excluded.reviewed_at
+                    ELSE cloudsea_labels.reviewed_at
+                END,
+                reviewed_by=CASE
+                    WHEN excluded.review_status='approved' THEN excluded.reviewed_by
+                    ELSE cloudsea_labels.reviewed_by
+                END
             """,
             (
                 spot_id,
@@ -133,8 +169,64 @@ def upsert_label(
                 labeled_by,
                 now,
                 now,
+                location_id,
+                lat,
+                lng,
+                location_name,
+                contributor_id,
+                review_status,
+                now if review_status == "approved" else None,
+                labeled_by if review_status == "approved" else None,
             ),
         )
+        if contributor_id and not existing:
+            from app.services.community_store import increment_daily_quota, _update_trust_level
+
+            increment_daily_quota(conn, contributor_id)
+            conn.execute(
+                """
+                UPDATE contributors SET label_count_total = label_count_total + 1
+                WHERE id=?
+                """,
+                (contributor_id,),
+            )
+            if location_id:
+                from app.services.community_store import increment_location_label_count
+
+                increment_location_label_count(
+                    conn,
+                    location_id,
+                    approved_delta=1 if review_status == "approved" else 0,
+                )
+            if review_status == "approved":
+                conn.execute(
+                    """
+                    UPDATE contributors
+                    SET label_count_approved = label_count_approved + 1
+                    WHERE id=?
+                    """,
+                    (contributor_id,),
+                )
+                _update_trust_level(conn, contributor_id)
+        elif contributor_id and becoming_approved:
+            from app.services.community_store import _update_trust_level, increment_location_label_count
+
+            if location_id:
+                increment_location_label_count(
+                    conn,
+                    location_id,
+                    approved_delta=1,
+                    label_delta=0,
+                )
+            conn.execute(
+                """
+                UPDATE contributors
+                SET label_count_approved = label_count_approved + 1
+                WHERE id=?
+                """,
+                (contributor_id,),
+            )
+            _update_trust_level(conn, contributor_id)
         row = conn.execute(
             """
             SELECT * FROM cloudsea_labels
@@ -144,6 +236,18 @@ def upsert_label(
             (spot_id, viewpoint_id, date_key, window_start, window_end),
         ).fetchone()
     return dict(row) if row else {}
+
+
+def list_approved_labels() -> list[dict[str, Any]]:
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM cloudsea_labels
+            WHERE review_status='approved' OR review_status IS NULL
+            ORDER BY date
+            """
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_label(

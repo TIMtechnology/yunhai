@@ -33,7 +33,7 @@ export interface LabelSession {
   hours: Array<{
     time: string
     cloudsea: { probability: number }
-    scenario: { label: string }
+    scenario: { label: string; combined_score?: number }
     weather: Record<string, unknown>
   }>
 }
@@ -100,4 +100,77 @@ export async function fetchLabels(token: string, spotId: string, viewpointId: st
   })
   if (!resp.ok) throw new Error(await resp.text())
   return resp.json() as Promise<{ labels: CloudseaLabel[] }>
+}
+
+export interface ReviewQueueItem {
+  id: number
+  date: string
+  status: LabelStatus
+  review_status: string
+  spot_id: string
+  viewpoint_id: string
+  location_id?: string | null
+  location_name?: string | null
+  community_name?: string | null
+  contributor_id?: string | null
+  notes?: string | null
+  lat?: number | null
+  lng?: number | null
+}
+
+export async function fetchReviewQueue(token: string, limit = 100) {
+  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/review-queue?limit=${limit}`, {
+    headers: headers(token),
+  })
+  if (!resp.ok) throw new Error(await resp.text())
+  const data = await resp.json()
+  return data.items as ReviewQueueItem[]
+}
+
+export async function reviewLabelApi(
+  token: string,
+  labelId: number,
+  reviewStatus: 'approved' | 'rejected',
+) {
+  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/labels/${labelId}/review`, {
+    method: 'POST',
+    headers: headers(token),
+    body: JSON.stringify({ review_status: reviewStatus }),
+  })
+  if (!resp.ok) throw new Error(await resp.text())
+  return resp.json()
+}
+
+export async function curateLocationApi(token: string, locationId: string) {
+  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/locations/${locationId}/curate`, {
+    method: 'POST',
+    headers: headers(token),
+  })
+  if (!resp.ok) throw new Error(await resp.text())
+  return resp.json() as Promise<{ spot_id: string; file: string; location_id: string }>
+}
+
+export async function trainModelApi(token: string) {
+  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/train`, {
+    method: 'POST',
+    headers: headers(token),
+  })
+  if (!resp.ok) throw new Error(await resp.text())
+  return resp.json() as Promise<{
+    loocv_accuracy?: number
+    deploy_recommended?: boolean
+    reason?: string
+    output?: string
+    stdout?: string
+  }>
+}
+
+const STATUS_LABEL: Record<LabelStatus, string> = {
+  none: '无云海',
+  partial: '部分',
+  full: '完整',
+}
+
+export function labelStatusText(status: string) {
+  return STATUS_LABEL[status as LabelStatus] || status
 }

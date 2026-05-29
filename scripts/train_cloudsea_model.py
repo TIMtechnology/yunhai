@@ -19,7 +19,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "backend"))
+for _base in (ROOT / "backend", ROOT):
+    if (_base / "app" / "adapters").exists():
+        sys.path.insert(0, str(_base))
+        break
 
 from app.adapters.open_meteo import HOURLY_VARS  # noqa: E402
 from app.engine.cloudsea_features import (  # noqa: E402
@@ -34,10 +37,10 @@ LAT, LNG, ELEV = 41.31976, 125.40773, 804.0
 WINDOW_START, WINDOW_END = 3, 7
 
 
-def fetch_day_meteo(day: str) -> list[dict]:
+def fetch_day_meteo(day: str, *, lat: float = LAT, lng: float = LNG) -> list[dict]:
     url = (
         "https://historical-forecast-api.open-meteo.com/v1/forecast?"
-        f"latitude={LAT}&longitude={LNG}&start_date={day}&end_date={day}"
+        f"latitude={lat}&longitude={lng}&start_date={day}&end_date={day}"
         f"&hourly={','.join(HOURLY_VARS)}&timezone=Asia%2FShanghai"
     )
     with urllib.request.urlopen(url, timeout=60) as resp:
@@ -53,12 +56,27 @@ def fetch_day_meteo(day: str) -> list[dict]:
     return rows
 
 
-def load_dataset(db_path: Path) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+def load_dataset(db_path: Path, *, approved_only: bool = False) -> tuple[np.ndarray, np.ndarray, list[dict]]:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    labels = conn.execute("SELECT * FROM cloudsea_labels ORDER BY date").fetchall()
+    if approved_only:
+        labels = conn.execute(
+            """
+            SELECT * FROM cloudsea_labels
+            WHERE review_status='approved' OR review_status IS NULL
+            ORDER BY date
+            """
+        ).fetchall()
+    else:
+        labels = conn.execute("SELECT * FROM cloudsea_labels ORDER BY date").fetchall()
+
+    from app.services.spot_loader import get_viewpoint
+
+    meteo_rows: list[sqlite3.Row] = conn.execute(
+        "SELECT ts, lat, lng, raw_json, spot_id, viewpoint_id FROM meteo_hourly"
+    ).fetchall()
     meteo_by_ts: dict[str, dict] = {}
-    for row in conn.execute("SELECT ts, raw_json FROM meteo_hourly"):
+    for row in meteo_rows:
         meteo_by_ts[row["ts"]] = json.loads(row["raw_json"])
 
     X_rows: list[list[float]] = []
@@ -68,19 +86,36 @@ def load_dataset(db_path: Path) -> tuple[np.ndarray, np.ndarray, list[dict]]:
     for label in labels:
         day = label["date"]
         target = label_to_target(label["status"])
+        lat, lng, elev = LAT, LNG, ELEV
+        if label.get("lat") is not None and label.get("lng") is not None:
+            lat, lng = float(label["lat"]), float(label["lng"])
+            elev = float(label["elevation"]) if label.get("elevation") is not None else ELEV
+        elif label["spot_id"] == "community" and label["viewpoint_id"]:
+            from app.services.community_store import get_community_location
+
+            loc = get_community_location(label["viewpoint_id"])
+            if loc:
+                lat, lng = float(loc["lat"]), float(loc["lng"])
+                elev = float(loc["elevation"]) if loc.get("elevation") else ELEV
+        elif label["spot_id"] and label["viewpoint_id"] and label["spot_id"] != "community":
+            vp = get_viewpoint(label["spot_id"], label["viewpoint_id"])
+            if vp:
+                lat, lng = vp.lat, vp.lng
+                elev = vp.elevation or ELEV
+
         hour_rows = sorted(
             [v for k, v in meteo_by_ts.items() if k.startswith(f"{day}T")],
             key=lambda r: str(r.get("time")),
         )
         if not hour_rows or not all(meteo_row_complete(r) for r in hour_rows):
-            hour_rows = fetch_day_meteo(day)
+            hour_rows = fetch_day_meteo(day, lat=lat, lng=lng)
         if not hour_rows:
             print(f"skip {day}: no meteo")
             continue
-        day_feat = aggregate_day_features(hour_rows, elevation=ELEV)
+        day_feat = aggregate_day_features(hour_rows, elevation=elev)
         X_rows.append([day_feat[n] for n in DAY_FEATURE_NAMES])
         y_rows.append(target)
-        meta.append({"date": day, "status": label["status"]})
+        meta.append({"date": day, "status": label["status"], "lat": lat, "lng": lng})
 
     conn.close()
     return np.array(X_rows), np.array(y_rows), meta
@@ -119,9 +154,10 @@ def main() -> None:
         "--output",
         default=str(ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.pkl"),
     )
+    parser.add_argument("--approved-only", action="store_true")
     args = parser.parse_args()
 
-    X, y, meta = load_dataset(Path(args.db))
+    X, y, meta = load_dataset(Path(args.db), approved_only=args.approved_only)
     print(f"标注日: {len(y)} | 有云海: {int(y.sum())} | 无云海: {int(len(y) - y.sum())}")
     print(f"特征数: {len(DAY_FEATURE_NAMES)}")
 
@@ -136,7 +172,9 @@ def main() -> None:
     print(classification_report(y, pred, target_names=["无", "有"], zero_division=0))
 
     print(f"\n=== 留一日交叉验证 LOOCV (n={len(y)}) ===")
-    print(f"accuracy: {accuracy_score(y, loo_pred):.3f}")
+    loocv_acc = accuracy_score(y, loo_pred)
+    print(f"accuracy: {loocv_acc:.3f}")
+    print(f"loocv_accuracy: {loocv_acc:.3f}")
     print(f"brier: {brier_score_loss(y, loo_probs):.3f}")
     if len(set(y)) > 1:
         print(f"auc: {roc_auc_score(y, loo_probs):.3f}")
