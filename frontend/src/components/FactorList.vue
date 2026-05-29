@@ -21,10 +21,24 @@ withDefaults(
       v-for="(factor, key) in factors"
       :key="key"
       class="rounded-lg bg-slate-900/40"
-      :class="compact ? 'p-2' : 'rounded-xl p-3'"
+      :class="[
+        compact ? 'p-2' : 'rounded-xl p-3',
+        String(key).startsWith('obs_') ? 'border border-slate-800/80' : '',
+        String(key).startsWith('ml_') || key === 'fuzzy_reference' ? 'border border-sky-900/40' : '',
+      ]"
     >
       <div class="mb-1 flex items-center justify-between" :class="compact ? 'text-xs' : 'text-sm'">
-        <span>{{ factor.label }}</span>
+        <span>
+          <span
+            v-if="String(key).startsWith('obs_')"
+            class="mr-1 rounded bg-slate-800 px-1 py-0.5 text-[10px] text-slate-400"
+          >观测</span>
+          <span
+            v-else-if="String(key).startsWith('ml_') || key === 'fuzzy_reference'"
+            class="mr-1 rounded bg-sky-950 px-1 py-0.5 text-[10px] text-sky-400"
+          >模型</span>
+          {{ factor.label }}
+        </span>
         <span class="text-slate-400">{{ factor.value }}</span>
       </div>
       <div class="mb-1 h-1 overflow-hidden rounded-full bg-slate-800">

@@ -11,8 +11,12 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+      - CLOUDSEA_ENABLED=true
+      - CLOUDSEA_ADMIN_TOKEN=dev-token
+      - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
     volumes:
       - ./data/scenic-spots:/app/data/scenic-spots:ro
+      - ./data/cloudsea:/app/data/cloudsea
     depends_on:
       - redis
 

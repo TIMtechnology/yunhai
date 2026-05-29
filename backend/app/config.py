@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     analytics_admin_token: str = ""
     analytics_retention_days: int = 90
     analytics_db_path: str = str(_PROJECT_ROOT / "data" / "analytics" / "analytics.db")
+    cloudsea_enabled: bool = False
+    cloudsea_admin_token: str = ""
+    cloudsea_db_path: str = str(_PROJECT_ROOT / "data" / "cloudsea" / "cloudsea.db")
+    cloudsea_auto_snapshot: bool = True
+    cloudsea_ml_enabled: bool = False
+    cloudsea_model_path: str = str(_PROJECT_ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.pkl")
 
     class Config:
         env_file = ".env"

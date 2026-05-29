@@ -6,3 +6,4 @@ pydantic-settings==2.7.0
 redis==5.2.1
 python-dateutil==2.9.0.post0
 Pillow==11.1.0
+scikit-learn==1.6.1

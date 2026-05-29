@@ -34,6 +34,51 @@ def _score_inversion_850_925(t_850: float, t_925: float) -> tuple[float, str]:
     return score, desc
 
 
+def _classify_cloudsea_archetype(
+    *,
+    cloud_low: float,
+    cloud_mid: float,
+    visibility: float | None,
+    rh: float,
+    rh_850: float | None,
+    precip_recent: float,
+) -> tuple[str, str]:
+    """五女山金标准日归纳：TypeA 高能见度山谷云海 / TypeB 低能见度层云 / 雾型排除。"""
+    if cloud_mid >= 40 and rh >= 90 and visibility is not None and visibility <= 500:
+        return "fog_exclude", "中层云偏高+近饱和湿度，雾/层云型"
+    if (
+        rh >= 93
+        and visibility is not None
+        and visibility <= 500
+        and cloud_mid <= 10
+        and cloud_low <= 15
+    ):
+        return "fog_exclude", "近地面饱和雾，非观赏云海"
+    if cloud_low >= 40 and rh >= 90:
+        return "fog_exclude", "模式低云偏高+高湿，非山谷云海型"
+    if (
+        cloud_mid <= 10
+        and cloud_low <= 10
+        and visibility is not None
+        and visibility >= 5000
+        and rh_850 is not None
+        and rh_850 <= 55
+        and precip_recent <= 10
+    ):
+        return "type_a", "高能见度山谷云海型"
+    if (
+        cloud_mid <= 15
+        and visibility is not None
+        and visibility <= 500
+        and rh <= 85
+        and rh >= 60
+        and rh_850 is not None
+        and rh_850 <= 45
+    ):
+        return "type_b", "低能见度层云型"
+    return "neutral", ""
+
+
 def _infer_effective_low_cloud(
     *,
     cloud_low: float,
@@ -41,18 +86,31 @@ def _infer_effective_low_cloud(
     visibility: float | None,
     elevation: float,
     rh: float,
+    archetype: str = "neutral",
 ) -> tuple[float, str]:
     """NWP 网格低云量常低估山顶/谷地层云；极低能见度+高海拔作补偿（Open-Meteo 自身矛盾）。"""
+    if archetype == "type_a":
+        return max(cloud_low, 30.0), "高能见度山谷云海型，补偿局域层云"
+    if archetype == "fog_exclude":
+        return cloud_low, ""
+
     if elevation < 500 or visibility is None:
         return cloud_low, ""
     if cloud_low >= 20:
         return cloud_low, ""
 
     vis_m = visibility
+    if rh >= 90:
+        return cloud_low, ""
+    if archetype == "type_b":
+        if vis_m <= 300:
+            return max(cloud_low, 45.0), f"能见度 {vis_m:.0f}m，低能见度层云型"
+        if vis_m <= 500:
+            return max(cloud_low, 35.0), f"能见度 {vis_m:.0f}m，低能见度层云型"
     if vis_m <= 300:
-        return max(cloud_low, 50.0), f"能见度 {vis_m:.0f}m，推断局域层云/云海"
+        return max(cloud_low, 45.0), f"能见度 {vis_m:.0f}m，推断局域层云/云海"
     if vis_m <= 800:
-        return max(cloud_low, 35.0), f"能见度 {vis_m:.0f}m，推断云雾层"
+        return max(cloud_low, 30.0), f"能见度 {vis_m:.0f}m，推断云雾层"
     if vis_m <= 1500 and rh >= 85 and cloud_mid >= 8:
         return max(cloud_low, 20.0), f"能见度 {vis_m:.0f}m，高湿雾区"
     return cloud_low, ""
@@ -136,12 +194,21 @@ def score_cloudsea(
     t_925: float | None = None,
     visibility: float | None = None,
 ) -> PredictionScore:
+    archetype, archetype_note = _classify_cloudsea_archetype(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        rh=rh,
+        rh_850=rh_850,
+        precip_recent=precip_recent,
+    )
     effective_low, vis_proxy_note = _infer_effective_low_cloud(
         cloud_low=cloud_low,
         cloud_mid=cloud_mid,
         visibility=visibility,
         elevation=elevation,
         rh=rh,
+        archetype=archetype,
     )
     cloud_base = estimate_cloud_base(temp, dewpoint)
 
@@ -189,7 +256,11 @@ def score_cloudsea(
             value=(
                 f"模式{cloud_low:.0f}% → 有效{effective_low:.0f}% ({vis_proxy_note})"
                 if vis_proxy_note
-                else f"{cloud_low:.0f}%"
+                else (
+                    f"{cloud_low:.0f}% · {archetype_note}"
+                    if archetype_note and archetype != "neutral"
+                    else f"{cloud_low:.0f}%"
+                )
             ),
             reference=REF_FANJINGSHAN,
         ),
@@ -299,9 +370,18 @@ def score_cloudsea(
     weighted = sum(f.score * f.weight for f in factors.values()) + season_bonus
 
     presence = _cloud_presence_factor(effective_low, cloud_mid)
+    if archetype == "type_a":
+        presence = max(presence, 0.55)
     weighted *= 0.22 + 0.78 * presence
 
-    if cloud_low < 10 and not vis_proxy_note and fog_score < 0.5:
+    if archetype == "fog_exclude":
+        weighted = min(weighted, 0.25)
+    elif archetype == "type_a":
+        weighted = max(weighted, 0.58)
+    elif archetype == "type_b":
+        weighted = max(weighted, 0.48)
+
+    if cloud_low < 10 and not vis_proxy_note and fog_score < 0.5 and archetype == "neutral":
         weighted = min(weighted, 0.32)
     if (
         has_pressure_profile
@@ -310,6 +390,7 @@ def score_cloudsea(
         and (t_850 - t_925) <= 0
         and effective_low < 20
         and not vis_proxy_note
+        and archetype not in ("type_a", "type_b")
     ):
         weighted = min(weighted, 0.38)
 
@@ -330,16 +411,29 @@ def cloudsea_visual_evidence(
     visibility: float | None,
     elevation: float,
     rh: float,
+    rh_850: float | None = None,
+    precip_recent: float = 0.0,
 ) -> tuple[float, bool]:
     """供场景标签判定：返回有效低云量及是否有云海可见证据。"""
+    archetype, _ = _classify_cloudsea_archetype(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        rh=rh,
+        rh_850=rh_850,
+        precip_recent=precip_recent,
+    )
+    if archetype == "fog_exclude":
+        return cloud_low, False
     effective_low, vis_note = _infer_effective_low_cloud(
         cloud_low=cloud_low,
         cloud_mid=cloud_mid,
         visibility=visibility,
         elevation=elevation,
         rh=rh,
+        archetype=archetype,
     )
-    has = (
+    has = archetype in ("type_a", "type_b") or (
         effective_low >= 20
         or (effective_low >= 10 and cloud_mid >= 15)
         or bool(vis_note)
