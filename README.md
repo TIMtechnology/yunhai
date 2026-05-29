@@ -38,7 +38,7 @@
 | **ML 模型** | 日出窗口 03–07 点由标注数据训练的 Logistic 回归接管概率（v2，22 维日特征） |
 | **底层观测** | 分层云量、垂直场剖面、云海型态、地面态等原始气象字段完整展示 |
 
-内置 **五女山、大黑山、黄山、庐山** 等精选景区观景点，也支持天地图 POI 搜索与地图拖拽自定义坐标。配套 **标注 / 回测 / ML 训练** 闭环（见 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)）。
+内置 **五女山、大黑山、黄山、庐山** 等精选景区观景点，也支持天地图 POI 搜索与地图拖拽自定义坐标。配套 **开放标注 / 审核 / ML 训练** 共建闭环（见下方 [共建计划](#-日出云海预测模型--共建计划)）。
 
 > ⚠️ 预测结果为**参考概率**，基于 Open-Meteo 免费预报与本地模型，**不替代**官方气象预警与现场判断。
 
@@ -55,7 +55,85 @@
 | 📡 **因子拆解** | 雷达图（加权评分维度）+ 列表（含模型层 / 观测层） |
 | 🛰️ **卫星云图** | Himawari 红外裁切，当天已发生时段轻量校正 |
 | 🏔️ **精选景区** | 预置观景点海拔、坐标、季节权重；支持全国 POI |
-| 🔬 **标注回测** | 内部标注页、Historical Forecast 回测、ML 重训脚本 |
+| 📝 **开放标注** | 匿名贡献 ID、POI/社区点云海标注、审核后入训练集 |
+| 🔬 **标注回测** | 开放标注页、Historical Forecast 回测、Admin 审核与重训 API |
+
+---
+
+## 🌤️ 日出云海预测模型 · 共建计划
+
+> **最终目标**：建成一套**全国可扩展、观景点级可校准**的日出—云海联合预测体系——任何人可在地图上选点、微调坐标、贡献现场标注；数据经审核后驱动**点位专属模型**与**全国 POI 通用模型**迭代，让预测从「五女山金标准」逐步覆盖更多真实观景点。
+
+### 计划愿景（我们要做成什么）
+
+```text
+  全国 POI 选点 ──→ 精确坐标 ──→ 现场标注（云海 / 日出）
+         │                              │
+         ▼                              ▼
+   社区点位库                    审核通过的标注样本
+         │                              │
+         ├──────────► 单点专属 ML ◄─────┤
+         │                              │
+         └──────────► 全国 POI 通用 ML ◄─┘
+                              │
+                              ▼
+              线上预测：规则引擎 + 分层 ML 融合 + 可解释因子
+```
+
+**长期价值**：
+
+1. **观景点级精度**：同一套规则无法套用全国；每个高频点位可有独立校准模型与 Type A/B 型态权重。
+2. **数据飞轮**：用户标注 → 审核 → 训练 → 部署 → 预测更准 → 吸引更多人标注。
+3. **开放共建**：无需注册账号，浏览器匿名 ID 即可贡献；高质量点位可「精选落库」进入官方景区列表。
+4. **专业可解释**：保留底层气象观测与规则因子，ML 只做日出窗口概率校准，不黑盒替代业务判断。
+
+### 共建模块说明
+
+| 模块 | 说明 | 状态 |
+|------|------|------|
+| **社区点位** | POI 或地图选点自动注册为 `cs_` 社区点，500 m 去重；可收藏深链 `/?loc=cs_xxx` | ✅ **已完成** |
+| **点位精确位置修改** | 预测页地图拖拽 / 点击放置标记，微调 WGS84 坐标后再预测 | ✅ **已完成**（会话内微调） |
+| | 社区点坐标持久化修改、贡献者编辑点位名称/海拔 | ⏳ **规划中** |
+| **日出 · 云海标注** | 日出窗口 03:00–07:00 三档云海标注（无 / 部分 / 完整） | ✅ **已完成**（云海） |
+| | 日出质量独立标注（如可见 / 遮挡 / 不可拍） | ⏳ **规划中** |
+| **开放贡献与审核** | 匿名 Contributor ID、30 条/日限额、pending → approved 审核 | ✅ **已完成** |
+| | 标注页 Admin 可视化审核队列 UI | 🔶 **部分**（API 已有，`label.html?admin=1` 待增强） |
+| **社区点位专属模型** | 单点 accumulated ≥10 天 approved 后可训练/绑定专属 ML | 🔶 **部分**（融合权重已分 spot；独立 pkl 未实现） |
+| **全国 POI 通用模型** | 汇总多地区 approved 样本，训练跨点位泛化 ML | 🔶 **部分**（全局 `--approved-only` 训练已有；POI 专项管线规划中） |
+| **精选落库** | approved ≥15 天 → 写入 `scenic-spots/*.json`，搜索可见 | ✅ **已完成**（Admin API） |
+| **定期重训** | 标注增量或周期触发自动重训 + LOOCV 门禁部署 | 🔶 **部分**（手动 `POST .../train`；cron 未接） |
+| **深链与收藏** | `/?spot=&vp=`、`/?lat=&lng=`、`/label.html?...` 直达预测/标注 | ✅ **已完成** |
+
+图例：**✅ 已完成** · **🔶 部分完成** · **⏳ 规划中**
+
+### 当前已上线（可立即使用）
+
+| 入口 | 地址 |
+|------|------|
+| 预测主页 | [yunhai.timkj.com](https://yunhai.timkj.com/) |
+| 开放标注 | [yunhai.timkj.com/label.html](https://yunhai.timkj.com/label.html) |
+| 使用指南 | [docs/index.html](https://yunhai.timkj.com/docs/index.html) |
+
+**贡献流程**：主页选 POI → 「标注此点位」→ 选择日期 → 1/2/3 标注云海 → 待审核 → 通过后纳入训练。
+
+**Admin 流程**（需 Token）：审核队列 → approve/reject → 达标社区点 `curate` 落库 → `train` 重训模型。
+
+详细设计见 [`internal/open-annotation-plan.md`](internal/open-annotation-plan.md) · 标注操作见 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
+
+### 共建路线图（尚未完成的部分）
+
+| 阶段 | 目标 |
+|------|------|
+| **近期** | 标注页 Admin 审核 UI；社区点坐标持久化编辑；模型版本与贡献数公开展示 |
+| **中期** | **单点专属 ML**（每社区点/精选点独立 pkl + 自动切换）；**日出标注**字段与训练 |
+| **远期** | **全国 POI 通用 ML**（跨纬度/地形泛化）；定时重训 CI；贡献排行榜与点位质量评分 |
+
+**确认结论（截至当前版本）**：
+
+- 共建计划的 **P1 核心**（社区点、POI 标注、开放贡献、审核 API、深链、精选落库 API）**已实现并部署**。
+- **P2/P3 深化**（单点独立模型、全国 POI 模型、日出标注、自动重训、完整 Admin UI）**尚未全部完成**，已在路线图中排期。
+
+欢迎通过 Issue / PR 参与：补充观景点 JSON、提交标注样本、改进单点/全国模型训练脚本。
 
 ---
 
@@ -143,9 +221,11 @@ docker compose -f docker-compose.prod.yml up -d
 | `GET` | `/api/spots/search?q=` | 搜索景区 |
 | `GET` | `/api/predict/{spot_id}/viewpoint/{viewpoint_id}` | 预置观景点预测 |
 | `POST` | `/api/predict` | 自定义坐标预测 |
+| `GET` | `/api/contribute/cloudsea/*` | 开放标注（Header: `X-Contributor-Id`） |
 | `GET` | `/api/satellite/cloud` | Himawari 红外裁切 |
-| `GET` | `/api/internal/backtest/predict` | 历史日回测（需 Token） |
-| `GET` | `/api/internal/cloudsea/label-session` | 标注会话（需 Token） |
+| `GET` | `/api/internal/cloudsea/review-queue` | 待审标注（Admin Token） |
+| `POST` | `/api/internal/cloudsea/train` | 手动重训 ML（Admin Token） |
+| `GET` | `/api/internal/backtest/predict` | 历史日回测（Admin Token） |
 
 Swagger：`http://localhost:8000/docs`
 
@@ -157,14 +237,16 @@ Swagger：`http://localhost:8000/docs`
 # 1. 回填标注日完整垂直场气象
 python3 scripts/backfill_meteo_hourly.py
 
-# 2. 训练 ML v2（32+ 标注日）
-python3 scripts/train_cloudsea_model.py
+# 2. 训练 ML（仅 approved 标注）
+python3 scripts/train_cloudsea_model.py --approved-only
 
 # 3. 模型输出
 # data/cloudsea/models/cloudsea_ml_v2.pkl
 ```
 
-标注页（内部）：`https://yunhai.timkj.com/label.html` · 详见 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
+**开放标注页**：https://yunhai.timkj.com/label.html（无需 Token，浏览器自动生成贡献 ID）
+
+**Admin**：审核 / 落库 / 重训见 [共建计划](#-日出云海预测模型--共建计划) · 操作细节 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
 
 ---
 
@@ -176,8 +258,8 @@ yunhai/
 ├── backend/app/
 │   ├── adapters/             # Open-Meteo、Historical、Himawari WMS
 │   ├── engine/               # cloudsea_scorer · cloudsea_ml · cloudsea_features
-│   ├── routers/              # api · cloudsea · analytics
-│   └── services/             # predictor · cloudsea_store · cache
+│   ├── routers/              # api · cloudsea · contribute · analytics
+│   └── services/             # predictor · cloudsea_store · community_store
 ├── data/
 │   ├── scenic-spots/         # 景区 JSON
 │   └── cloudsea/             # 标注库 cloudsea.db · ML 模型
@@ -211,7 +293,9 @@ yunhai/
 
 ## 🤝 贡献
 
-欢迎 Issue / PR：观景点 JSON、标注样本、模型优化、文档完善等。
+欢迎 Issue / PR：观景点 JSON、**云海/日出现场标注**、单点/全国模型优化、文档完善等。
+
+参与 **日出云海预测模型共建** 见 [共建计划](#-日出云海预测模型--共建计划)。
 
 ---
 

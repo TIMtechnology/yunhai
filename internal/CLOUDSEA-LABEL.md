@@ -1,39 +1,47 @@
 # 云海标注工具
 
+## 开放标注（用户）
+
+1. 打开：**https://yunhai.timkj.com/label.html**（无需 Token）
+2. 或从主页 POI 选点后点击 **「标注此点位」**
+3. 选择日期，按 **1 / 2 / 3** 标注无云海 / 部分 / 完整
+4. 保存后 **立即生效**（社区点位免审核）；首次标注会自动 **加入精选**，主页搜索即可直达，无需重复选 POI
+
+### POI → 社区点位流程
+
+```
+主页搜索 POI → 选点预测 → 「标注此点位」
+    → 首次保存自动创建 cs_xxx 社区点
+    → 首次标注即写入精选景区（主页可搜到）
+    → 标注直接进入 ML 训练集（社区点免审核）
+```
+
+收藏链接：
+
+- 预测：`/?loc=cs_xxx` 或 `/?lat=40.48&lng=122.98&name=黄丫口`
+- 标注：`/label.html?loc=cs_xxx&date=2026-05-29`
+
+---
+
+## Admin 审核（维护者）
+
+打开：**https://yunhai.timkj.com/label.html?admin=1**
+
+1. 填入 **Admin Token**（与服务器 `CLOUDSEA_ADMIN_TOKEN` 相同）→ 保存
+2. 页面下方 **「Admin · 审核与训练」** 面板：
+   - **刷新队列**：查看所有 pending 标注
+   - **通过 / 驳回**：逐条或批量处理
+   - 点击条目可跳转查看该日气象与标注详情
+   - **落库**：社区点 ≥1 条标注后自动落库；也可手动触发
+   - **重训 ML**：仅用 approved 样本训练；LOOCV 达标后需手动部署新 pkl
+
+---
+
 ## 30 天标注是什么意思？
 
-ML 训练需要的是 **30 个已标注的日历日**（每个日出窗口 03:00–07:00 标一次），**不是** 30 天「都有云海」。
+ML 训练需要 **30 个已标注日历日**（日出窗口 03:00–07:00 各标一次），含正负样本。
 
-建议比例：
-
-- **有云海**（完整 / 部分）：约 10–15 天
-- **无云海**：约 15–20 天
-
-正负样本都要够，模型才能学会区分。你目前已有 7 天金标准（4 有 + 3 无），再补 **23 天**左右即可启动 ML。
-
----
-
-## 线上使用（已部署后）
-
-1. 打开：**https://yunhai.timkj.com/label.html**
-2. 在页面顶部填入 **Admin Token**（与服务器 `CLOUDSEA_ADMIN_TOKEN` 相同，与 analytics 看板共用）
-3. 点击「保存 Token」
-4. 选择景区 / 观景点 / 日期，点 **无云海 / 部分 / 完整** 保存
-
-> 标注页为内部工具，不在主导航展示；请收藏上述链接。
-
----
-
-## 本地开发
-
-```bash
-# 终端 1：后端
-cd backend && CLOUDSEA_ENABLED=true CLOUDSEA_ADMIN_TOKEN=dev-token uvicorn app.main:app --reload
-
-# 终端 2：标注页
-cd frontend && npm run dev
-# 打开 http://127.0.0.1:5173/label.html
-```
+建议：有云海 10–15 天 + 无云海 15–20 天。
 
 ---
 
@@ -44,24 +52,24 @@ cd frontend && npm run dev
 
 ---
 
-## 预置金标准（五女山·点将台，库内已 seed）
-
-| 日期 | 标注 |
-|------|------|
-| 5/4, 5/9, 5/22, 5/29 | 有云海（完整） |
-| 5/24, 5/25, 5/28 | 无云海 |
-
----
-
-## 回测 API（可选）
+## 本地开发
 
 ```bash
-curl -H "X-Cloudsea-Token: <你的token>" \
-  "https://yunhai.timkj.com/api/internal/backtest/predict?date=2026-05-29&spot_id=wunvshan&viewpoint_id=dianjiangtai"
+cd backend && CLOUDSEA_ENABLED=true CLOUDSEA_CONTRIBUTE_ENABLED=true CLOUDSEA_ADMIN_TOKEN=dev-token uvicorn app.main:app --reload
+cd frontend && npm run dev
+# http://127.0.0.1:5173/label.html
+# http://127.0.0.1:5173/label.html?admin=1
 ```
 
 ---
 
-## 标注完成后
+## 训练与部署
 
-在标注页底部可查看「回测准确率」。累计 **≥30 个标注日** 后联系开发 ML 训练（Logistic 可解释版 → 替换 03–07 点云海概率）。
+```bash
+python3 scripts/train_cloudsea_model.py --approved-only
+# 或 Admin 页「重训 ML」按钮
+
+# 部署：更新 CLOUDSEA_MODEL_PATH 并重启容器
+```
+
+详见 [`internal/open-annotation-plan.md`](open-annotation-plan.md)

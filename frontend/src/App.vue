@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { GITHUB_REPO_URL } from './config'
+import { buildLabelPageUrl, fetchPublicLocation } from './services/contributeLabel'
 import { trackPageVisit } from './services/analytics'
 import { useAppStore } from './stores/app'
 import ForecastTimeline from './components/ForecastTimeline.vue'
@@ -9,6 +10,69 @@ import PredictPanel from './components/PredictPanel.vue'
 import SpotPanel from './components/SpotPanel.vue'
 
 const store = useAppStore()
+const BANNER_KEY = 'yunhai_contrib_banner_dismissed'
+const showContribBanner = ref(localStorage.getItem(BANNER_KEY) !== '1')
+
+function dismissBanner() {
+  showContribBanner.value = false
+  localStorage.setItem(BANNER_KEY, '1')
+}
+
+function openLabelTool() {
+  const loc = store.prediction?.location
+  if (loc?.spot_id && store.selectedViewpoint) {
+    window.open(buildLabelPageUrl({ spot: loc.spot_id, vp: store.selectedViewpoint.id }), '_blank')
+    return
+  }
+  if (loc) {
+    window.open(
+      buildLabelPageUrl({
+        lat: loc.lat,
+        lng: loc.lng,
+        name: loc.name,
+        elevation: loc.elevation,
+      }),
+      '_blank',
+    )
+    return
+  }
+  window.open('/label.html', '_blank')
+}
+
+async function applyDeepLinkFromUrl() {
+  const q = new URLSearchParams(window.location.search)
+  const spot = q.get('spot')
+  const vp = q.get('vp')
+  const loc = q.get('loc')
+  const lat = q.get('lat')
+  const lng = q.get('lng')
+  const name = q.get('name') || undefined
+
+  if (spot) {
+    await store.selectSpot(spot)
+    if (vp && store.currentSpot) {
+      const target = store.currentSpot.viewpoints.find((v) => v.id === vp)
+      if (target) await store.selectViewpoint(target)
+    }
+    return
+  }
+  if (loc) {
+    try {
+      const data = await fetchPublicLocation(loc)
+      if (data.curated_spot_id) {
+        await store.selectSpot(data.curated_spot_id)
+        return
+      }
+      await store.predictAt(data.lat, data.lng, data.name, data.elevation, undefined)
+    } catch {
+      /* ignore invalid loc */
+    }
+    return
+  }
+  if (lat && lng) {
+    await store.predictAt(Number(lat), Number(lng), name || '自定义位置')
+  }
+}
 
 const mapTarget = computed(() => {
   const coords = store.mapCoords
@@ -34,9 +98,14 @@ const mapTarget = computed(() => {
 
 const currentHour = computed(() => store.currentHour())
 
-onMounted(() => {
+onMounted(async () => {
   trackPageVisit()
-  store.selectSpot('wunvshan')
+  const q = new URLSearchParams(window.location.search)
+  if (q.has('spot') || q.has('loc') || q.has('lat')) {
+    await applyDeepLinkFromUrl()
+  } else {
+    store.selectSpot('wunvshan')
+  }
 })
 
 function openGuide() {
@@ -89,6 +158,19 @@ function openGithub() {
             <n-button type="primary" secondary size="small" @click="openGuide">📖 使用指南</n-button>
           </div>
         </header>
+
+        <n-alert
+          v-if="showContribBanner"
+          type="info"
+          closable
+          class="mx-4 mt-2 shrink-0"
+          @close="dismissBanner"
+        >
+          <template #header>云海标注已开放</template>
+          贡献你在现场的日出/云海观测，帮助改进模型；审核通过后将纳入定期训练。
+          <n-button size="tiny" type="primary" class="ml-2" @click="openLabelTool">去标注</n-button>
+          <n-button size="tiny" quaternary tag="a" href="/label.html" target="_blank" class="ml-1">标注页</n-button>
+        </n-alert>
 
         <n-alert
           v-if="store.error"

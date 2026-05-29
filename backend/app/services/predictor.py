@@ -496,6 +496,7 @@ async def run_backtest_prediction(
 ) -> dict:
     from datetime import date as date_cls
 
+    from app.adapters.open_meteo import fetch_forecast, parse_daily_astronomy, slice_hourly_window
     from app.adapters.open_meteo_historical import (
         fetch_historical_forecast,
         parse_astronomy_for_date,
@@ -513,20 +514,44 @@ async def run_backtest_prediction(
     cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
     sunrise_months = spot.seasonality.get("sunrise_months") if spot else None
 
-    forecast = await fetch_historical_forecast(req.lat, req.lng, target_date, target_date)
-    full_hourly = forecast.get("hourly", {})
-    hourly = slice_hourly_for_date(full_hourly, target_date)
-    day_astro = parse_astronomy_for_date(forecast, target_date)
-    astronomy = {target_date.isoformat(): day_astro} if day_astro else {}
-
-    backtest_now = datetime(
-        target_date.year,
-        target_date.month,
-        target_date.day,
-        12,
-        0,
-        tzinfo=TZ,
-    )
+    today = datetime.now(TZ).date()
+    satellite_context = None
+    if target_date >= today:
+        # 未来/当天：与主页 predict 同源（live forecast），避免 historical API 能见度等字段偏差
+        forecast_days = min(max((target_date - today).days + 1, 5), 16)
+        forecast = await fetch_forecast(req.lat, req.lng, days=forecast_days)
+        hourly = slice_hourly_window(forecast.get("hourly", {}), days=forecast_days)
+        display_hourly = slice_hourly_for_date(hourly, target_date)
+        astronomy = parse_daily_astronomy(forecast)
+        data_source = "live_forecast"
+        if target_date == today:
+            satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
+            backtest_now = datetime.now(TZ)
+        else:
+            backtest_now = datetime(
+                target_date.year,
+                target_date.month,
+                target_date.day,
+                12,
+                0,
+                tzinfo=TZ,
+            )
+    else:
+        forecast = await fetch_historical_forecast(req.lat, req.lng, target_date, target_date)
+        full_hourly = forecast.get("hourly", {})
+        hourly = slice_hourly_for_date(full_hourly, target_date)
+        display_hourly = hourly
+        day_astro = parse_astronomy_for_date(forecast, target_date)
+        astronomy = {target_date.isoformat(): day_astro} if day_astro else {}
+        data_source = "historical_forecast"
+        backtest_now = datetime(
+            target_date.year,
+            target_date.month,
+            target_date.day,
+            12,
+            0,
+            tzinfo=TZ,
+        )
 
     results = build_predictions_from_hourly(
         req=req,
@@ -535,47 +560,50 @@ async def run_backtest_prediction(
         astronomy=astronomy,
         cloudsea_months=cloudsea_months,
         sunrise_months=sunrise_months,
-        satellite_context=None,
+        satellite_context=satellite_context,
         now=backtest_now,
     )
 
     window_hours = [
         h
         for h in results
-        if window_start <= parse_shanghai_time(h.time).hour < window_end
+        if h.time.startswith(target_date.isoformat())
+        and window_start <= parse_shanghai_time(h.time).hour < window_end
     ]
     peak = max(window_hours, key=lambda h: h.cloudsea.probability) if window_hours else None
 
     raw_rows = []
-    times = hourly.get("time", [])
+    times = display_hourly.get("time", [])
     precips = hourly.get("precipitation", [])
+    time_to_idx = {t: i for i, t in enumerate(hourly.get("time", []))}
     for idx, t_str in enumerate(times):
         hour = parse_shanghai_time(t_str).hour
         if hour < window_start or hour >= window_end:
             continue
+        src_idx = time_to_idx.get(t_str, idx)
         raw_rows.append(
             {
                 "time": t_str,
-                "cloud_low": hourly.get("cloud_cover_low", [None])[idx],
-                "cloud_mid": hourly.get("cloud_cover_mid", [None])[idx],
-                "cloud_high": hourly.get("cloud_cover_high", [None])[idx],
-                "visibility": hourly.get("visibility", [None])[idx],
-                "rh": hourly.get("relative_humidity_2m", [None])[idx],
-                "rh_850": hourly.get("relative_humidity_850hPa", [None])[idx],
-                "rh_700": hourly.get("relative_humidity_700hPa", [None])[idx],
-                "t_850": hourly.get("temperature_850hPa", [None])[idx],
-                "t_925": hourly.get("temperature_925hPa", [None])[idx],
+                "cloud_low": display_hourly.get("cloud_cover_low", [None])[idx],
+                "cloud_mid": display_hourly.get("cloud_cover_mid", [None])[idx],
+                "cloud_high": display_hourly.get("cloud_cover_high", [None])[idx],
+                "visibility": display_hourly.get("visibility", [None])[idx],
+                "rh": display_hourly.get("relative_humidity_2m", [None])[idx],
+                "rh_850": display_hourly.get("relative_humidity_850hPa", [None])[idx],
+                "rh_700": display_hourly.get("relative_humidity_700hPa", [None])[idx],
+                "t_850": display_hourly.get("temperature_850hPa", [None])[idx],
+                "t_925": display_hourly.get("temperature_925hPa", [None])[idx],
                 "inversion": (
-                    hourly.get("temperature_850hPa", [None])[idx]
-                    - hourly.get("temperature_925hPa", [None])[idx]
-                    if idx < len(hourly.get("temperature_850hPa", []))
-                    and idx < len(hourly.get("temperature_925hPa", []))
-                    and hourly.get("temperature_850hPa", [None])[idx] is not None
-                    and hourly.get("temperature_925hPa", [None])[idx] is not None
+                    display_hourly.get("temperature_850hPa", [None])[idx]
+                    - display_hourly.get("temperature_925hPa", [None])[idx]
+                    if idx < len(display_hourly.get("temperature_850hPa", []))
+                    and idx < len(display_hourly.get("temperature_925hPa", []))
+                    and display_hourly.get("temperature_850hPa", [None])[idx] is not None
+                    and display_hourly.get("temperature_925hPa", [None])[idx] is not None
                     else None
                 ),
-                "wind": hourly.get("wind_speed_10m", [None])[idx],
-                "precip48": _recent_precip(precips, idx),
+                "wind": display_hourly.get("wind_speed_10m", [None])[idx],
+                "precip48": _recent_precip(precips, src_idx),
             }
         )
 
@@ -595,7 +623,7 @@ async def run_backtest_prediction(
     return {
         "meta": {
             "date": target_date.isoformat(),
-            "data_source": "historical_forecast",
+            "data_source": data_source,
             "model": "fuzzy_v2_archetype",
             "window_start": window_start,
             "window_end": window_end,

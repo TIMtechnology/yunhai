@@ -25,9 +25,32 @@ class Settings(BaseSettings):
     cloudsea_auto_snapshot: bool = True
     cloudsea_ml_enabled: bool = False
     cloudsea_model_path: str = str(_PROJECT_ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.pkl")
+    cloudsea_contribute_enabled: bool = True
+    cloudsea_daily_label_cap: int = 30
+    cloudsea_max_locations_per_contributor: int = 10
+    cloudsea_dedup_radius_m: float = 500.0
+    cloudsea_auto_approve_trusted: bool = False
+    cloudsea_community_auto_approve: bool = True
+    cloudsea_curate_min_labels: int = 1
+    cloudsea_curated_spots_dir: str = ""
+    cloudsea_train_min_approved: int = 20
+    cloudsea_model_min_loocv: float = 0.70
 
     class Config:
         env_file = ".env"
 
 
 settings = Settings()
+
+
+def curated_spots_dir() -> Path:
+    configured = settings.cloudsea_curated_spots_dir.strip()
+    db_parent = Path(settings.cloudsea_db_path).resolve().parent
+    if configured:
+        path = Path(configured)
+        if not path.is_absolute():
+            path = db_parent / path
+    else:
+        path = db_parent / "curated-spots"
+    path.mkdir(parents=True, exist_ok=True)
+    return path

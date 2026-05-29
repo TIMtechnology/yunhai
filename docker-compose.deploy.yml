@@ -24,9 +24,14 @@ services:
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
       - CLOUDSEA_ML_ENABLED=true
       - CLOUDSEA_MODEL_PATH=/app/models/cloudsea_ml_v2.pkl
+      - CLOUDSEA_CONTRIBUTE_ENABLED=true
+      - CLOUDSEA_DAILY_LABEL_CAP=30
+      - CLOUDSEA_MAX_LOCATIONS_PER_CONTRIBUTOR=10
     volumes:
       - analytics_data:/app/data/analytics
       - cloudsea_data:/app/data/cloudsea
+      # 精选景区 JSON 使用镜像内嵌数据；勿挂载空目录，否则会覆盖导致 /api/spots/* 全部 404
+      # 精选落库（curate）写入需配合部署脚本同步，见 scripts/sync-scenic-spots.sh
     depends_on:
       - redis
     restart: unless-stopped

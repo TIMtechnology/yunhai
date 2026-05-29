@@ -56,6 +56,37 @@
     </div>
 
     <section class="glass p-6">
+      <h2 class="text-xl font-semibold mb-4">共建标注：POI → 社区点位 → 提交</h2>
+      <p class="text-sm text-slate-600 mb-4">
+        欢迎贡献你在现场的云海观测，帮助改进模型。无需注册账号，浏览器会自动生成匿名贡献 ID。
+      </p>
+      <ol class="list-decimal list-inside space-y-3 text-slate-700 text-sm">
+        <li><strong>主页选 POI</strong>：左侧搜索并选择<strong>天地图 POI</strong>（绿色标签），或拖动地图标记到准确位置。</li>
+        <li><strong>进入标注</strong>：右侧预测面板点击 <strong>「标注此点位」</strong>，或顶栏 Banner「去标注」。</li>
+        <li><strong>自动创建社区点</strong>：首次保存标注时，系统将该 POI 注册为社区点位（如 <code>cs_0c28f6f2</code>），500 米内重复坐标会合并。</li>
+        <li><strong>选择日期并标注</strong>：在 <a href="/label.html" target="_blank">标注页</a> 选择历史日期（仅今天及以前），按 <strong>1/2/3</strong> 标注无云海 / 部分 / 完整。</li>
+        <li><strong>提交即生效</strong>：社区点位保存后立即 approved，并自动加入精选（主页可搜索）；标注纳入 ML 训练集。</li>
+      </ol>
+      <div class="tip text-sm mt-4">
+        <strong>收藏链接：</strong>预测页 <code>/?loc=cs_xxx</code> 或 <code>/?lat=…&amp;lng=…&amp;name=…</code>；
+        标注页 <code>/label.html?loc=cs_xxx</code>。便于下次直达同一社区点。
+      </div>
+    </section>
+
+    <section class="glass p-6">
+      <h2 class="text-xl font-semibold mb-4">Admin 审核（维护者）</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        打开 <a href="/label.html?admin=1" target="_blank"><code>/label.html?admin=1</code></a>，
+        填入 Admin Token 后可：查看待审队列 → 通过/驳回 → 重训 ML → 达标社区点「精选落库」。
+      </p>
+      <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+        <li>仅 <strong>approved</strong> 标注进入训练集</li>
+        <li>单社区点 ≥1 天标注后自动「落库」为精选景区</li>
+        <li>重训通过后需在服务器更新模型 pkl 并重启，03–07 点云海概率才会变化</li>
+      </ul>
+    </section>
+
+    <section class="glass p-6">
       <h2 class="text-xl font-semibold mb-4">快速上手（5 步）</h2>
       <ol class="list-decimal list-inside space-y-3 text-slate-700">
         <li><strong>搜索地点</strong>：左侧输入景区名（如「云台山」「大黑山」）或点击快捷按钮。绿色标签为<strong>天地图 POI</strong>，紫色为<strong>精选观景点</strong>。</li>

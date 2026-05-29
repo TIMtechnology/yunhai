@@ -1,0 +1,8 @@
+/* 标注页需纵向滚动；主站 style.css 对 body 设置了 overflow:hidden */
+html,
+body,
+#app {
+  overflow: auto !important;
+  height: auto !important;
+  min-height: 100%;
+}
