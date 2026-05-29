@@ -75,6 +75,7 @@ def migrate_community_schema() -> None:
         _add_column(conn, "cloudsea_labels", "review_status", "TEXT DEFAULT 'approved'")
         _add_column(conn, "cloudsea_labels", "reviewed_at", "TEXT")
         _add_column(conn, "cloudsea_labels", "reviewed_by", "TEXT")
+        _add_column(conn, "cloudsea_labels", "sunrise_quality", "TEXT")
         conn.execute(
             "UPDATE cloudsea_labels SET review_status='approved' WHERE review_status IS NULL"
         )
@@ -407,6 +408,73 @@ def list_community_locations(contributor_id: str) -> list[dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
+SUNRISE_QUALITY_VALUES = frozenset({"visible", "blocked", "unshootable"})
+
+
+def validate_sunrise_quality(value: Optional[str]) -> None:
+    if value is not None and value not in SUNRISE_QUALITY_VALUES:
+        raise ValueError("sunrise_quality 须为 visible、blocked 或 unshootable")
+
+
+def update_community_location(
+    *,
+    location_id: str,
+    contributor_id: str,
+    name: Optional[str] = None,
+    lat: Optional[float] = None,
+    lng: Optional[float] = None,
+    elevation: Optional[float] = None,
+) -> dict[str, Any]:
+    loc = get_community_location(location_id)
+    if not loc:
+        raise ValueError("社区点位未找到")
+    if loc["contributor_id"] != contributor_id:
+        raise PermissionError("无权修改该社区点位")
+
+    new_name = name.strip() if name is not None else loc["name"]
+    if not new_name:
+        raise ValueError("名称不能为空")
+    new_lat = float(lat) if lat is not None else float(loc["lat"])
+    new_lng = float(lng) if lng is not None else float(loc["lng"])
+    if not (-90.0 <= new_lat <= 90.0 and -180.0 <= new_lng <= 180.0):
+        raise ValueError("坐标无效")
+
+    if lat is not None or lng is not None:
+        nearby = find_nearby_location(new_lat, new_lng)
+        if nearby and nearby["id"] != location_id:
+            raise ValueError("新坐标与已有社区点位过近（500 m 内），请微调")
+
+    if elevation is not None:
+        new_elevation: Optional[float] = float(elevation)
+    else:
+        new_elevation = loc.get("elevation")
+
+    now = _now_iso()
+    with _connect() as conn:
+        conn.execute(
+            """
+            UPDATE community_locations
+            SET name=?, lat=?, lng=?, elevation=?, updated_at=?
+            WHERE id=?
+            """,
+            (new_name, new_lat, new_lng, new_elevation, now, location_id),
+        )
+        conn.execute(
+            """
+            UPDATE cloudsea_labels
+            SET lat=?, lng=?, location_name=?, updated_at=?
+            WHERE location_id=?
+            """,
+            (new_lat, new_lng, new_name, now, location_id),
+        )
+
+    from app.services.curate_service import sync_curated_spot_from_location
+
+    sync_curated_spot_from_location(location_id)
+    updated = get_community_location(location_id)
+    return updated or {}
+
+
 def resolve_or_create_location(
     *,
     contributor_id: str,
@@ -563,14 +631,19 @@ def calendar_summary_extended(
     with _connect() as conn:
         rows = conn.execute(
             """
-            SELECT date, status, review_status FROM cloudsea_labels
+            SELECT date, status, review_status, sunrise_quality FROM cloudsea_labels
             WHERE spot_id=? AND viewpoint_id=? AND date LIKE ?
             ORDER BY date
             """,
             (spot_id, viewpoint_id, f"{month}-%"),
         ).fetchall()
     return [
-        {"date": r["date"], "status": r["status"], "review_status": r["review_status"]}
+        {
+            "date": r["date"],
+            "status": r["status"],
+            "review_status": r["review_status"],
+            "sunrise_quality": r["sunrise_quality"],
+        }
         for r in rows
     ]
 

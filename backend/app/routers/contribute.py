@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -22,7 +22,9 @@ from app.services.community_store import (
     label_exists,
     list_community_locations,
     resolve_or_create_location,
+    update_community_location,
     validate_contributor_id,
+    validate_sunrise_quality,
 )
 from app.services.contribute_rate_limit import check_contribute_rate_limit
 from app.services.label_session import build_label_session_payload
@@ -44,6 +46,14 @@ class ContributeLabelBody(BaseModel):
     window_start: int = 3
     window_end: int = 7
     notes: str = ""
+    sunrise_quality: Optional[Literal["visible", "blocked", "unshootable"]] = None
+
+
+class UpdateLocationBody(BaseModel):
+    name: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    elevation: Optional[float] = None
 
 
 class RegisterLocationBody(BaseModel):
@@ -200,6 +210,32 @@ async def register_location(
     return {"location": loc}
 
 
+@router.patch("/locations/{location_id}")
+async def patch_location(
+    location_id: str,
+    body: UpdateLocationBody,
+    contributor_id: str = Depends(get_contributor_id),
+    _: None = Depends(_rate_limit),
+):
+    if body.name is None and body.lat is None and body.lng is None and body.elevation is None:
+        raise HTTPException(status_code=400, detail="请至少提供 name、lat、lng 或 elevation 之一")
+    try:
+        assert_contributor_active(contributor_id)
+        loc = update_community_location(
+            location_id=location_id,
+            contributor_id=contributor_id,
+            name=body.name,
+            lat=body.lat,
+            lng=body.lng,
+            elevation=body.elevation,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"location": loc}
+
+
 @router.get("/cloudsea/label-session")
 async def contribute_label_session(
     request: Request,
@@ -286,6 +322,11 @@ async def contribute_save_label(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    try:
+        validate_sunrise_quality(body.sunrise_quality)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     spot_id, viewpoint_id, location_id, loc = _resolve_label_target(body, contributor_id)
     is_new = not label_exists(
         spot_id, viewpoint_id, body.date, body.window_start, body.window_end
@@ -317,6 +358,7 @@ async def contribute_save_label(
         lng=lng,
         location_name=location_name,
         review_status=review_status,
+        sunrise_quality=body.sunrise_quality,
     )
     curated = None
     if location_id and review_status == "approved":

@@ -57,6 +57,7 @@ def fetch_day_meteo(day: str, *, lat: float = LAT, lng: float = LNG) -> list[dic
 
 
 def load_dataset(db_path: Path, *, approved_only: bool = False) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+    """加载标注日特征。目标变量仅来自 status（云海）；sunrise_quality 字段暂不参与训练。"""
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     if approved_only:

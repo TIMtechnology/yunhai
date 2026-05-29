@@ -17,7 +17,13 @@ from app.services.cloudsea_store import (
     save_prediction_run,
     upsert_label,
 )
-from app.services.community_store import COMMUNITY_SPOT_ID, get_community_location, list_review_queue, review_label
+from app.services.community_store import (
+    COMMUNITY_SPOT_ID,
+    get_community_location,
+    list_review_queue,
+    review_label,
+    validate_sunrise_quality,
+)
 from app.services.curate_service import curate_community_location, run_model_training
 from app.services.label_session import build_label_session_payload
 from app.services.predictor import run_backtest_prediction
@@ -42,6 +48,7 @@ class LabelBody(BaseModel):
     window_end: int = 7
     confidence: str = "confirmed"
     notes: str = ""
+    sunrise_quality: Optional[str] = Field(default=None, pattern=r"^(visible|blocked|unshootable)$")
 
 
 def _require_cloudsea_enabled() -> None:
@@ -254,6 +261,10 @@ async def cloudsea_labels_list(
 
 @router.post("/api/internal/cloudsea/labels")
 async def cloudsea_labels_upsert(body: LabelBody, _: None = Depends(verify_cloudsea_token)):
+    try:
+        validate_sunrise_quality(body.sunrise_quality)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     row = upsert_label(
         spot_id=body.spot_id,
         viewpoint_id=body.viewpoint_id,
@@ -265,6 +276,7 @@ async def cloudsea_labels_upsert(body: LabelBody, _: None = Depends(verify_cloud
         notes=body.notes,
         labeled_by="admin",
         review_status="approved",
+        sunrise_quality=body.sunrise_quality,
     )
     return {"label": row}
 
