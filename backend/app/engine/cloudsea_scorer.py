@@ -42,6 +42,8 @@ def _classify_cloudsea_archetype(
     rh: float,
     rh_850: float | None,
     precip_recent: float,
+    t_850: float | None = None,
+    t_925: float | None = None,
 ) -> tuple[str, str]:
     """五女山金标准日归纳：TypeA 高能见度山谷云海 / TypeB 低能见度层云 / 雾型排除。"""
     if cloud_mid >= 40 and rh >= 90 and visibility is not None and visibility <= 500:
@@ -64,6 +66,9 @@ def _classify_cloudsea_archetype(
         and rh_850 is not None
         and rh_850 <= 55
         and precip_recent <= 10
+        and _type_a_moisture_support(rh=rh, cloud_low=cloud_low, cloud_mid=cloud_mid, precip_recent=precip_recent)
+        and rh_850 >= 42
+        and not _strong_negative_inversion(t_850, t_925)
     ):
         return "type_a", "高能见度山谷云海型"
     if (
@@ -77,6 +82,67 @@ def _classify_cloudsea_archetype(
     ):
         return "type_b", "低能见度层云型"
     return "neutral", ""
+
+
+def _strong_negative_inversion(t_850: float | None, t_925: float | None, threshold: float = -2.5) -> bool:
+    if t_850 is None or t_925 is None:
+        return False
+    return (t_850 - t_925) <= threshold
+
+
+def _type_a_moisture_support(
+    *,
+    rh: float,
+    cloud_low: float,
+    cloud_mid: float,
+    precip_recent: float,
+) -> bool:
+    """Type A 补偿仅在有近地面湿润或降水背景时启用，避免晴天空天误判。"""
+    if precip_recent >= 0.5:
+        return True
+    if cloud_low >= 5 or cloud_mid >= 5:
+        return True
+    return rh >= 68
+
+
+def cloudsea_plausibility_cap(
+    *,
+    cloud_low: float,
+    cloud_mid: float,
+    rh: float,
+    rh_850: float | None,
+    rh_700: float | None,
+    t_850: float | None,
+    t_925: float | None,
+    visibility: float | None,
+    archetype: str,
+) -> int:
+    """基于当前观测场的云海概率硬上限（0–100），用于约束 ML 与规则融合结果。"""
+    cap = 100
+    inversion = (t_850 - t_925) if t_850 is not None and t_925 is not None else None
+    cloud_signal = max(cloud_low, cloud_mid)
+
+    if cloud_low < 5 and cloud_mid < 5:
+        cap = min(cap, 42)
+    if rh_850 is not None and rh_850 < 50:
+        cap = min(cap, 40)
+    if rh_700 is not None and rh_700 > 75 and rh_850 is not None and rh_850 < 55:
+        cap = min(cap, 38)
+    if inversion is not None and inversion <= -2.0:
+        cap = min(cap, 36)
+    if (
+        rh_850 is not None
+        and rh_850 < 50
+        and inversion is not None
+        and inversion <= 0
+        and cloud_signal < 8
+    ):
+        cap = min(cap, 28)
+    if archetype == "neutral" and cloud_signal < 10 and rh < 72:
+        cap = min(cap, 32)
+    if visibility is not None and visibility >= 12000 and cloud_signal < 5 and rh < 75:
+        cap = min(cap, 30)
+    return cap
 
 
 def _infer_effective_low_cloud(
@@ -201,6 +267,8 @@ def score_cloudsea(
         rh=rh,
         rh_850=rh_850,
         precip_recent=precip_recent,
+        t_850=t_850,
+        t_925=t_925,
     )
     effective_low, vis_proxy_note = _infer_effective_low_cloud(
         cloud_low=cloud_low,
@@ -422,6 +490,8 @@ def cloudsea_visual_evidence(
         rh=rh,
         rh_850=rh_850,
         precip_recent=precip_recent,
+        t_850=t_850,
+        t_925=t_925,
     )
     if archetype == "fog_exclude":
         return cloud_low, False

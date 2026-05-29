@@ -31,6 +31,15 @@ def ml_enabled() -> bool:
     return settings.cloudsea_ml_enabled and load_artifact() is not None
 
 
+def ml_calibration_weight(spot_id: str | None) -> float:
+    """标注样本越充分，ML 权重越高；未标定景区保留规则引擎主导。"""
+    if spot_id == "wunvshan":
+        return 0.80
+    if spot_id:
+        return 0.55
+    return 0.45
+
+
 def _explain(model, day_feat: dict[str, float]) -> list[dict]:
     scaler = model.named_steps["scaler"]
     clf = model.named_steps["clf"]
@@ -50,16 +59,38 @@ def merge_ml_cloudsea_score(
     ml: PredictionScore,
     *,
     observational: dict[str, FactorDetail] | None = None,
+    spot_id: str | None = None,
+    plausibility_cap: int | None = None,
 ) -> PredictionScore:
-    """ML 仅覆盖概率；保留规则引擎的气象因子与底层观测。"""
+    """ML 与规则融合：按景区标定权重混合，并受观测场上限约束。"""
+    ml_weight = ml_calibration_weight(spot_id)
+    fuzzy_prob = fuzzy.probability
+    ml_prob = ml.probability
+    blended = int(round(ml_weight * ml_prob + (1.0 - ml_weight) * fuzzy_prob))
+    if plausibility_cap is not None:
+        blended = min(blended, plausibility_cap)
+    blended = max(0, min(100, blended))
+
+    artifact_ref = ml.factors["ml_model"].reference
     merged: dict[str, FactorDetail] = {
-        "ml_model": ml.factors["ml_model"],
+        "ml_model": FactorDetail(
+            score=ml_prob / 100.0,
+            weight=ml_weight,
+            label="ML 云海模型",
+            description=(
+                f"基于五女山标注训练；本点 ML 权重 {ml_weight:.0%}，"
+                f"与规则 {fuzzy_prob}% 融合为 {blended}%"
+                + (f"（观测场上限 {plausibility_cap}%）" if plausibility_cap is not None else "")
+            ),
+            value=f"P_ml={ml_prob}% → P={blended}%",
+            reference=artifact_ref,
+        ),
         "fuzzy_reference": FactorDetail(
-            score=fuzzy.probability / 100.0,
-            weight=0.0,
+            score=fuzzy_prob / 100.0,
+            weight=round(1.0 - ml_weight, 2),
             label="规则引擎参考",
-            description="模糊逻辑专家系统评分，供与 ML 对照",
-            value=f"{fuzzy.probability}%",
+            description="模糊逻辑专家系统评分，与 ML 按景区标定权重融合",
+            value=f"{fuzzy_prob}%",
             reference="fuzzy_v2_archetype",
         ),
     }
@@ -74,8 +105,8 @@ def merge_ml_cloudsea_score(
             merged[f"obs_{key}"] = detail
 
     return PredictionScore(
-        probability=ml.probability,
-        grade=grade_from_probability(ml.probability),
+        probability=blended,
+        grade=grade_from_probability(blended),
         factors=merged,
         cloud_base_m=fuzzy.cloud_base_m,
     )
@@ -106,6 +137,8 @@ def build_observational_factors(
         rh=rh,
         rh_850=rh_850,
         precip_recent=precip_recent,
+        t_850=t_850,
+        t_925=t_925,
     )
     inversion_value = "—"
     if t_850 is not None and t_925 is not None:

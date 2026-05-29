@@ -129,6 +129,8 @@ def build_feature_row(
         rh=rh,
         rh_850=rh_850_f if rh_850 is not None else None,
         precip_recent=precip48,
+        t_850=raw.get("t_850"),
+        t_925=raw.get("t_925"),
     )
     effective_low, _ = _infer_effective_low_cloud(
         cloud_low=cloud_low,
