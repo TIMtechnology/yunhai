@@ -1,16 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
-import type { CalendarEntry, CommunityLocation, ContributorStats, LabelSession, LabelStatus } from '../services/contributeLabel'
+import type {
+  CalendarEntry,
+  CommunityLocation,
+  ContributorStats,
+  LabelSession,
+  LabelStatus,
+  SunriseQuality,
+} from '../services/contributeLabel'
 import {
   fetchContributeCalendar,
   fetchContributeLabelSession,
   fetchLocationByCuratedSpot,
   fetchMyLocations,
   saveContributeLabel,
+  sunriseQualityText,
+  updateCommunityLocation,
 } from '../services/contributeLabel'
 import { contributorIdShort } from '../services/contributor'
-import type { LabelStatus as AdminLabelStatus } from '../services/cloudseaLabel'
+import type { LabelStatus as AdminLabelStatus, SunriseQuality as AdminSunriseQuality } from '../services/cloudseaLabel'
 import {
   fetchAccuracy,
   fetchCalendar,
@@ -48,8 +57,14 @@ const calendar = ref<Record<string, CalendarEntry>>({})
 const stats = ref<ContributorStats | null>(null)
 const accuracy = ref<{ total: number; correct: number; accuracy: number | null; details: Array<Record<string, unknown>> } | null>(null)
 const selectedStatus = ref<LabelStatus | null>(null)
+const selectedSunriseQuality = ref<SunriseQuality | null>(null)
 const linkedCommunityId = ref('')
 const pageReady = ref(false)
+const editLocName = ref('')
+const editLocLat = ref<number | null>(null)
+const editLocLng = ref<number | null>(null)
+const editLocElev = ref<number | null>(null)
+const savingLocation = ref(false)
 let loadSessionSeq = 0
 
 interface LabelKeys {
@@ -59,6 +74,12 @@ interface LabelKeys {
 }
 
 const month = computed(() => currentDate.value.slice(0, 7))
+const canEditLocation = computed(
+  () =>
+    locationMode.value === 'community' &&
+    !!locationId.value &&
+    myLocations.value.some((l) => l.id === locationId.value),
+)
 const communityOptions = computed(() =>
   myLocations.value.map((l) => ({ label: `${l.name} (${l.id})`, value: l.id })),
 )
@@ -194,8 +215,50 @@ async function loadMyLocations() {
       // URL 带入的点位可能属于其他贡献者，仍可标注
       myLocations.value = [{ id: locationId.value, name: poiName.value || locationId.value, lat: poiLat.value || 0, lng: poiLng.value || 0 }, ...locs]
     }
+    syncLocationEditFields()
   } catch {
     myLocations.value = []
+  }
+}
+
+function syncLocationEditFields() {
+  if (!locationId.value) return
+  const loc =
+    myLocations.value.find((l) => l.id === locationId.value) ||
+    (session.value?.location_id === locationId.value
+      ? {
+          id: locationId.value,
+          name: session.value.location_name || locationId.value,
+          lat: session.value.lat ?? 0,
+          lng: session.value.lng ?? 0,
+          elevation: session.value.elevation,
+        }
+      : null)
+  if (!loc) return
+  editLocName.value = loc.name
+  editLocLat.value = loc.lat
+  editLocLng.value = loc.lng
+  editLocElev.value = loc.elevation ?? null
+}
+
+async function saveLocationEdit() {
+  if (!locationId.value || editLocLat.value == null || editLocLng.value == null) return
+  savingLocation.value = true
+  try {
+    const updated = await updateCommunityLocation(locationId.value, {
+      name: editLocName.value.trim(),
+      lat: editLocLat.value,
+      lng: editLocLng.value,
+      elevation: editLocElev.value,
+    })
+    myLocations.value = myLocations.value.map((l) => (l.id === updated.id ? updated : l))
+    poiName.value = updated.name
+    message.success('社区点位已更新（已落库精选的将同步坐标）')
+    await loadSession()
+  } catch (err) {
+    message.error(String(err))
+  } finally {
+    savingLocation.value = false
   }
 }
 
@@ -270,10 +333,19 @@ async function loadSession() {
         hours: adminSession.hours,
       }
       selectedStatus.value = (adminSession.label?.status as LabelStatus) || null
+      selectedSunriseQuality.value = (adminSession.label?.sunrise_quality as SunriseQuality) || null
       notes.value = adminSession.label?.notes || ''
       const cal = await fetchCalendar(token.value, keys.spotId, keys.viewpointId, month.value)
       calendar.value = Object.fromEntries(
-        cal.labels.map((x) => [x.date, { date: x.date, status: x.status, review_status: 'approved' as const }]),
+        cal.labels.map((x) => [
+          x.date,
+          {
+            date: x.date,
+            status: x.status,
+            review_status: 'approved' as const,
+            sunrise_quality: (x as { sunrise_quality?: SunriseQuality }).sunrise_quality,
+          },
+        ]),
       )
       if (keys.spotId !== 'community') {
         accuracy.value = await fetchAccuracy(token.value, keys.spotId, keys.viewpointId)
@@ -291,9 +363,11 @@ async function loadSession() {
       })
       session.value = data
       selectedStatus.value = (data.label?.status as LabelStatus) || null
+      selectedSunriseQuality.value = (data.label?.sunrise_quality as SunriseQuality) || null
       notes.value = data.label?.notes || ''
       stats.value = data.stats || null
       if (data.location_id) locationId.value = data.location_id
+      syncLocationEditFields()
       const entries = await fetchContributeCalendar({
         month: month.value,
         locationId: keys.locationId,
@@ -306,6 +380,7 @@ async function loadSession() {
     const data = await fetchContributeLabelSession(params)
     session.value = data
     selectedStatus.value = (data.label?.status as LabelStatus) || null
+    selectedSunriseQuality.value = (data.label?.sunrise_quality as SunriseQuality) || null
     notes.value = data.label?.notes || ''
     stats.value = data.stats || null
     if (data.location_id) locationId.value = data.location_id
@@ -324,10 +399,14 @@ async function loadSession() {
   }
 }
 
-async function applyLabel(status: LabelStatus) {
+async function applyLabel(status: LabelStatus, sunriseQuality?: SunriseQuality | null) {
   selectedStatus.value = status
+  if (sunriseQuality !== undefined) {
+    selectedSunriseQuality.value = sunriseQuality
+  }
   try {
     const keys = await resolveLabelKeys()
+    const sunrisePayload = selectedSunriseQuality.value ?? undefined
     if (adminMode.value && token.value) {
       await saveLabel(token.value, {
         spot_id: keys.spotId,
@@ -335,6 +414,7 @@ async function applyLabel(status: LabelStatus) {
         date: currentDate.value,
         status: status as AdminLabelStatus,
         notes: notes.value,
+        sunrise_quality: sunrisePayload as AdminSunriseQuality | undefined,
       })
       message.success(`已保存 ${currentDate.value}`)
     } else {
@@ -342,6 +422,7 @@ async function applyLabel(status: LabelStatus) {
         date: currentDate.value,
         status,
         notes: notes.value,
+        sunrise_quality: sunrisePayload ?? null,
       }
       if (keys.locationId) {
         body.location_id = keys.locationId
@@ -362,6 +443,15 @@ async function applyLabel(status: LabelStatus) {
   } catch (err) {
     message.error(String(err))
   }
+}
+
+async function applySunriseQuality(quality: SunriseQuality) {
+  const status = selectedStatus.value || (session.value?.label?.status as LabelStatus | undefined)
+  if (!status) {
+    message.warning('请先选择云海标注（无/部分/完整），再标注日出质量')
+    return
+  }
+  await applyLabel(status, quality)
 }
 
 function saveToken() {
@@ -430,6 +520,9 @@ watch([locationMode, spotId, viewpointId, locationId, currentDate, poiLat, poiLn
   if (!pageReady.value) return
   loadSession()
 })
+watch(locationId, () => {
+  if (pageReady.value) syncLocationEditFields()
+})
 
 onMounted(async () => {
   parseUrlParams()
@@ -459,7 +552,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
       <div class="rounded-xl border border-sky-800/60 bg-sky-950/40 p-4">
         <div class="text-lg font-semibold text-sky-100">云海标注 · 开放贡献</div>
         <div class="mt-1 text-sm text-slate-400">
-          标注日出窗口（03:00–07:00）实际云海情况，审核通过后将纳入模型训练。匿名 ID：…{{ contributorIdShort() }}
+          标注日出窗口（03:00–07:00）：云海三档 + 日出质量（可见/遮挡/不可拍）。云海标注纳入 ML；日出质量先入库，待样本足够后单独训练。匿名 ID：…{{ contributorIdShort() }}
         </div>
         <div v-if="stats && !adminMode" class="mt-2 text-xs text-slate-400">
           今日已标注 {{ stats.labels_today }}/{{ stats.daily_cap }} · 累计通过 {{ stats.labels_approved }} · 待审 {{ stats.labels_pending }}
@@ -535,6 +628,36 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
           <n-button tag="a" href="/" quaternary size="small">去主页选新 POI</n-button>
         </template>
 
+        <div
+          v-if="canEditLocation"
+          class="w-full rounded-lg border border-slate-700/80 bg-slate-950/50 p-3 space-y-2"
+        >
+          <div class="text-xs font-medium text-slate-400">
+            编辑我的社区点位 · {{ locationId }}（保存后持久化；已落库精选将同步名称/坐标/海拔）
+          </div>
+          <div class="flex flex-wrap items-end gap-2">
+            <div>
+              <div class="mb-1 text-[10px] text-slate-500">名称</div>
+              <n-input v-model:value="editLocName" style="width: 160px" />
+            </div>
+            <div>
+              <div class="mb-1 text-[10px] text-slate-500">纬度</div>
+              <n-input-number v-model:value="editLocLat" :step="0.0001" style="width: 130px" />
+            </div>
+            <div>
+              <div class="mb-1 text-[10px] text-slate-500">经度</div>
+              <n-input-number v-model:value="editLocLng" :step="0.0001" style="width: 130px" />
+            </div>
+            <div>
+              <div class="mb-1 text-[10px] text-slate-500">海拔 m</div>
+              <n-input-number v-model:value="editLocElev" :step="1" clearable style="width: 110px" />
+            </div>
+            <n-button type="primary" size="small" :loading="savingLocation" @click="saveLocationEdit">
+              保存点位
+            </n-button>
+          </div>
+        </div>
+
         <div class="flex items-center gap-2">
           <n-button @click="shiftDate(-1)">◀</n-button>
           <n-date-picker v-model:formatted-value="currentDate" value-format="yyyy-MM-dd" type="date" />
@@ -565,10 +688,41 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                   <div v-if="dataSourceLabel" class="mt-1 text-xs text-slate-500">数据源：{{ dataSourceLabel }}</div>
                   <div v-if="session.label?.review_status === 'pending'" class="mt-1 text-xs text-sky-400">当前标注待审核</div>
                 </div>
-                <div class="flex gap-2">
-                  <n-button :type="selectedStatus === 'none' ? 'error' : 'default'" @click="applyLabel('none')">无云海 (1)</n-button>
-                  <n-button :type="selectedStatus === 'partial' ? 'warning' : 'default'" @click="applyLabel('partial')">部分 (2)</n-button>
-                  <n-button :type="selectedStatus === 'full' ? 'success' : 'default'" @click="applyLabel('full')">完整 (3)</n-button>
+                <div class="flex flex-col gap-2 sm:items-end">
+                  <div class="flex gap-2">
+                    <n-button :type="selectedStatus === 'none' ? 'error' : 'default'" @click="applyLabel('none')">无云海 (1)</n-button>
+                    <n-button :type="selectedStatus === 'partial' ? 'warning' : 'default'" @click="applyLabel('partial')">部分 (2)</n-button>
+                    <n-button :type="selectedStatus === 'full' ? 'success' : 'default'" @click="applyLabel('full')">完整 (3)</n-button>
+                  </div>
+                  <div class="w-full sm:w-auto space-y-1">
+                    <div class="text-[10px] text-slate-500">日出质量（需先选云海；暂不入云海 ML）</div>
+                    <div class="flex flex-wrap gap-1">
+                      <n-button
+                        size="small"
+                        :type="selectedSunriseQuality === 'visible' ? 'success' : 'default'"
+                        @click="applySunriseQuality('visible')"
+                      >
+                        可见
+                      </n-button>
+                      <n-button
+                        size="small"
+                        :type="selectedSunriseQuality === 'blocked' ? 'warning' : 'default'"
+                        @click="applySunriseQuality('blocked')"
+                      >
+                        遮挡
+                      </n-button>
+                      <n-button
+                        size="small"
+                        :type="selectedSunriseQuality === 'unshootable' ? 'error' : 'default'"
+                        @click="applySunriseQuality('unshootable')"
+                      >
+                        不可拍
+                      </n-button>
+                    </div>
+                    <div v-if="selectedSunriseQuality" class="text-[10px] text-orange-300">
+                      日出：{{ sunriseQualityText(selectedSunriseQuality) }}
+                    </div>
+                  </div>
                 </div>
               </div>
               <n-input v-model:value="notes" type="textarea" placeholder="备注（可选）" :rows="2" class="mb-4" />
@@ -619,11 +773,16 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               <button
                 v-for="d in buildMonthDays()"
                 :key="d"
-                class="rounded border px-1 py-2"
+                class="rounded border px-1 py-2 relative"
                 :class="dayClass(d)"
                 @click="currentDate = d"
               >
                 {{ d.slice(8) }}
+                <span
+                  v-if="calendar[d]?.sunrise_quality"
+                  class="absolute right-0.5 top-0.5 text-[9px] leading-none"
+                  title="已标注日出质量"
+                >🌅</span>
               </button>
             </div>
             <div class="mt-4 space-y-1 text-xs text-slate-400">
@@ -631,6 +790,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               <div><span class="inline-block h-2 w-2 rounded bg-amber-500"></span> 部分云海</div>
               <div><span class="inline-block h-2 w-2 rounded bg-slate-500"></span> 无云海</div>
               <div><span class="inline-block h-2 w-2 rounded ring-1 ring-sky-500/50 bg-emerald-600/30"></span> 待审核</div>
+              <div class="pt-1 text-[10px] text-slate-500">🌅 = 已标日出质量</div>
             </div>
             <div class="mt-4 text-[11px] leading-relaxed text-slate-500">
               为限制恶意刷标注，浏览器会保存匿名 ID。清除站点数据后将生成新 ID。审核通过的标注将纳入定期模型训练。

@@ -8,6 +8,7 @@ function headers(token: string): HeadersInit {
 }
 
 export type LabelStatus = 'none' | 'partial' | 'full'
+export type SunriseQuality = 'visible' | 'blocked' | 'unshootable'
 
 export interface CloudseaLabel {
   id?: number
@@ -15,6 +16,7 @@ export interface CloudseaLabel {
   viewpoint_id: string
   date: string
   status: LabelStatus
+  sunrise_quality?: SunriseQuality | null
   notes?: string
   confidence?: string
 }
@@ -81,7 +83,7 @@ export async function fetchCalendar(token: string, spotId: string, viewpointId: 
     headers: headers(token),
   })
   if (!resp.ok) throw new Error(await resp.text())
-  return resp.json() as Promise<{ labels: Array<{ date: string; status: string }> }>
+  return resp.json() as Promise<{ labels: Array<{ date: string; status: string; sunrise_quality?: SunriseQuality | null }> }>
 }
 
 export async function fetchAccuracy(token: string, spotId: string, viewpointId: string) {
@@ -173,4 +175,10 @@ const STATUS_LABEL: Record<LabelStatus, string> = {
 
 export function labelStatusText(status: string) {
   return STATUS_LABEL[status as LabelStatus] || status
+}
+
+export const SUNRISE_QUALITY_LABEL: Record<SunriseQuality, string> = {
+  visible: '日出可见',
+  blocked: '日出遮挡',
+  unshootable: '不可拍',
 }

@@ -113,6 +113,7 @@ def upsert_label(
     location_name: Optional[str] = None,
     contributor_id: Optional[str] = None,
     review_status: str = "approved",
+    sunrise_quality: Optional[str] = None,
 ) -> dict[str, Any]:
     now = _now_iso()
     with _connect() as conn:
@@ -133,8 +134,8 @@ def upsert_label(
             (spot_id, viewpoint_id, date, window_start, window_end, status,
              confidence, notes, labeled_by, created_at, updated_at,
              location_id, lat, lng, location_name, contributor_id,
-             review_status, reviewed_at, reviewed_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             review_status, reviewed_at, reviewed_by, sunrise_quality)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(spot_id, viewpoint_id, date, window_start, window_end)
             DO UPDATE SET
                 status=excluded.status,
@@ -148,6 +149,7 @@ def upsert_label(
                 location_name=COALESCE(excluded.location_name, cloudsea_labels.location_name),
                 contributor_id=COALESCE(excluded.contributor_id, cloudsea_labels.contributor_id),
                 review_status=excluded.review_status,
+                sunrise_quality=excluded.sunrise_quality,
                 reviewed_at=CASE
                     WHEN excluded.review_status='approved' THEN excluded.reviewed_at
                     ELSE cloudsea_labels.reviewed_at
@@ -177,6 +179,7 @@ def upsert_label(
                 review_status,
                 now if review_status == "approved" else None,
                 labeled_by if review_status == "approved" else None,
+                sunrise_quality,
             ),
         )
         if contributor_id and not existing:
@@ -294,7 +297,14 @@ def list_labels(
 
 def calendar_summary(spot_id: str, viewpoint_id: str, month: str) -> list[dict[str, Any]]:
     labels = list_labels(spot_id=spot_id, viewpoint_id=viewpoint_id, month=month)
-    return [{"date": r["date"], "status": r["status"]} for r in labels]
+    return [
+        {
+            "date": r["date"],
+            "status": r["status"],
+            "sunrise_quality": r.get("sunrise_quality"),
+        }
+        for r in labels
+    ]
 
 
 def save_meteo_hourly(

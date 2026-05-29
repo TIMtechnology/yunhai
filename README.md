@@ -93,9 +93,9 @@
 |------|------|------|
 | **社区点位** | POI 或地图选点自动注册为 `cs_` 社区点，500 m 去重；可收藏深链 `/?loc=cs_xxx` | ✅ **已完成** |
 | **点位精确位置修改** | 预测页地图拖拽 / 点击放置标记，微调 WGS84 坐标后再预测 | ✅ **已完成**（会话内微调） |
-| | 社区点坐标持久化修改、贡献者编辑点位名称/海拔 | ⏳ **规划中** |
+| | 社区点坐标持久化修改、贡献者编辑点位名称/海拔 | ✅ **已完成**（标注页 PATCH + 精选 JSON 同步） |
 | **日出 · 云海标注** | 日出窗口 03:00–07:00 三档云海标注（无 / 部分 / 完整） | ✅ **已完成**（云海） |
-| | 日出质量独立标注（如可见 / 遮挡 / 不可拍） | ⏳ **规划中** |
+| | 日出质量独立标注（可见 / 遮挡 / 不可拍） | ✅ **已完成**（入库；**暂不入**云海 ML，待日出模型） |
 | **开放贡献与审核** | 匿名 Contributor ID、30 条/日限额、pending → approved 审核 | ✅ **已完成** |
 | | 标注页 Admin 可视化审核队列 UI | 🔶 **部分**（API 已有，`label.html?admin=1` 待增强） |
 | **社区点位专属模型** | 单点 accumulated ≥10 天 approved 后可训练/绑定专属 ML | 🔶 **部分**（融合权重已分 spot；独立 pkl 未实现） |
@@ -114,9 +114,9 @@
 | 开放标注 | [yunhai.timkj.com/label.html](https://yunhai.timkj.com/label.html) |
 | 使用指南 | [docs/index.html](https://yunhai.timkj.com/docs/index.html) |
 
-**贡献流程**：主页选 POI → 「标注此点位」→ 选择日期 → 1/2/3 标注云海 → 待审核 → 通过后纳入训练。
+**贡献流程**：主页选 POI → 「标注此点位」→ 选择日期 → 1/2/3 标注云海 → 可选标注日出质量 → 社区点可持久化编辑坐标。
 
-**Admin 流程**（需 Token）：审核队列 → approve/reject → 达标社区点 `curate` 落库 → `train` 重训模型。
+**Admin 流程**（需 Token）：审核队列 → approve/reject → 达标社区点 `curate` 落库 → `train` 重训云海 ML（不含日出质量字段）。
 
 详细设计见 [`internal/open-annotation-plan.md`](internal/open-annotation-plan.md) · 标注操作见 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
 
@@ -124,14 +124,14 @@
 
 | 阶段 | 目标 |
 |------|------|
-| **近期** | 标注页 Admin 审核 UI；社区点坐标持久化编辑；模型版本与贡献数公开展示 |
-| **中期** | **单点专属 ML**（每社区点/精选点独立 pkl + 自动切换）；**日出标注**字段与训练 |
-| **远期** | **全国 POI 通用 ML**（跨纬度/地形泛化）；定时重训 CI；贡献排行榜与点位质量评分 |
+| **近期** | 模型版本与贡献数公开展示；日出 ML 训练脚本（基于 `sunrise_quality`） |
+| **中期** | **单点专属 ML**（每社区点/精选点独立 pkl + 自动切换） |
+| **远期** | **全国 POI 通用 ML**（跨纬度/地形泛化）；定时重训 CI；贡献排行榜 |
 
 **确认结论（截至当前版本）**：
 
 - 共建计划的 **P1 核心**（社区点、POI 标注、开放贡献、审核 API、深链、精选落库 API）**已实现并部署**。
-- **P2/P3 深化**（单点独立模型、全国 POI 模型、日出标注、自动重训、完整 Admin UI）**尚未全部完成**，已在路线图中排期。
+- **P2/P3 深化**（单点独立模型、全国 POI 模型、**日出 ML 训练**、自动重训）**部分进行中**。
 
 欢迎通过 Issue / PR 参与：补充观景点 JSON、提交标注样本、改进单点/全国模型训练脚本。
 
@@ -222,6 +222,7 @@ docker compose -f docker-compose.prod.yml up -d
 | `GET` | `/api/predict/{spot_id}/viewpoint/{viewpoint_id}` | 预置观景点预测 |
 | `POST` | `/api/predict` | 自定义坐标预测 |
 | `GET` | `/api/contribute/cloudsea/*` | 开放标注（Header: `X-Contributor-Id`） |
+| `PATCH` | `/api/contribute/locations/{id}` | 编辑我的社区点位名称/坐标/海拔 |
 | `GET` | `/api/satellite/cloud` | Himawari 红外裁切 |
 | `GET` | `/api/internal/cloudsea/review-queue` | 待审标注（Admin Token） |
 | `POST` | `/api/internal/cloudsea/train` | 手动重训 ML（Admin Token） |

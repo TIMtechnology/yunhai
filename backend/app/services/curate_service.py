@@ -25,6 +25,48 @@ def _curated_spots_dir() -> Path:
     return curated_spots_dir()
 
 
+def sync_curated_spot_from_location(location_id: str) -> None:
+    """已落库精选的社区点：名称/坐标/海拔变更后同步 JSON。"""
+    loc = get_community_location(location_id)
+    if not loc or not loc.get("curated_spot_id"):
+        return
+    spot_id = loc["curated_spot_id"]
+    directory = _curated_spots_dir()
+    target = directory / f"{spot_id}.json"
+    if not target.exists():
+        return
+    viewpoint = Viewpoint(
+        id="main",
+        name=loc["name"],
+        lat=loc["lat"],
+        lng=loc["lng"],
+        elevation=float(loc.get("elevation") or 0),
+        tags=["sunrise", "cloudsea", "community"],
+        note=f"社区贡献点位 · {location_id}",
+    )
+    spot = ScenicSpot(
+        id=spot_id,
+        name=loc["name"],
+        aliases=[loc["name"]],
+        region="社区精选",
+        peak_elevation=float(loc.get("elevation") or 0),
+        community_location_id=location_id,
+        seasonality={
+            "cloudsea_months": list(range(1, 13)),
+            "sunrise_months": list(range(1, 13)),
+            "sunrise_best": "all_year",
+        },
+        rules={"min_wind": 0.5, "max_wind": 12, "rh_threshold": 70},
+        cloud_region={"span_lng": 1.5, "span_lat": 1.0},
+        viewpoints=[viewpoint],
+    )
+    target.write_text(
+        json.dumps(spot.model_dump(exclude_none=True), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    reload_spots()
+
+
 def curate_community_location(location_id: str) -> dict[str, Any]:
     loc = get_community_location(location_id)
     if not loc:

@@ -3,6 +3,7 @@ import { contributorHeaders } from './contributor'
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 export type LabelStatus = 'none' | 'partial' | 'full'
+export type SunriseQuality = 'visible' | 'blocked' | 'unshootable'
 export type ReviewStatus = 'pending' | 'approved' | 'rejected'
 
 export interface CloudseaLabel {
@@ -12,6 +13,7 @@ export interface CloudseaLabel {
   location_id?: string
   date: string
   status: LabelStatus
+  sunrise_quality?: SunriseQuality | null
   notes?: string
   review_status?: ReviewStatus
 }
@@ -70,6 +72,7 @@ export interface CalendarEntry {
   date: string
   status: string
   review_status?: ReviewStatus
+  sunrise_quality?: SunriseQuality | null
 }
 
 async function parseError(resp: Response): Promise<string> {
@@ -112,6 +115,20 @@ export async function fetchLocationByCuratedSpot(spotId: string): Promise<Commun
   return resp.json()
 }
 
+export async function updateCommunityLocation(
+  locationId: string,
+  body: { name?: string; lat?: number; lng?: number; elevation?: number | null },
+): Promise<CommunityLocation> {
+  const resp = await fetch(`${API_BASE}/api/contribute/locations/${locationId}`, {
+    method: 'PATCH',
+    headers: contributorHeaders(),
+    body: JSON.stringify(body),
+  })
+  if (!resp.ok) throw new Error(await parseError(resp))
+  const data = await resp.json()
+  return data.location as CommunityLocation
+}
+
 export async function fetchContributeLabelSession(params: {
   spotId?: string
   viewpointId?: string
@@ -150,6 +167,7 @@ export async function saveContributeLabel(body: {
   elevation?: number
   date: string
   status: LabelStatus
+  sunrise_quality?: SunriseQuality | null
   notes?: string
 }) {
   const resp = await fetch(`${API_BASE}/api/contribute/cloudsea/labels`, {
@@ -220,4 +238,15 @@ export function buildPredictPageUrl(params: {
   if (params.vp) q.set('vp', params.vp)
   const qs = q.toString()
   return qs ? `/?${qs}` : '/'
+}
+
+export const SUNRISE_QUALITY_LABEL: Record<SunriseQuality, string> = {
+  visible: '日出可见',
+  blocked: '日出遮挡',
+  unshootable: '不可拍',
+}
+
+export function sunriseQualityText(q?: string | null) {
+  if (!q) return '—'
+  return SUNRISE_QUALITY_LABEL[q as SunriseQuality] || q
 }
