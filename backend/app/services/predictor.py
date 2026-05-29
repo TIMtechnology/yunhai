@@ -14,7 +14,7 @@ from app.engine.cloudsea_ml import (
     ml_enabled,
     predict_day_cloudsea,
 )
-from app.engine.cloudsea_scorer import score_cloudsea
+from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, cloudsea_plausibility_cap, score_cloudsea
 from app.engine.satellite_analyzer import analyze_ir_image
 from app.engine.scenario import build_scenario, weather_text
 from app.engine.sunrise_scorer import score_sunrise_window
@@ -313,6 +313,27 @@ def build_predictions_from_hourly(
             precip_recent=recent,
             elevation=elevation,
         )
+        archetype, _ = _classify_cloudsea_archetype(
+            cloud_low=low,
+            cloud_mid=mid,
+            visibility=vis,
+            rh=rh,
+            rh_850=rh_850,
+            precip_recent=recent,
+            t_850=t_850,
+            t_925=t_925,
+        )
+        plausibility_cap = cloudsea_plausibility_cap(
+            cloud_low=low,
+            cloud_mid=mid,
+            rh=rh,
+            rh_850=rh_850,
+            rh_700=rh_700,
+            t_850=t_850,
+            t_925=t_925,
+            visibility=vis,
+            archetype=archetype,
+        )
 
         use_ml = ml_enabled() and 3 <= local_hour < 7
         if use_ml:
@@ -324,7 +345,13 @@ def build_predictions_from_hourly(
                 )
             ml_score = ml_day_cache.get(day_key)
             if ml_score is not None:
-                cloudsea = merge_ml_cloudsea_score(cloudsea, ml_score, observational=obs)
+                cloudsea = merge_ml_cloudsea_score(
+                    cloudsea,
+                    ml_score,
+                    observational=obs,
+                    spot_id=req.spot_id,
+                    plausibility_cap=plausibility_cap,
+                )
 
         if not (use_ml and ml_day_cache.get(day_key) is not None):
             cloudsea = PredictionScore(
