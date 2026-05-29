@@ -1,0 +1,4 @@
+{
+  "api_base": "https://yunhai.timkj.com",
+  "admin_token": "请填入与服务器 ANALYTICS_ADMIN_TOKEN 相同的值"
+}

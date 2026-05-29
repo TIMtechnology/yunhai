@@ -28,6 +28,8 @@ RUN pip install --no-cache-dir -r requirements.txt -i "${PIP_INDEX}"
 
 COPY backend/app ./app
 COPY data/scenic-spots ./data/scenic-spots
+# 模型放在卷挂载目录外，避免 cloudsea_data 覆盖 /app/data/cloudsea
+COPY data/cloudsea/models/cloudsea_ml_v2.pkl ./models/cloudsea_ml_v2.pkl
 COPY --from=frontend-build /app/dist ./static
 
 ENV SCENIC_SPOTS_DIR=/app/data/scenic-spots

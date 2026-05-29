@@ -23,12 +23,21 @@ HOURLY_VARS = [
     "cloud_cover_high",
     "wind_speed_10m",
     "visibility",
+    # 850 / 925 / 700 hPa — Phase A 垂直场（Open-Meteo pressure-level hourly）
+    "temperature_850hPa",
+    "relative_humidity_850hPa",
+    "temperature_925hPa",
+    "relative_humidity_925hPa",
+    "temperature_700hPa",
+    "relative_humidity_700hPa",
+    "temperature_500hPa",
+    "relative_humidity_500hPa",
 ]
 
 
 async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
     today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
-    cache_key = f"forecast:v4:{lat:.4f}:{lng:.4f}:{days}:{today}"
+    cache_key = f"forecast:v5:{lat:.4f}:{lng:.4f}:{days}:{today}"
     cached = cache_get(cache_key)
     if cached:
         return cached

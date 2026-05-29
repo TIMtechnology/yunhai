@@ -17,9 +17,14 @@ const props = withDefaults(
 const chartRef = ref<HTMLElement | null>(null)
 let chart: echarts.ECharts | null = null
 
-const factors = computed(() =>
-  props.mode === 'cloudsea' ? props.cloudseaFactors : props.sunriseFactors,
-)
+const factors = computed(() => {
+  const source = props.mode === 'cloudsea' ? props.cloudseaFactors : props.sunriseFactors
+  return Object.fromEntries(
+    Object.entries(source).filter(
+      ([key, f]) => f.weight > 0 && !key.startsWith('ml_') && key !== 'fuzzy_reference',
+    ),
+  )
+})
 
 function render() {
   if (!chartRef.value) return

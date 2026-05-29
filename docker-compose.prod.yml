@@ -20,9 +20,15 @@ services:
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
       - STATIC_DIR=/app/static
       - TZ=Asia/Shanghai
+      - CLOUDSEA_ENABLED=true
+      - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:-}
+      - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
+    volumes:
+      - cloudsea_data:/app/data/cloudsea
     depends_on:
       - redis
     restart: unless-stopped
 
 volumes:
   redis_data:
+  cloudsea_data:

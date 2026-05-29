@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>云海 · 内部统计分析</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px;
+      background: #0f172a; color: #e2e8f0;
+      font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    .sub { color: #94a3b8; font-size: 13px; margin-bottom: 16px; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+      padding: 12px 16px; margin-bottom: 16px;
+    }
+    .toolbar label { font-size: 13px; color: #94a3b8; }
+    .toolbar input, .toolbar select, .toolbar button {
+      background: #0f172a; border: 1px solid #475569; color: #e2e8f0;
+      border-radius: 8px; padding: 6px 10px; font-size: 13px;
+    }
+    .toolbar button { cursor: pointer; background: #0369a1; border-color: #0284c7; }
+    .toolbar button.secondary { background: #334155; border-color: #475569; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px 16px;
+    }
+    .card .label { font-size: 12px; color: #94a3b8; }
+    .card .value { font-size: 26px; font-weight: 700; margin-top: 4px; color: #38bdf8; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px;
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 15px; color: #cbd5e1; }
+    .chart { width: 100%; height: 280px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid #334155; padding: 8px 6px; text-align: left; }
+    th { color: #94a3b8; font-weight: 600; }
+    .err { color: #f87171; margin: 8px 0; font-size: 13px; }
+    .ok { color: #34d399; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>云海 · 内部统计分析</h1>
+  <div class="sub">本地看板 · 数据来自线上 API（需 Token）</div>
+
+  <div class="toolbar">
+    <label>API</label>
+    <input id="apiBase" style="width:240px" value="https://yunhai.timkj.com" />
+    <label>Token</label>
+    <input id="adminToken" type="password" style="width:220px" placeholder="ANALYTICS_ADMIN_TOKEN" />
+    <label>范围</label>
+    <select id="rangePreset">
+      <option value="1">今天</option>
+      <option value="7" selected>近 7 天</option>
+      <option value="30">近 30 天</option>
+      <option value="custom">自定义</option>
+    </select>
+    <input id="fromTs" type="datetime-local" style="display:none" />
+    <input id="toTs" type="datetime-local" style="display:none" />
+    <button id="refreshBtn">刷新</button>
+    <button id="exportBtn" class="secondary">导出 CSV</button>
+  </div>
+  <div id="status" class="ok"></div>
+  <div id="error" class="err"></div>
+
+  <div class="cards">
+    <div class="card"><div class="label">总事件</div><div class="value" id="vTotal">-</div></div>
+    <div class="card"><div class="label">独立 IP</div><div class="value" id="vUv">-</div></div>
+    <div class="card"><div class="label">页面访问</div><div class="value" id="vPv">-</div></div>
+    <div class="card"><div class="label">API 调用</div><div class="value" id="vApi">-</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel"><h2>访问渠道</h2><div id="chartChannel" class="chart"></div></div>
+    <div class="panel"><h2>浏览器分布</h2><div id="chartBrowser" class="chart"></div></div>
+    <div class="panel"><h2>搜索词 Top</h2><div id="chartSearch" class="chart"></div></div>
+    <div class="panel"><h2>景区热度</h2><div id="chartSpot" class="chart"></div></div>
+    <div class="panel" style="grid-column:1/-1"><h2>API 调用统计</h2><div id="chartApi" class="chart" style="height:320px"></div></div>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <div class="panel"><h2>Top IP</h2><table><thead><tr><th>IP</th><th>次数</th></tr></thead><tbody id="ipTable"></tbody></table></div>
+    <div class="panel"><h2>最近事件</h2><table><thead><tr><th>时间</th><th>类型</th><th>IP</th><th>详情</th></tr></thead><tbody id="eventTable"></tbody></table></div>
+  </div>
+
+  <script>
+    const charts = {};
+    function initCharts() {
+      ['chartChannel','chartBrowser','chartSearch','chartSpot','chartApi'].forEach(id => {
+        charts[id] = echarts.init(document.getElementById(id));
+      });
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('./config.local.json');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        if (cfg.api_base) document.getElementById('apiBase').value = cfg.api_base;
+        if (cfg.admin_token) document.getElementById('adminToken').value = cfg.admin_token;
+      } catch (_) {}
+    }
+
+    function isoRange() {
+      const preset = document.getElementById('rangePreset').value;
+      const now = new Date();
+      let from, to = now.toISOString();
+      if (preset === 'custom') {
+        const f = document.getElementById('fromTs').value;
+        const t = document.getElementById('toTs').value;
+        from = f ? new Date(f).toISOString() : undefined;
+        to = t ? new Date(t).toISOString() : now.toISOString();
+      } else {
+        const days = Number(preset);
+        from = new Date(now.getTime() - days * 86400000).toISOString();
+      }
+      const q = new URLSearchParams();
+      if (from) q.set('from', from);
+      if (to) q.set('to', to);
+      return q.toString();
+    }
+
+    async function apiGet(path, extraParams = {}) {
+      const base = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const token = document.getElementById('adminToken').value.trim();
+      const [pathOnly, pathQuery] = path.split('?');
+      const q = new URLSearchParams(pathQuery || '');
+      new URLSearchParams(isoRange()).forEach((v, k) => q.set(k, v));
+      Object.entries(extraParams).forEach(([k, v]) => q.set(k, String(v)));
+      const qs = q.toString();
+      const url = `${base}${pathOnly}${qs ? '?' + qs : ''}`;
+      const res = await fetch(url, { headers: { 'X-Analytics-Token': token } });
+      if (!res.ok) throw new Error(`${pathOnly} ${res.status}`);
+      return res.json();
+    }
+
+    function pieChart(el, data, nameKey, valKey) {
+      charts[el].setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'item' },
+        series: [{
+          type: 'pie', radius: ['35%', '65%'],
+          data: (data || []).map(d => ({ name: d[nameKey] || 'unknown', value: d[valKey] || d.count })),
+          label: { color: '#cbd5e1' }
+        }]
+      });
+    }
+
+    function barChart(el, data, nameKey, valKey, horizontal) {
+      const names = (data || []).map(d => d[nameKey] || '').slice(0, 15);
+      const vals = (data || []).map(d => d[valKey] || d.count).slice(0, 15);
+      charts[el].setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis' },
+        grid: { left: horizontal ? 100 : 40, right: 20, top: 20, bottom: 30 },
+        xAxis: horizontal ? { type: 'value', axisLabel: { color: '#94a3b8' } } : { type: 'category', data: names, axisLabel: { color: '#94a3b8', rotate: 30 } },
+        yAxis: horizontal ? { type: 'category', data: names, axisLabel: { color: '#94a3b8' } } : { type: 'value', axisLabel: { color: '#94a3b8' } },
+        series: [{ type: 'bar', data: vals, itemStyle: { color: '#38bdf8' } }]
+      });
+    }
+
+    async function refresh() {
+      document.getElementById('error').textContent = '';
+      document.getElementById('status').textContent = '加载中…';
+      try {
+        const [summary, channels, clients, searches, spots, apiStats, events] = await Promise.all([
+          apiGet('/api/internal/analytics/summary'),
+          apiGet('/api/internal/analytics/channels'),
+          apiGet('/api/internal/analytics/clients'),
+          apiGet('/api/internal/analytics/searches'),
+          apiGet('/api/internal/analytics/spots'),
+          apiGet('/api/internal/analytics/api-stats'),
+          apiGet('/api/internal/analytics/events', { limit: 80 }),
+        ]);
+
+        document.getElementById('vTotal').textContent = summary.total_events;
+        document.getElementById('vUv').textContent = summary.unique_ips;
+        document.getElementById('vPv').textContent = summary.page_visits;
+        document.getElementById('vApi').textContent = summary.api_calls;
+
+        pieChart('chartChannel', channels, 'channel', 'count');
+        pieChart('chartBrowser', clients.browsers, 'name', 'count');
+        barChart('chartSearch', searches.top, 'keyword', 'count', true);
+        barChart('chartSpot', spots.map(s => ({ name: s.spot_name || s.spot_id, count: s.count })), 'name', 'count', true);
+        barChart('chartApi', apiStats.map(a => ({ name: a.path, count: a.calls })), 'name', 'count', false);
+
+        document.getElementById('ipTable').innerHTML = (clients.top_ips || []).slice(0, 20).map(r =>
+          `<tr><td>${r.ip}</td><td>${r.count}</td></tr>`).join('');
+
+        document.getElementById('eventTable').innerHTML = (events || []).slice(0, 40).map(e => {
+          const detail = e.payload?.keyword || e.payload?.spot_name || e.path || '';
+          return `<tr><td>${(e.ts || '').slice(0, 19)}</td><td>${e.event_type}</td><td>${e.ip || ''}</td><td>${detail}</td></tr>`;
+        }).join('');
+
+        document.getElementById('status').textContent = '已更新 ' + new Date().toLocaleString();
+      } catch (err) {
+        document.getElementById('error').textContent = '加载失败: ' + err.message;
+        document.getElementById('status').textContent = '';
+      }
+    }
+
+    async function exportCsv() {
+      const base = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const token = document.getElementById('adminToken').value.trim();
+      const qs = isoRange();
+      const url = `${base}/api/internal/analytics/export.csv?${qs}`;
+      const res = await fetch(url, { headers: { 'X-Analytics-Token': token } });
+      if (!res.ok) { alert('导出失败'); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'yunhai-analytics.csv';
+      a.click();
+    }
+
+    document.getElementById('rangePreset').addEventListener('change', e => {
+      const custom = e.target.value === 'custom';
+      document.getElementById('fromTs').style.display = custom ? '' : 'none';
+      document.getElementById('toTs').style.display = custom ? '' : 'none';
+    });
+    document.getElementById('refreshBtn').addEventListener('click', refresh);
+    document.getElementById('exportBtn').addEventListener('click', exportCsv);
+
+    initCharts();
+    loadConfig().then(refresh);
+    window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize()));
+  </script>
+</body>
+</html>

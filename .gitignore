@@ -13,3 +13,6 @@ frontend/.env.*
 .DS_Store
 *.tar
 yunhai-amd64.tar
+internal/config.local.json
+internal/PAPER-ABSTRACT.md
+internal/research-paper.html

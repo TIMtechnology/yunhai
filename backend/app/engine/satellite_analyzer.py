@@ -59,15 +59,15 @@ def build_satellite_factor(
     delta = sat_frac - meteo_cloud_total
     structured = bool(satellite_ctx.get("structured"))
 
-    # 卫星看到比单点预报更多云 → 上调；明显更少 → 略降
-    base = delta / 100.0 * 0.4
+    # 近实况轻量校正：卫星云量高于/低于单点预报时微调，幅度刻意压低
+    base = delta / 100.0 * 0.22
     if structured and sat_frac >= 35:
-        base += 0.08
+        base += 0.03
     if sat_frac >= 55:
-        base += 0.05
+        base += 0.02
 
-    adjustment = max(-0.12, min(0.25, base))
-    score = max(0.0, min(1.0, 0.55 + adjustment * 2))
+    adjustment = max(-0.05, min(0.08, base))
+    score = max(0.0, min(1.0, 0.55 + adjustment * 1.5))
 
     lookback = int(satellite_ctx.get("lookback_hours") or 0)
     utc = satellite_ctx.get("datetime_utc") or ""
@@ -75,9 +75,9 @@ def build_satellite_factor(
 
     factor = FactorDetail(
         score=round(score, 3),
-        weight=0.12,
+        weight=0.06,
         label="卫星区域云量",
-        description="Himawari 红外裁切与 Open-Meteo 单点云量交叉验证",
+        description="当天已发生时段：Himawari 近实况与单点预报的轻量交叉验证",
         value=f"卫星≈{sat_frac:.0f}% · 预报≈{meteo_cloud_total:.0f}% · {time_note}",
     )
     return adjustment, factor

@@ -4,6 +4,7 @@
   "aliases": ["庐山风景区", "九江庐山"],
   "region": "江西省九江市",
   "peak_elevation": 1474,
+  "coord_sys": "WGS84",
   "seasonality": {
     "cloudsea_months": [3, 4, 5, 9, 10, 11],
     "sunrise_months": [4, 5, 6, 9, 10],
@@ -18,29 +19,29 @@
     {
       "id": "hanpo",
       "name": "含鄱口",
-      "lat": 29.5582,
-      "lng": 115.9915,
+      "lat": 29.55611,
+      "lng": 115.99194,
       "elevation": 1280,
       "tags": ["sunrise", "cloudsea"],
-      "note": "庐山最著名日出观景点"
+      "note": "庐山最著名日出观景点（WGS84）"
     },
     {
       "id": "wulao",
       "name": "五老峰",
-      "lat": 29.5485,
-      "lng": 116.0028,
+      "lat": 29.54861,
+      "lng": 116.00278,
       "elevation": 1436,
       "tags": ["cloudsea"],
-      "note": "俯瞰鄱阳湖云海"
+      "note": "俯瞰鄱阳湖云海（WGS84）"
     },
     {
       "id": "longshou",
       "name": "龙头山",
-      "lat": 29.5520,
-      "lng": 115.9850,
+      "lat": 29.552,
+      "lng": 115.985,
       "elevation": 1200,
       "tags": ["cloudsea", "sunrise"],
-      "note": "冬季云海高发"
+      "note": "冬季云海高发（WGS84）"
     }
   ]
 }

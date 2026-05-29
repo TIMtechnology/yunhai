@@ -4,6 +4,7 @@
   "aliases": ["五女山", "五女山景区", "桓仁五女山"],
   "region": "辽宁省本溪市桓仁县",
   "peak_elevation": 824,
+  "coord_sys": "WGS84",
   "seasonality": {
     "cloudsea_months": [9, 10, 11],
     "sunrise_months": [9, 10, 11],
@@ -22,17 +23,17 @@
     {
       "id": "dianjiangtai",
       "name": "点将台",
-      "lat": 41.26083,
-      "lng": 125.39825,
+      "lat": 41.31976,
+      "lng": 125.40773,
       "elevation": 804,
       "tags": ["sunrise", "cloudsea"],
-      "note": "最佳日出与云海观景点，景区官方推荐"
+      "note": "山城最南端制高点"
     },
     {
       "id": "guanyunting",
       "name": "观云亭",
-      "lat": 41.26115,
-      "lng": 125.39758,
+      "lat": 41.32008,
+      "lng": 125.40706,
       "elevation": 790,
       "tags": ["cloudsea"],
       "note": "以观云海见长"
@@ -40,8 +41,8 @@
     {
       "id": "nantianmen",
       "name": "南天门",
-      "lat": 41.26042,
-      "lng": 125.39672,
+      "lat": 41.31935,
+      "lng": 125.4062,
       "elevation": 820,
       "tags": ["cloudsea", "sunrise"],
       "note": "高海拔视角，云海层次丰富"
@@ -49,8 +50,8 @@
     {
       "id": "yunhaisongtao",
       "name": "云海松涛",
-      "lat": 41.26102,
-      "lng": 125.39910,
+      "lat": 41.31995,
+      "lng": 125.40858,
       "elevation": 785,
       "tags": ["cloudsea"],
       "note": "松涛与云海相映"

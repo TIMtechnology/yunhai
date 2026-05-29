@@ -4,9 +4,16 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from app.adapters.gibs_wms import fetch_himawari_best_effort
-from app.adapters.open_meteo import fetch_forecast, parse_daily_astronomy, slice_hourly_window
+from app.adapters.open_meteo import fetch_elevation, fetch_forecast, parse_daily_astronomy, slice_hourly_window, estimate_cloud_base
 from app.engine.utils import parse_shanghai_time
 from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
+from app.engine.cloudsea_features import hour_raw_from_forecast
+from app.engine.cloudsea_ml import (
+    build_observational_factors,
+    merge_ml_cloudsea_score,
+    ml_enabled,
+    predict_day_cloudsea,
+)
 from app.engine.cloudsea_scorer import score_cloudsea
 from app.engine.satellite_analyzer import analyze_ir_image
 from app.engine.scenario import build_scenario, weather_text
@@ -17,9 +24,11 @@ from app.models.schemas import (
     HourPrediction,
     PredictRequest,
     PredictResponse,
+    PredictionScore,
     ScenarioPrediction,
     WeatherSnapshot,
 )
+from app.services.cache import cache_get, cache_set
 from app.services.spot_loader import get_spot
 
 TZ = ZoneInfo("Asia/Shanghai")
@@ -58,6 +67,25 @@ def _is_near_sunrise(target: datetime, sunrise_at: datetime | None) -> bool:
     if sunrise_at is None:
         return 4 <= target.astimezone(TZ).hour <= 7
     return abs((target.astimezone(TZ) - sunrise_at.astimezone(TZ)).total_seconds()) <= 2700
+
+
+def _satellite_context_for_hour(
+    ctx: dict | None,
+    target: datetime,
+    now: datetime,
+) -> dict | None:
+    """Himawari 为近实况，仅用于当天已发生时段的预报校正，不参与未来日期评分。"""
+    if not ctx:
+        return None
+    target_local = target.astimezone(TZ)
+    now_local = now.astimezone(TZ)
+    if target_local.date() != now_local.date():
+        return None
+    target_hour = target_local.replace(minute=0, second=0, microsecond=0)
+    now_hour = now_local.replace(minute=0, second=0, microsecond=0)
+    if target_hour > now_hour:
+        return None
+    return ctx
 
 
 def _closest_hour_index(entries: list[tuple[int, HourPrediction]], moment: datetime) -> tuple[int, HourPrediction] | None:
@@ -140,35 +168,48 @@ async def _fetch_satellite_context(lat: float, lng: float, spot) -> dict | None:
     lng_span, lat_span = resolve_bbox_span(None, None, region)
     bbox = compute_bbox(lat, lng, lng_span, lat_span)
     now = datetime.now(TZ)
+    cache_key = (
+        f"sat_ctx:{bbox['west']:.3f}:{bbox['south']:.3f}:"
+        f"{bbox['east']:.3f}:{bbox['north']:.3f}:{now.strftime('%Y%m%d%H')}"
+    )
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached if cached else None
+
     try:
         result = await fetch_himawari_best_effort(bbox, now, lookback_hours=12)
     except Exception:
+        cache_set(cache_key, {}, ttl=300)
         return None
     if not result:
+        cache_set(cache_key, {}, ttl=300)
         return None
     analysis = analyze_ir_image(result["content"])
-    return {
+    payload = {
         **analysis,
         "datetime_utc": result["datetime_utc"],
         "lookback_hours": result.get("lookback_hours") or 0,
         "source": result.get("source", "gibs_himawari_b13"),
     }
+    cache_set(cache_key, payload)
+    return payload
 
 
-async def run_prediction(req: PredictRequest) -> PredictResponse:
-    elevation = req.elevation
-    if elevation is None:
-        elevation = await fetch_elevation(req.lat, req.lng)
-
-    spot = get_spot(req.spot_id) if req.spot_id else None
-    cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
-    sunrise_months = spot.seasonality.get("sunrise_months") if spot else None
-    satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
-
-    forecast = await fetch_forecast(req.lat, req.lng, days=5)
-    hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
-    astronomy = parse_daily_astronomy(forecast)
-    times: list[str] = hourly.get("time", [])[: req.hours]
+def build_predictions_from_hourly(
+    *,
+    req: PredictRequest,
+    elevation: float,
+    hourly: dict,
+    astronomy: dict[str, dict[str, datetime]],
+    cloudsea_months: list[int] | None,
+    sunrise_months: list[int] | None,
+    satellite_context: dict | None,
+    now: datetime,
+    hour_limit: int | None = None,
+) -> list[HourPrediction]:
+    times: list[str] = hourly.get("time", [])
+    if hour_limit is not None:
+        times = times[:hour_limit]
 
     temps = hourly.get("temperature_2m", [])
     rhs = hourly.get("relative_humidity_2m", [])
@@ -180,6 +221,37 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     cloud_high = hourly.get("cloud_cover_high", [])
     winds = hourly.get("wind_speed_10m", [])
     visibilities = hourly.get("visibility", [])
+    rh_850_series = hourly.get("relative_humidity_850hPa", [])
+    rh_700_series = hourly.get("relative_humidity_700hPa", [])
+    t_850_series = hourly.get("temperature_850hPa", [])
+    t_925_series = hourly.get("temperature_925hPa", [])
+
+    ml_day_cache: dict[str, PredictionScore | None] = {}
+
+    def _sunrise_window_rows(day_key: str) -> list[dict]:
+        rows: list[dict] = []
+        for j, ts in enumerate(times):
+            local = parse_shanghai_time(ts).astimezone(TZ)
+            if ts[:10] != day_key or local.hour < 3 or local.hour >= 7:
+                continue
+            rows.append(
+                hour_raw_from_forecast(
+                    t_str=ts,
+                    idx=j,
+                    cloud_low=cloud_low,
+                    cloud_mid=cloud_mid,
+                    cloud_high=cloud_high,
+                    visibilities=visibilities,
+                    rhs=rhs,
+                    rh_850_series=rh_850_series,
+                    rh_700_series=rh_700_series,
+                    t_850_series=t_850_series,
+                    t_925_series=t_925_series,
+                    winds=winds,
+                    precips=precips,
+                )
+            )
+        return rows
 
     results: list[HourPrediction] = []
     for idx, t_str in enumerate(times):
@@ -197,9 +269,16 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
         vis = visibilities[idx] if idx < len(visibilities) and visibilities[idx] is not None else None
         recent = _recent_precip(precips, idx)
 
+        rh_850 = rh_850_series[idx] if idx < len(rh_850_series) else None
+        rh_700 = rh_700_series[idx] if idx < len(rh_700_series) else None
+        t_850 = t_850_series[idx] if idx < len(t_850_series) else None
+        t_925 = t_925_series[idx] if idx < len(t_925_series) else None
+
         day_key = t_str[:10]
         sunrise_at = astronomy.get(day_key, {}).get("sunrise")
+        local_hour = t.astimezone(TZ).hour
 
+        cloud_base = estimate_cloud_base(temp, dew)
         cloudsea = score_cloudsea(
             rh=rh,
             cloud_low=low,
@@ -213,8 +292,47 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             elevation=elevation,
             month=month,
             cloudsea_months=cloudsea_months,
-            satellite_context=satellite_context,
+            satellite_context=_satellite_context_for_hour(satellite_context, t, now),
+            rh_850=rh_850,
+            rh_700=rh_700,
+            t_850=t_850,
+            t_925=t_925,
+            visibility=vis,
         )
+        obs = build_observational_factors(
+            cloud_low=low,
+            cloud_mid=mid,
+            cloud_high=high,
+            visibility=vis,
+            rh=rh,
+            rh_850=rh_850,
+            rh_700=rh_700,
+            t_850=t_850,
+            t_925=t_925,
+            wind=wind,
+            precip_recent=recent,
+            elevation=elevation,
+        )
+
+        use_ml = ml_enabled() and 3 <= local_hour < 7
+        if use_ml:
+            if day_key not in ml_day_cache:
+                ml_day_cache[day_key] = predict_day_cloudsea(
+                    _sunrise_window_rows(day_key),
+                    elevation=elevation,
+                    cloud_base_m=cloud_base,
+                )
+            ml_score = ml_day_cache.get(day_key)
+            if ml_score is not None:
+                cloudsea = merge_ml_cloudsea_score(cloudsea, ml_score, observational=obs)
+
+        if not (use_ml and ml_day_cache.get(day_key) is not None):
+            cloudsea = PredictionScore(
+                probability=cloudsea.probability,
+                grade=cloudsea.grade,
+                factors={**cloudsea.factors, **{f"obs_{k}": v for k, v in obs.items()}},
+                cloud_base_m=cloudsea.cloud_base_m,
+            )
 
         sunrise = score_sunrise_window(
             sunrise_at=sunrise_at,
@@ -239,6 +357,9 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             cloud_mid=mid,
             cloud_high=high,
             is_sunrise_window=near_sun,
+            visibility=vis,
+            elevation=elevation,
+            rh=rh,
         )
 
         results.append(
@@ -262,7 +383,16 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
                 is_sunrise_window=near_sun,
             )
         )
+    return results
 
+
+def _build_response(
+    req: PredictRequest,
+    elevation: float,
+    results: list[HourPrediction],
+    astronomy: dict[str, dict[str, datetime]],
+    satellite_context: dict | None,
+) -> PredictResponse:
     days = _build_day_summaries(results, astronomy)
 
     sunrise_days: list[dict] = []
@@ -299,3 +429,152 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             "sunrise": sunrise_days,
         },
     )
+
+
+async def run_prediction(req: PredictRequest) -> PredictResponse:
+    elevation = req.elevation
+    if elevation is None:
+        elevation = await fetch_elevation(req.lat, req.lng)
+
+    spot = get_spot(req.spot_id) if req.spot_id else None
+    cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
+    sunrise_months = spot.seasonality.get("sunrise_months") if spot else None
+    now = datetime.now(TZ)
+    satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
+
+    forecast = await fetch_forecast(req.lat, req.lng, days=5)
+    hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
+    astronomy = parse_daily_astronomy(forecast)
+
+    results = build_predictions_from_hourly(
+        req=req,
+        elevation=elevation,
+        hourly=hourly,
+        astronomy=astronomy,
+        cloudsea_months=cloudsea_months,
+        sunrise_months=sunrise_months,
+        satellite_context=satellite_context,
+        now=now,
+        hour_limit=req.hours,
+    )
+    return _build_response(req, elevation, results, astronomy, satellite_context)
+
+
+async def run_backtest_prediction(
+    *,
+    req: PredictRequest,
+    target_date,
+    window_start: int = 3,
+    window_end: int = 7,
+) -> dict:
+    from datetime import date as date_cls
+
+    from app.adapters.open_meteo_historical import (
+        fetch_historical_forecast,
+        parse_astronomy_for_date,
+        slice_hourly_for_date,
+    )
+
+    if isinstance(target_date, str):
+        target_date = date_cls.fromisoformat(target_date)
+
+    elevation = req.elevation
+    if elevation is None:
+        elevation = await fetch_elevation(req.lat, req.lng)
+
+    spot = get_spot(req.spot_id) if req.spot_id else None
+    cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
+    sunrise_months = spot.seasonality.get("sunrise_months") if spot else None
+
+    forecast = await fetch_historical_forecast(req.lat, req.lng, target_date, target_date)
+    full_hourly = forecast.get("hourly", {})
+    hourly = slice_hourly_for_date(full_hourly, target_date)
+    day_astro = parse_astronomy_for_date(forecast, target_date)
+    astronomy = {target_date.isoformat(): day_astro} if day_astro else {}
+
+    backtest_now = datetime(
+        target_date.year,
+        target_date.month,
+        target_date.day,
+        12,
+        0,
+        tzinfo=TZ,
+    )
+
+    results = build_predictions_from_hourly(
+        req=req,
+        elevation=elevation,
+        hourly=hourly,
+        astronomy=astronomy,
+        cloudsea_months=cloudsea_months,
+        sunrise_months=sunrise_months,
+        satellite_context=None,
+        now=backtest_now,
+    )
+
+    window_hours = [
+        h
+        for h in results
+        if window_start <= parse_shanghai_time(h.time).hour < window_end
+    ]
+    peak = max(window_hours, key=lambda h: h.cloudsea.probability) if window_hours else None
+
+    raw_rows = []
+    times = hourly.get("time", [])
+    precips = hourly.get("precipitation", [])
+    for idx, t_str in enumerate(times):
+        hour = parse_shanghai_time(t_str).hour
+        if hour < window_start or hour >= window_end:
+            continue
+        raw_rows.append(
+            {
+                "time": t_str,
+                "cloud_low": hourly.get("cloud_cover_low", [None])[idx],
+                "cloud_mid": hourly.get("cloud_cover_mid", [None])[idx],
+                "cloud_high": hourly.get("cloud_cover_high", [None])[idx],
+                "visibility": hourly.get("visibility", [None])[idx],
+                "rh": hourly.get("relative_humidity_2m", [None])[idx],
+                "rh_850": hourly.get("relative_humidity_850hPa", [None])[idx],
+                "rh_700": hourly.get("relative_humidity_700hPa", [None])[idx],
+                "t_850": hourly.get("temperature_850hPa", [None])[idx],
+                "t_925": hourly.get("temperature_925hPa", [None])[idx],
+                "inversion": (
+                    hourly.get("temperature_850hPa", [None])[idx]
+                    - hourly.get("temperature_925hPa", [None])[idx]
+                    if idx < len(hourly.get("temperature_850hPa", []))
+                    and idx < len(hourly.get("temperature_925hPa", []))
+                    and hourly.get("temperature_850hPa", [None])[idx] is not None
+                    and hourly.get("temperature_925hPa", [None])[idx] is not None
+                    else None
+                ),
+                "wind": hourly.get("wind_speed_10m", [None])[idx],
+                "precip48": _recent_precip(precips, idx),
+            }
+        )
+
+    response = _build_response(req, elevation, results, astronomy, None)
+    summary = None
+    if peak:
+        ph = parse_shanghai_time(peak.time).hour
+        feat = next((r for r in raw_rows if r["time"] == peak.time), {})
+        summary = {
+            "peak_time": peak.time,
+            "peak_hour": ph,
+            "max_cloudsea_prob": peak.cloudsea.probability,
+            "scenario": peak.scenario.label,
+            "features_at_peak": feat,
+        }
+
+    return {
+        "meta": {
+            "date": target_date.isoformat(),
+            "data_source": "historical_forecast",
+            "model": "fuzzy_v2_archetype",
+            "window_start": window_start,
+            "window_end": window_end,
+        },
+        "raw_meteo": raw_rows,
+        "sunrise_window_summary": summary,
+        "prediction": response.model_dump(),
+    }
+

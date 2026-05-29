@@ -28,38 +28,92 @@
   </nav>
   <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
     <h1 class="text-3xl font-bold">系统架构</h1>
-    <p class="text-slate-600">生产环境为单 Docker 镜像（linux/amd64）：FastAPI 托管 API + 静态前端，Open-Meteo 与 GIBS 卫星由后端请求，天地图 POI 由浏览器直连。</p>
+    <p class="text-slate-600">生产环境为单 Docker 镜像（linux/amd64）：FastAPI 托管 API + 静态前端 + Redis 缓存。预测编排由 <code>predictor.py</code> 统一完成，云海 ML 模型打包在镜像 <code>/app/models/</code>（独立于标注数据卷）。</p>
 
     <section class="glass">
       <h2 class="text-lg font-semibold mb-4">整体架构</h2>
       <div class="mermaid">
 flowchart TB
   subgraph client [Vue3 前端]
+    App[主应用 index]
+    Label[标注页 label.html]
     Map[天地图 MapPanel]
-    POI[浏览器 POI 搜索]
-    Predict[PredictPanel]
-    Timeline[5天逐小时时间轴]
+    Factors[因子雷达 + 因子列表]
   end
   subgraph server [FastAPI 后端]
-    Spots[精选景区 JSON]
-    Adapter[Open-Meteo]
-    GIBS[Himawari 红外 WMS]
-    Engine[模糊评分引擎]
+    Predictor[predictor 编排]
+    Fuzzy[cloudsea_scorer 模糊逻辑]
+    ML[cloudsea_ml v2]
+    Features[cloudsea_features]
+    Store[cloudsea_store SQLite]
+    Analytics[analytics_store]
   end
-  client -->|/api| server
-  POI --> Tianditu[天地图 v2/search]
-  Adapter --> OpenMeteo[Open-Meteo API]
-  GIBS --> NASA[NASA GIBS]
+  subgraph external [外部数据]
+    OM[Open-Meteo Forecast]
+    Hist[Historical Forecast API]
+    GIBS[Himawari GIBS WMS]
+    TD[天地图 POI 浏览器直连]
+  end
+  App -->|/api/predict| Predictor
+  Label -->|/api/internal/cloudsea| Store
+  Predictor --> Fuzzy
+  Predictor --> ML
+  ML --> Features
+  Predictor --> OM
+  Store --> Hist
+  Predictor --> GIBS
+  App --> TD
+      </div>
+    </section>
+
+    <section class="glass space-y-4">
+      <h2 class="text-lg font-semibold">预测流水线</h2>
+      <ol class="text-sm text-slate-600 list-decimal list-inside space-y-2">
+        <li>按观景点 WGS84 坐标请求 Open-Meteo 5 天逐小时场（含气压层）。</li>
+        <li>逐小时调用 <code>score_cloudsea</code> 生成规则因子与参考概率。</li>
+        <li>03:00–07:00 且 ML 启用时，以日聚合特征调用 <code>predict_day_cloudsea</code>，合并 ML 概率与全部因子。</li>
+        <li>并行计算日出窗口评分与综合场景标签（晴日日出 / 云海日出等）。</li>
+        <li>当天已发生时段可选 Himawari 红外区域云量轻量校正。</li>
+      </ol>
+    </section>
+
+    <section class="glass space-y-4">
+      <h2 class="text-lg font-semibold">标注与 ML 闭环</h2>
+      <div class="mermaid">
+flowchart LR
+  Label[人工标注 label.html] --> DB[(cloudsea.db)]
+  DB --> Backfill[backfill_meteo_hourly]
+  Backfill --> Train[train_cloudsea_model]
+  Train --> PKL[cloudsea_ml_v2.pkl]
+  PKL --> Docker[Docker 镜像 /app/models]
+  Docker --> Predictor[线上 03-07 ML 预测]
+  Predictor --> Backtest[LOOCV / accuracy API]
+  Backtest --> Label
       </div>
     </section>
 
     <section class="glass space-y-4">
       <h2 class="text-lg font-semibold">核心 API</h2>
-      <pre>GET  /api/spots/search?q=…          # 精选景区
-GET  /api/predict/{spot}/viewpoint/{vp}
-POST /api/predict  { lat, lng, … }      # 自定义/POI 坐标
-GET  /api/satellite/cloud?…             # Himawari 裁切云图
+      <pre>GET  /api/spots/search?q=…
+GET  /api/predict/{spot}/viewpoint/{vp}?hours=120
+POST /api/predict  { lat, lng, elevation, hours }
+GET  /api/satellite/cloud?…
+GET  /api/internal/backtest/predict?date=&spot_id=&viewpoint_id=   # Token
+GET  /api/internal/cloudsea/label-session                           # Token
+POST /api/internal/cloudsea/labels                                  # Token
 GET  /health</pre>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">部署拓扑</h2>
+      <pre>docker-compose.deploy.yml
+├── yunhai (yunhai:latest)  :8088→8080
+│   ├── /app/static          前端 dist
+│   ├── /app/models          ML 模型（镜像内）
+│   └── volumes:
+│       ├── cloudsea_data → /app/data/cloudsea  (标注库)
+│       └── analytics_data  → /app/data/analytics
+└── redis:6379               预报缓存 TTL ~30min</pre>
     </section>
   </main>
   <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>

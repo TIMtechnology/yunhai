@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { GITHUB_REPO_URL } from './config'
+import { trackPageVisit } from './services/analytics'
 import { useAppStore } from './stores/app'
 import ForecastTimeline from './components/ForecastTimeline.vue'
 import MapPanel from './components/MapPanel.vue'
@@ -28,12 +29,13 @@ const mapTarget = computed(() => {
       zoom: 12,
     }
   }
-  return { lng: 125.398, lat: 41.261, label: '本溪五女山（默认）', zoom: 11 }
+  return { lng: 125.408, lat: 41.32, label: '本溪五女山（默认）', zoom: 12 }
 })
 
 const currentHour = computed(() => store.currentHour())
 
 onMounted(() => {
+  trackPageVisit()
   store.selectSpot('wunvshan')
 })
 

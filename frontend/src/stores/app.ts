@@ -2,6 +2,13 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { DaySummary, HourPrediction, PredictResponse, ScenicSpot, SpotSearchResult, Viewpoint } from '../services/api'
 import { getSpot, predictCustom, predictViewpoint, searchSpots } from '../services/api'
+import {
+  trackPoiSearch,
+  trackPredictCustom,
+  trackSearch,
+  trackSpotSelect,
+  trackViewpointSelect,
+} from '../services/analytics'
 import { searchTiandituPoi } from '../services/tiandituPoi'
 
 export interface CloudBounds {
@@ -125,6 +132,7 @@ export const useAppStore = defineStore('app', () => {
 
     const [curated, poi] = await Promise.all([curatedPromise, poiPromise])
     searchResults.value = [...curated, ...poi]
+    trackSearch(q, curated.length, poi.length)
   }
 
   async function loadPoiSuggestions(keyword: string, center?: MarkerPosition) {
@@ -141,6 +149,7 @@ export const useAppStore = defineStore('app', () => {
         count: 8,
         regionalBias: true,
       })
+      trackPoiSearch(q, poiSuggestions.value.length)
     } catch (err: any) {
       poiSearchError.value = err?.message || '天地图 POI 搜索失败'
       poiSuggestions.value = []
@@ -192,6 +201,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       currentSpot.value = await getSpot(spotId)
       selectedViewpoint.value = currentSpot.value.viewpoints[0] ?? null
+      trackSpotSelect(spotId, currentSpot.value.name)
       if (selectedViewpoint.value) {
         await loadPrediction(spotId, selectedViewpoint.value.id)
         const vp = selectedViewpoint.value
@@ -211,6 +221,7 @@ export const useAppStore = defineStore('app', () => {
     selectedViewpoint.value = vp
     clearMarkerOverride()
     if (currentSpot.value) {
+      trackViewpointSelect(currentSpot.value.id, vp.id, vp.name)
       await loadPrediction(currentSpot.value.id, vp.id)
       await loadPoiSuggestions(`${currentSpot.value.name} ${vp.name}`, {
         lat: vp.lat,
@@ -254,6 +265,7 @@ export const useAppStore = defineStore('app', () => {
     }
     try {
       prediction.value = await predictCustom({ lat, lng, name, elevation, spot_id: spotId })
+      trackPredictCustom(lat, lng, name, spotId)
       selectedDayIndex.value = 0
       selectedHourIndex.value = prediction.value.days[0]?.sunrise_hour_index ?? 0
     } catch (e: any) {
