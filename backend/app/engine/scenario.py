@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.engine.cloudsea_scorer import cloudsea_visual_evidence
 from app.engine.utils import clamp
 
 
@@ -36,10 +37,19 @@ def build_scenario(
     cloud_mid: float,
     cloud_high: float,
     is_sunrise_window: bool = False,
+    visibility: float | None = None,
+    elevation: float = 0.0,
+    rh: float = 70.0,
 ) -> dict:
-    """联合云海+日出+天气给出观赏场景；云海标签需低云直接证据。"""
+    """联合云海+日出+天气给出观赏场景；云海标签需低云或能见度补偿证据。"""
     total_cloud = (cloud_low + cloud_mid + cloud_high) / 3
-    has_cloudsea_evidence = cloud_low >= 25 or (cloud_low >= 15 and cloud_mid >= 30)
+    effective_low, has_cloudsea_evidence = cloudsea_visual_evidence(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        elevation=elevation,
+        rh=rh,
+    )
 
     if precip >= 1.0:
         return _scenario(
@@ -64,7 +74,7 @@ def build_scenario(
             cloudsea_prob >= 70
             and sunrise_prob >= 70
             and has_cloudsea_evidence
-            and cloud_low >= 30
+            and effective_low >= 30
         ):
             return _scenario(
                 "sunrise_cloudsea",
@@ -77,7 +87,7 @@ def build_scenario(
             cloudsea_prob >= 55
             and sunrise_prob >= 50
             and has_cloudsea_evidence
-            and cloud_low >= 20
+            and effective_low >= 18
         ):
             return _scenario(
                 "sunrise_cloudsea_fair",

@@ -286,6 +286,9 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             cloud_mid=mid,
             cloud_high=high,
             is_sunrise_window=near_sun,
+            visibility=vis,
+            elevation=elevation,
+            rh=rh,
         )
 
         results.append(

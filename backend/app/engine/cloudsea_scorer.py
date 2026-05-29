@@ -34,6 +34,30 @@ def _score_inversion_850_925(t_850: float, t_925: float) -> tuple[float, str]:
     return score, desc
 
 
+def _infer_effective_low_cloud(
+    *,
+    cloud_low: float,
+    cloud_mid: float,
+    visibility: float | None,
+    elevation: float,
+    rh: float,
+) -> tuple[float, str]:
+    """NWP 网格低云量常低估山顶/谷地层云；极低能见度+高海拔作补偿（Open-Meteo 自身矛盾）。"""
+    if elevation < 500 or visibility is None:
+        return cloud_low, ""
+    if cloud_low >= 20:
+        return cloud_low, ""
+
+    vis_m = visibility
+    if vis_m <= 300:
+        return max(cloud_low, 50.0), f"能见度 {vis_m:.0f}m，推断局域层云/云海"
+    if vis_m <= 800:
+        return max(cloud_low, 35.0), f"能见度 {vis_m:.0f}m，推断云雾层"
+    if vis_m <= 1500 and rh >= 85 and cloud_mid >= 8:
+        return max(cloud_low, 20.0), f"能见度 {vis_m:.0f}m，高湿雾区"
+    return cloud_low, ""
+
+
 def _score_low_cloud_direct(cloud_low: float) -> float:
     """低云是云海直接证据；极低低云时不应给高分（梵净山/华山低云状研究）。"""
     if cloud_low < 5:
@@ -64,19 +88,28 @@ def _cloud_presence_factor(cloud_low: float, cloud_mid: float) -> float:
     return clamp(signal / 35.0)
 
 
-def _fog_not_cloudsea_score(*, rh: float, cloud_low: float, visibility: float | None) -> float:
-    """高湿+极低云+低能见度 → 雾/轻雾，非层状云海（梵净山 RH-温度-云关系）。"""
+def _fog_not_cloudsea_score(
+    *,
+    rh: float,
+    cloud_low: float,
+    visibility: float | None,
+    elevation: float,
+    vis_proxy_note: str,
+) -> float:
+    """区分高山层云（低能见度+有补偿信号）与近地面雾。"""
+    if vis_proxy_note:
+        return clamp(0.65 + min(cloud_low, 60) / 120.0)
     if cloud_low >= 15:
         return 1.0
     if rh < 85:
         return 1.0
     if visibility is None:
-        if cloud_low >= 8:
-            return 0.85
         return clamp(0.35 + cloud_low / 20.0)
     vis_km = visibility / 1000.0
     if vis_km >= 5.0:
         return 1.0
+    if elevation >= 500 and vis_km <= 1.0:
+        return clamp(0.55 + vis_km / 4.0)
     if vis_km <= 2.0 and cloud_low < 10:
         return clamp(0.15 + vis_km / 8.0)
     return clamp(0.45 + vis_km / 10.0)
@@ -103,15 +136,30 @@ def score_cloudsea(
     t_925: float | None = None,
     visibility: float | None = None,
 ) -> PredictionScore:
+    effective_low, vis_proxy_note = _infer_effective_low_cloud(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        elevation=elevation,
+        rh=rh,
+    )
     cloud_base = estimate_cloud_base(temp, dewpoint)
 
     rh_score = range_score(rh, 75, 95)
     mid_score = clamp((rh / 100.0) * 0.6 + bell_score(cloud_mid, 45, 35) * 0.4)
-    low_score = _score_low_cloud_direct(cloud_low)
+    low_score = _score_low_cloud_direct(effective_low)
     wind_score = bell_score(wind, 2.5, 4.0)
     rain_score = clamp(precip_recent / 8.0) * 0.5 + (1.0 if precip <= 0.2 else 0.3) * 0.5
-    elev_score = _score_elevation_match(cloud_low=cloud_low, cloud_base=cloud_base, elevation=elevation)
-    fog_score = _fog_not_cloudsea_score(rh=rh, cloud_low=cloud_low, visibility=visibility)
+    elev_score = _score_elevation_match(
+        cloud_low=effective_low, cloud_base=cloud_base, elevation=elevation
+    )
+    fog_score = _fog_not_cloudsea_score(
+        rh=rh,
+        cloud_low=effective_low,
+        visibility=visibility,
+        elevation=elevation,
+        vis_proxy_note=vis_proxy_note,
+    )
 
     has_pressure_profile = (
         rh_850 is not None
@@ -137,8 +185,12 @@ def score_cloudsea(
             score=low_score,
             weight=0.20,
             label="低云量",
-            description="层云/碎层云是云海直接证据；极低低云时高湿仅代表雾，非云海",
-            value=f"{cloud_low:.0f}%",
+            description="层云/碎层云是云海直接证据；模式低估时用能见度补偿",
+            value=(
+                f"模式{cloud_low:.0f}% → 有效{effective_low:.0f}% ({vis_proxy_note})"
+                if vis_proxy_note
+                else f"{cloud_low:.0f}%"
+            ),
             reference=REF_FANJINGSHAN,
         ),
         "rh_850": FactorDetail(
@@ -209,7 +261,7 @@ def score_cloudsea(
             score=fog_score,
             weight=0.06,
             label="雾 vs 云海",
-            description="高湿+低能见度+极低低云 → 雾/轻雾，非观赏级云海",
+            description="低能见度在高海拔可指示层云；近地面高湿雾则降权",
             value=(
                 f"能见度 {visibility / 1000:.1f} km"
                 if visibility is not None
@@ -246,12 +298,19 @@ def score_cloudsea(
 
     weighted = sum(f.score * f.weight for f in factors.values()) + season_bonus
 
-    presence = _cloud_presence_factor(cloud_low, cloud_mid)
+    presence = _cloud_presence_factor(effective_low, cloud_mid)
     weighted *= 0.22 + 0.78 * presence
 
-    if cloud_low < 10 and fog_score < 0.5:
+    if cloud_low < 10 and not vis_proxy_note and fog_score < 0.5:
         weighted = min(weighted, 0.32)
-    if has_pressure_profile and t_850 is not None and t_925 is not None and (t_850 - t_925) <= 0 and cloud_low < 20:
+    if (
+        has_pressure_profile
+        and t_850 is not None
+        and t_925 is not None
+        and (t_850 - t_925) <= 0
+        and effective_low < 20
+        and not vis_proxy_note
+    ):
         weighted = min(weighted, 0.38)
 
     probability = int(round(clamp(weighted) * 100))
@@ -262,3 +321,27 @@ def score_cloudsea(
         factors=factors,
         cloud_base_m=round(cloud_base, 1),
     )
+
+
+def cloudsea_visual_evidence(
+    *,
+    cloud_low: float,
+    cloud_mid: float,
+    visibility: float | None,
+    elevation: float,
+    rh: float,
+) -> tuple[float, bool]:
+    """供场景标签判定：返回有效低云量及是否有云海可见证据。"""
+    effective_low, vis_note = _infer_effective_low_cloud(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        elevation=elevation,
+        rh=rh,
+    )
+    has = (
+        effective_low >= 20
+        or (effective_low >= 10 and cloud_mid >= 15)
+        or bool(vis_note)
+    )
+    return effective_low, has
