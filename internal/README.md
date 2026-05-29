@@ -1,8 +1,15 @@
-# 内部统计分析（不公开、不 push 到 GitHub）
+# 内部文档（不公开、不 push 到 GitHub）
 
-本目录包含本地看板与配置，用于分析 yunhai 线上用户行为。
+本目录包含本地看板、标注说明与论文草稿，用于 yunhai 研发与投稿准备。
 
-## 使用
+## 文档索引
+
+| 文件 | 说明 |
+|------|------|
+| [`CLOUDSEA-LABEL.md`](CLOUDSEA-LABEL.md) | 云海标注工具使用、ML 训练说明 |
+| `analytics-dashboard.html` | 用户行为分析看板 |
+
+## 使用（分析看板）
 
 1. 复制配置：
    ```bash
