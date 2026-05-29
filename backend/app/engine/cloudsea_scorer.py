@@ -118,6 +118,10 @@ def cloudsea_plausibility_cap(
     archetype: str,
 ) -> int:
     """基于当前观测场的云海概率硬上限（0–100），用于约束 ML 与规则融合结果。"""
+    # 五女山金标准型态（Type A/B）下，低 RH850 + 模式无云仍可能有观赏级云海，不做晴空干廓线上限
+    if archetype in ("type_a", "type_b"):
+        return 100
+
     cap = 100
     inversion = (t_850 - t_925) if t_850 is not None and t_925 is not None else None
     cloud_signal = max(cloud_low, cloud_mid)
@@ -481,6 +485,8 @@ def cloudsea_visual_evidence(
     rh: float,
     rh_850: float | None = None,
     precip_recent: float = 0.0,
+    t_850: float | None = None,
+    t_925: float | None = None,
 ) -> tuple[float, bool]:
     """供场景标签判定：返回有效低云量及是否有云海可见证据。"""
     archetype, _ = _classify_cloudsea_archetype(
