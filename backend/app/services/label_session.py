@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date as date_cls, datetime as dt_cls
 from typing import Any, Optional
 
+from app.engine.cloudsea_ml import get_ml_status
+from app.engine.ml_eligibility import load_sunrise_window_meteo, sunrise_window_rain_summary
 from app.models.schemas import PredictRequest
 from app.services.cloudsea_store import get_label, save_meteo_hourly
 from app.services.community_store import (
@@ -40,7 +42,8 @@ def build_predict_request(
             lng=loc["lng"],
             elevation=loc.get("elevation"),
             name=loc["name"],
-            spot_id=None,
+            spot_id=comm_spot_id,
+            viewpoint_id=comm_viewpoint_id,
             hours=24,
         )
         meta.update(
@@ -71,6 +74,7 @@ def build_predict_request(
             elevation=vp.elevation,
             name=f"{spot.name} · {vp.name}" if spot else vp.name,
             spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
             hours=24,
         )
         meta["mode"] = "curated"
@@ -131,6 +135,11 @@ async def build_label_session_payload(
         if str(h["time"]).startswith(date_key)
         and window_start <= dt_cls.fromisoformat(h["time"]).hour < window_end
     ]
+    meteo_rows = backtest["raw_meteo"] or load_sunrise_window_meteo(
+        spot_id, viewpoint_id, date_key, window_start=window_start, window_end=window_end
+    )
+    rain_window = sunrise_window_rain_summary(meteo_rows)
+    ml_status = get_ml_status(spot_id, viewpoint_id)
     return {
         **meta,
         "spot_id": spot_id,
@@ -145,4 +154,6 @@ async def build_label_session_payload(
         "lat": req.lat,
         "lng": req.lng,
         "elevation": req.elevation,
+        "ml_status": ml_status,
+        "rain_window": rain_window,
     }

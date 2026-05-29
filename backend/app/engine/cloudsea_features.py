@@ -79,6 +79,7 @@ def build_meteo_hour_row(hourly: dict, idx: int, *, precip48: float | None = Non
     inversion = (float(t_850) - float(t_925)) if t_850 is not None and t_925 is not None else None
     return {
         "time": t_str,
+        "precipitation": _series_val(hourly.get("precipitation", []), idx),
         "cloud_low": _series_val(hourly.get("cloud_cover_low", []), idx),
         "cloud_mid": _series_val(hourly.get("cloud_cover_mid", []), idx),
         "cloud_high": _series_val(hourly.get("cloud_cover_high", []), idx),

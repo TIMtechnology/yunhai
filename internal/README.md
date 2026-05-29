@@ -7,6 +7,8 @@
 | 文件 | 说明 |
 |------|------|
 | [`DEPLOY.md`](DEPLOY.md) | **生产部署备忘**（SSH、Docker、发布/热补丁，避免连错机器） |
+| [`terrain-cloudsea-plan.md`](terrain-cloudsea-plan.md) | **地形增强 + 区域云海**（DEM、100km 热力图、分阶段方案） |
+| [`viewing-mode-plan.md`](viewing-mode-plan.md) | **观云模式分型**（山谷填云 / 峰顶俯瞰 / 点位 profile） |
 | [`CLOUDSEA-LABEL.md`](CLOUDSEA-LABEL.md) | 云海标注工具使用、ML 训练说明 |
 | `analytics-dashboard.html` | 用户行为分析看板 |
 

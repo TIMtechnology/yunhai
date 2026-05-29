@@ -10,9 +10,10 @@ from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
 from app.engine.cloudsea_features import hour_raw_from_forecast
 from app.engine.cloudsea_ml import (
     build_observational_factors,
+    get_ml_status,
     merge_ml_cloudsea_score,
-    ml_enabled,
     predict_day_cloudsea,
+    should_use_spot_ml,
 )
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, cloudsea_plausibility_cap, score_cloudsea
 from app.engine.satellite_analyzer import analyze_ir_image
@@ -335,13 +336,18 @@ def build_predictions_from_hourly(
             archetype=archetype,
         )
 
-        use_ml = ml_enabled() and 3 <= local_hour < 7
+        use_ml = (
+            should_use_spot_ml(req.spot_id, req.viewpoint_id)
+            and 3 <= local_hour < 7
+        )
         if use_ml:
             if day_key not in ml_day_cache:
                 ml_day_cache[day_key] = predict_day_cloudsea(
                     _sunrise_window_rows(day_key),
                     elevation=elevation,
                     cloud_base_m=cloud_base,
+                    spot_id=req.spot_id,
+                    viewpoint_id=req.viewpoint_id,
                 )
             ml_score = ml_day_cache.get(day_key)
             if ml_score is not None:
@@ -350,6 +356,7 @@ def build_predictions_from_hourly(
                     ml_score,
                     observational=obs,
                     spot_id=req.spot_id,
+                    viewpoint_id=req.viewpoint_id,
                     plausibility_cap=plausibility_cap,
                 )
 
@@ -443,6 +450,8 @@ def _build_response(
         "elevation": round(elevation, 1),
         "name": req.name,
         "spot_id": req.spot_id,
+        "viewpoint_id": req.viewpoint_id,
+        "ml_status": get_ml_status(req.spot_id, req.viewpoint_id),
     }
     if satellite_context:
         location["satellite_context"] = satellite_context
@@ -584,6 +593,7 @@ async def run_backtest_prediction(
         raw_rows.append(
             {
                 "time": t_str,
+                "precipitation": display_hourly.get("precipitation", [None])[idx],
                 "cloud_low": display_hourly.get("cloud_cover_low", [None])[idx],
                 "cloud_mid": display_hourly.get("cloud_cover_mid", [None])[idx],
                 "cloud_high": display_hourly.get("cloud_cover_high", [None])[idx],

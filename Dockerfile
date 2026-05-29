@@ -30,7 +30,7 @@ COPY backend/app ./app
 COPY scripts ./scripts
 COPY data/scenic-spots ./data/scenic-spots
 # 模型放在卷挂载目录外，避免 cloudsea_data 覆盖 /app/data/cloudsea
-COPY data/cloudsea/models/cloudsea_ml_v2.pkl ./models/cloudsea_ml_v2.pkl
+COPY data/cloudsea/models/*.pkl ./models/
 COPY --from=frontend-build /app/dist ./static
 
 ENV SCENIC_SPOTS_DIR=/app/data/scenic-spots

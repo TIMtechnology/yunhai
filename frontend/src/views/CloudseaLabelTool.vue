@@ -117,6 +117,9 @@ const dataSourceLabel = computed(() => {
   return ''
 })
 
+const mlStatus = computed(() => session.value?.ml_status)
+const rainWindow = computed(() => session.value?.rain_window)
+
 function parseUrlParams() {
   const q = new URLSearchParams(location.search)
   if (q.get('loc')) {
@@ -400,6 +403,9 @@ async function loadSession() {
 }
 
 async function applyLabel(status: LabelStatus, sunriseQuality?: SunriseQuality | null) {
+  if (session.value?.rain_window?.has_rain && status !== 'none') {
+    message.warning('日出窗口有降水，建议标注「无云海」；该日不计入 ML 有效样本')
+  }
   selectedStatus.value = status
   if (sunriseQuality !== undefined) {
     selectedSunriseQuality.value = sunriseQuality
@@ -552,7 +558,12 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
       <div class="rounded-xl border border-sky-800/60 bg-sky-950/40 p-4">
         <div class="text-lg font-semibold text-sky-100">云海标注 · 开放贡献</div>
         <div class="mt-1 text-sm text-slate-400">
-          标注日出窗口（03:00–07:00）：云海三档 + 日出质量（可见/遮挡/不可拍）。云海标注纳入 ML；日出质量先入库，待样本足够后单独训练。匿名 ID：…{{ contributorIdShort() }}
+          标注日出窗口（03:00–07:00）：云海三档 + 日出质量。每个点位需累计
+          <strong class="text-slate-300">30 天有效标注</strong>（排除日出时段有雨）方可训练专属 ML；未达标时 03–07 点
+          <strong class="text-slate-300">仅规则引擎</strong>。匿名 ID：…{{ contributorIdShort() }}
+        </div>
+        <div v-if="mlStatus && !mlStatus.ml_active" class="mt-2 rounded-lg border border-amber-700/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+          {{ mlStatus.message }}
         </div>
         <div v-if="stats && !adminMode" class="mt-2 text-xs text-slate-400">
           今日已标注 {{ stats.labels_today }}/{{ stats.daily_cap }} · 累计通过 {{ stats.labels_approved }} · 待审 {{ stats.labels_pending }}
@@ -686,6 +697,13 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                     </template>
                   </div>
                   <div v-if="dataSourceLabel" class="mt-1 text-xs text-slate-500">数据源：{{ dataSourceLabel }}</div>
+                  <div v-if="rainWindow?.has_rain" class="mt-2 rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-xs text-red-200">
+                    <div class="font-medium">日出窗口有降水（{{ rainWindow.rainy_hours.join('、') }}）</div>
+                    <div class="mt-1 text-red-300/90">
+                      建议直接标注「无云海 (1)」；该日
+                      <strong>不计入 ML 训练</strong>，也不计入 30 日达标计数。
+                    </div>
+                  </div>
                   <div v-if="session.label?.review_status === 'pending'" class="mt-1 text-xs text-sky-400">当前标注待审核</div>
                 </div>
                 <div class="flex flex-col gap-2 sm:items-end">
@@ -731,6 +749,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                   <thead class="text-slate-400">
                     <tr>
                       <th class="px-2 py-1 text-left">时间</th>
+                      <th class="px-2 py-1 text-right">降水</th>
                       <th class="px-2 py-1 text-right">低/中/高云</th>
                       <th class="px-2 py-1 text-right">能见度</th>
                       <th class="px-2 py-1 text-right">RH/RH850/RH700</th>
@@ -744,6 +763,12 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                   <tbody>
                     <tr v-for="row in session.raw_meteo" :key="String(row.time)" class="border-t border-slate-800">
                       <td class="px-2 py-1">{{ String(row.time).slice(11, 16) }}</td>
+                      <td
+                        class="px-2 py-1 text-right"
+                        :class="Number(row.precipitation) >= 0.1 ? 'text-red-300 font-medium' : ''"
+                      >
+                        {{ row.precipitation != null ? `${Number(row.precipitation).toFixed(1)}mm` : '—' }}
+                      </td>
                       <td class="px-2 py-1 text-right">{{ row.cloud_low }}/{{ row.cloud_mid }}/{{ row.cloud_high ?? '—' }}%</td>
                       <td class="px-2 py-1 text-right">{{ row.visibility }}m</td>
                       <td class="px-2 py-1 text-right">{{ row.rh }}/{{ row.rh_850 }}/{{ row.rh_700 ?? '—' }}%</td>

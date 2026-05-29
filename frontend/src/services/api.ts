@@ -118,6 +118,17 @@ export interface DaySummary {
   recommend_periods: string[]
 }
 
+export interface MlStatus {
+  ml_active: boolean
+  mode: 'rule_only' | 'wunvshan_model' | 'spot_model'
+  min_labels: number
+  eligible_labels: number
+  total_labels: number
+  rain_excluded_labels: number
+  has_spot_model: boolean
+  message: string
+}
+
 export interface PredictResponse {
   location: {
     lat: number
@@ -125,6 +136,8 @@ export interface PredictResponse {
     elevation: number
     name: string
     spot_id?: string
+    viewpoint_id?: string
+    ml_status?: MlStatus
   }
   hours: HourPrediction[]
   days: DaySummary[]

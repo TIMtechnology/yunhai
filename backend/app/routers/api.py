@@ -78,6 +78,7 @@ async def predict_viewpoint(spot_id: str, viewpoint_id: str, hours: int = 120):
         elevation=vp.elevation,
         name=f"{spot.name} · {vp.name}" if spot else vp.name,
         spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
         hours=hours,
     )
     return await run_prediction(req)

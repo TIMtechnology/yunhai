@@ -32,6 +32,12 @@ function openAnnotate() {
 <template>
   <div class="flex h-full min-h-0 flex-col gap-2 overflow-hidden border-l border-slate-800 p-3">
     <template v-if="hour && store.prediction">
+      <div
+        v-if="store.prediction.location.ml_status && !store.prediction.location.ml_status.ml_active"
+        class="rounded-lg border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] leading-snug text-amber-200"
+      >
+        {{ store.prediction.location.ml_status.message }}
+      </div>
       <div class="flex items-center justify-end gap-2">
         <n-button size="tiny" secondary @click="openAnnotate">标注此点位</n-button>
       </div>

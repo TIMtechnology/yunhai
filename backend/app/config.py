@@ -33,7 +33,8 @@ class Settings(BaseSettings):
     cloudsea_community_auto_approve: bool = True
     cloudsea_curate_min_labels: int = 1
     cloudsea_curated_spots_dir: str = ""
-    cloudsea_train_min_approved: int = 20
+    cloudsea_train_min_approved: int = 30
+    cloudsea_ml_min_labels_per_spot: int = 30
     cloudsea_model_min_loocv: float = 0.70
 
     class Config:

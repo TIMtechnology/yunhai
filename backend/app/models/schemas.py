@@ -115,6 +115,7 @@ class PredictRequest(BaseModel):
     elevation: Optional[float] = None
     name: str = "自定义位置"
     spot_id: Optional[str] = None
+    viewpoint_id: Optional[str] = None
     hours: int = 120
 
 

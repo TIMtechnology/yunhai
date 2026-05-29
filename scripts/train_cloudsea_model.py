@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""从 cloudsea.db 标注数据训练云海 ML 模型 v2（含 700hPa / 逆温 / 高云特征）。"""
+"""从 cloudsea.db 标注数据训练云海 ML（按点位分模型；排除日出窗口降水日）。"""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,7 @@ import pickle
 import sqlite3
 import sys
 import urllib.request
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
@@ -32,9 +33,15 @@ from app.engine.cloudsea_features import (  # noqa: E402
     label_to_target,
     meteo_row_complete,
 )
+from app.engine.ml_eligibility import (  # noqa: E402
+    min_labels_for_ml,
+    spot_model_path,
+    sunrise_window_rain_summary,
+)
 
 LAT, LNG, ELEV = 41.31976, 125.40773, 804.0
 WINDOW_START, WINDOW_END = 3, 7
+WUNVSHAN_SPOT, WUNVSHAN_VP = "wunvshan", "dianjiangtai"
 
 
 def fetch_day_meteo(day: str, *, lat: float = LAT, lng: float = LNG) -> list[dict]:
@@ -56,28 +63,75 @@ def fetch_day_meteo(day: str, *, lat: float = LAT, lng: float = LNG) -> list[dic
     return rows
 
 
-def load_dataset(db_path: Path, *, approved_only: bool = False) -> tuple[np.ndarray, np.ndarray, list[dict]]:
-    """加载标注日特征。目标变量仅来自 status（云海）；sunrise_quality 字段暂不参与训练。"""
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    if approved_only:
-        labels = conn.execute(
-            """
-            SELECT * FROM cloudsea_labels
-            WHERE review_status='approved' OR review_status IS NULL
-            ORDER BY date
-            """
-        ).fetchall()
-    else:
-        labels = conn.execute("SELECT * FROM cloudsea_labels ORDER BY date").fetchall()
-
+def _resolve_coords(label: dict, meteo_by_ts: dict[str, dict]) -> tuple[float, float, float]:
+    from app.services.community_store import get_community_location
     from app.services.spot_loader import get_viewpoint
 
-    meteo_rows: list[sqlite3.Row] = conn.execute(
-        "SELECT ts, lat, lng, raw_json, spot_id, viewpoint_id FROM meteo_hourly"
+    lat, lng, elev = LAT, LNG, ELEV
+    if label.get("lat") is not None and label.get("lng") is not None:
+        lat, lng = float(label["lat"]), float(label["lng"])
+        elev = float(label["elevation"]) if label.get("elevation") is not None else ELEV
+    elif label["spot_id"] == "community" and label["viewpoint_id"]:
+        loc = get_community_location(label["viewpoint_id"])
+        if loc:
+            lat, lng = float(loc["lat"]), float(loc["lng"])
+            elev = float(loc["elevation"]) if loc.get("elevation") else ELEV
+    elif label["spot_id"] and label["viewpoint_id"] and label["spot_id"] != "community":
+        vp = get_viewpoint(label["spot_id"], label["viewpoint_id"])
+        if vp:
+            lat, lng = vp.lat, vp.lng
+            elev = vp.elevation or ELEV
+    return lat, lng, elev
+
+
+def load_meteo_rows(
+    label: dict,
+    meteo_by_ts: dict[str, dict],
+    *,
+    lat: float,
+    lng: float,
+) -> list[dict]:
+    day = label["date"]
+    hour_rows = sorted(
+        [v for k, v in meteo_by_ts.items() if k.startswith(f"{day}T")],
+        key=lambda r: str(r.get("time")),
+    )
+    if not hour_rows or not all(meteo_row_complete(r) for r in hour_rows):
+        hour_rows = fetch_day_meteo(day, lat=lat, lng=lng)
+    return hour_rows
+
+
+def load_dataset(
+    db_path: Path,
+    *,
+    approved_only: bool = False,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
+    exclude_rain: bool = True,
+) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+    """加载标注日特征。排除未审核、降水日（默认）与气象缺失样本。"""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    clauses = ["1=1"]
+    params: list[object] = []
+    if approved_only:
+        clauses.append("(review_status='approved' OR review_status IS NULL)")
+    if spot_id:
+        clauses.append("spot_id=?")
+        params.append(spot_id)
+    if viewpoint_id:
+        clauses.append("viewpoint_id=?")
+        params.append(viewpoint_id)
+    labels = conn.execute(
+        f"SELECT * FROM cloudsea_labels WHERE {' AND '.join(clauses)} ORDER BY date",
+        params,
+    ).fetchall()
+
+    meteo_rows_db: list[sqlite3.Row] = conn.execute(
+        "SELECT ts, raw_json FROM meteo_hourly"
     ).fetchall()
     meteo_by_ts: dict[str, dict] = {}
-    for row in meteo_rows:
+    for row in meteo_rows_db:
         meteo_by_ts[row["ts"]] = json.loads(row["raw_json"])
 
     X_rows: list[list[float]] = []
@@ -87,43 +141,36 @@ def load_dataset(db_path: Path, *, approved_only: bool = False) -> tuple[np.ndar
     for raw in labels:
         label = dict(raw)
         day = label["date"]
-        target = label_to_target(label["status"])
-        lat, lng, elev = LAT, LNG, ELEV
-        if label.get("lat") is not None and label.get("lng") is not None:
-            lat, lng = float(label["lat"]), float(label["lng"])
-            elev = float(label["elevation"]) if label.get("elevation") is not None else ELEV
-        elif label["spot_id"] == "community" and label["viewpoint_id"]:
-            from app.services.community_store import get_community_location
-
-            loc = get_community_location(label["viewpoint_id"])
-            if loc:
-                lat, lng = float(loc["lat"]), float(loc["lng"])
-                elev = float(loc["elevation"]) if loc.get("elevation") else ELEV
-        elif label["spot_id"] and label["viewpoint_id"] and label["spot_id"] != "community":
-            vp = get_viewpoint(label["spot_id"], label["viewpoint_id"])
-            if vp:
-                lat, lng = vp.lat, vp.lng
-                elev = vp.elevation or ELEV
-
-        hour_rows = sorted(
-            [v for k, v in meteo_by_ts.items() if k.startswith(f"{day}T")],
-            key=lambda r: str(r.get("time")),
-        )
-        if not hour_rows or not all(meteo_row_complete(r) for r in hour_rows):
-            hour_rows = fetch_day_meteo(day, lat=lat, lng=lng)
+        lat, lng, elev = _resolve_coords(label, meteo_by_ts)
+        hour_rows = load_meteo_rows(label, meteo_by_ts, lat=lat, lng=lng)
         if not hour_rows:
-            print(f"skip {day}: no meteo")
+            print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: no meteo")
+            continue
+        if not all(meteo_row_complete(r) for r in hour_rows):
+            print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: incomplete meteo")
+            continue
+        if exclude_rain and sunrise_window_rain_summary(hour_rows)["has_rain"]:
+            print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: rain in sunrise window")
             continue
         day_feat = aggregate_day_features(hour_rows, elevation=elev)
         X_rows.append([day_feat[n] for n in DAY_FEATURE_NAMES])
-        y_rows.append(target)
-        meta.append({"date": day, "status": label["status"], "lat": lat, "lng": lng})
+        y_rows.append(label_to_target(label["status"]))
+        meta.append(
+            {
+                "date": day,
+                "status": label["status"],
+                "lat": lat,
+                "lng": lng,
+                "spot_id": label["spot_id"],
+                "viewpoint_id": label["viewpoint_id"],
+            }
+        )
 
     conn.close()
     return np.array(X_rows), np.array(y_rows), meta
 
 
-def train_eval(X: np.ndarray, y: np.ndarray, meta: list[dict], *, c: float = 0.3) -> tuple[Pipeline, np.ndarray, np.ndarray]:
+def train_eval(X: np.ndarray, y: np.ndarray, *, c: float = 0.3) -> tuple[Pipeline, np.ndarray, np.ndarray]:
     model = Pipeline(
         [
             ("scaler", StandardScaler()),
@@ -131,9 +178,6 @@ def train_eval(X: np.ndarray, y: np.ndarray, meta: list[dict], *, c: float = 0.3
         ]
     )
     model.fit(X, y)
-    prob = model.predict_proba(X)[:, 1]
-    pred = (prob >= 0.5).astype(int)
-
     loo = LeaveOneOut()
     loo_probs = np.zeros(len(y))
     for train_idx, test_idx in loo.split(X):
@@ -149,6 +193,120 @@ def train_eval(X: np.ndarray, y: np.ndarray, meta: list[dict], *, c: float = 0.3
     return model, loo_probs, loo_pred
 
 
+def save_artifact(
+    path: Path,
+    *,
+    model: Pipeline,
+    y: np.ndarray,
+    loo_probs: np.ndarray,
+    loo_pred: np.ndarray,
+    spot_id: str,
+    viewpoint_id: str,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    artifact = {
+        "version": "cloudsea_ml_v3_spot",
+        "algorithm": "logistic_regression_day",
+        "feature_names": DAY_FEATURE_NAMES,
+        "aggregation": "sunrise_window_03_07",
+        "spot_id": spot_id,
+        "viewpoint_id": viewpoint_id,
+        "model": model,
+        "trained_at": datetime.utcnow().isoformat(),
+        "n_days": len(y),
+        "loocv_accuracy": float(accuracy_score(y, loo_pred)),
+        "loocv_brier": float(brier_score_loss(y, loo_probs)),
+        "excludes_rainy_sunrise_window": True,
+    }
+    with open(path, "wb") as f:
+        pickle.dump(artifact, f)
+
+
+def train_group(
+    db_path: Path,
+    spot_id: str,
+    viewpoint_id: str,
+    *,
+    approved_only: bool,
+    models_dir: Path,
+    default_output: Path | None = None,
+) -> dict | None:
+    min_n = min_labels_for_ml()
+    X, y, meta = load_dataset(
+        db_path,
+        approved_only=approved_only,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+        exclude_rain=True,
+    )
+    pos = int(y.sum()) if len(y) else 0
+    print(f"\n=== {spot_id}/{viewpoint_id} ===")
+    print(f"有效标注日: {len(y)} | 有云海: {pos} | 无云海: {int(len(y) - pos)}")
+    if len(y) < min_n:
+        print(f"跳过：有效样本 {len(y)} < {min_n}")
+        return None
+    if len(set(y)) < 2:
+        print("跳过：正负样本不足")
+        return None
+
+    model, loo_probs, loo_pred = train_eval(X, y)
+    prob = model.predict_proba(X)[:, 1]
+    pred = (prob >= 0.5).astype(int)
+    loocv_acc = accuracy_score(y, loo_pred)
+    print(f"全量 accuracy: {accuracy_score(y, pred):.3f}")
+    print(f"LOOCV accuracy: {loocv_acc:.3f}")
+    print(classification_report(y, pred, target_names=["无", "有"], zero_division=0))
+
+    out = spot_model_path(spot_id, viewpoint_id, models_dir=models_dir)
+    save_artifact(
+        out,
+        model=model,
+        y=y,
+        loo_probs=loo_probs,
+        loo_pred=loo_pred,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+    )
+    print(f"模型已保存: {out}")
+
+    if default_output is not None:
+        save_artifact(
+            default_output,
+            model=model,
+            y=y,
+            loo_probs=loo_probs,
+            loo_pred=loo_pred,
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
+        )
+        print(f"默认模型已同步: {default_output}")
+
+    return {
+        "spot_id": spot_id,
+        "viewpoint_id": viewpoint_id,
+        "n_days": len(y),
+        "loocv_accuracy": loocv_acc,
+        "output": str(out),
+    }
+
+
+def list_label_groups(db_path: Path, *, approved_only: bool) -> list[tuple[str, str]]:
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    clauses = ["1=1"]
+    if approved_only:
+        clauses.append("(review_status='approved' OR review_status IS NULL)")
+    rows = conn.execute(
+        f"""
+        SELECT DISTINCT spot_id, viewpoint_id FROM cloudsea_labels
+        WHERE {' AND '.join(clauses)}
+        ORDER BY spot_id, viewpoint_id
+        """
+    ).fetchall()
+    conn.close()
+    return [(r["spot_id"], r["viewpoint_id"]) for r in rows]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", default=str(ROOT / "data" / "cloudsea" / "cloudsea.db"))
@@ -157,58 +315,38 @@ def main() -> None:
         default=str(ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.pkl"),
     )
     parser.add_argument("--approved-only", action="store_true")
+    parser.add_argument("--spot-id")
+    parser.add_argument("--viewpoint-id")
     args = parser.parse_args()
 
-    X, y, meta = load_dataset(Path(args.db), approved_only=args.approved_only)
-    print(f"标注日: {len(y)} | 有云海: {int(y.sum())} | 无云海: {int(len(y) - y.sum())}")
-    print(f"特征数: {len(DAY_FEATURE_NAMES)}")
+    db_path = Path(args.db)
+    models_dir = Path(args.output).resolve().parent
+    groups: list[tuple[str, str]]
+    if args.spot_id and args.viewpoint_id:
+        groups = [(args.spot_id, args.viewpoint_id)]
+    else:
+        groups = list_label_groups(db_path, approved_only=args.approved_only)
 
-    model, loo_probs, loo_pred = train_eval(X, y, meta)
-    prob = model.predict_proba(X)[:, 1]
-    pred = (prob >= 0.5).astype(int)
+    trained: list[dict] = []
+    for spot_id, viewpoint_id in groups:
+        default_out = Path(args.output) if (spot_id, viewpoint_id) == (WUNVSHAN_SPOT, WUNVSHAN_VP) else None
+        result = train_group(
+            db_path,
+            spot_id,
+            viewpoint_id,
+            approved_only=args.approved_only,
+            models_dir=models_dir,
+            default_output=default_out,
+        )
+        if result:
+            trained.append(result)
 
-    print(f"\n=== 全量拟合 (n={len(y)}) ===")
-    print(f"accuracy: {accuracy_score(y, pred):.3f}")
-    print(f"brier: {brier_score_loss(y, prob):.3f}")
-    print(f"auc: {roc_auc_score(y, prob):.3f}")
-    print(classification_report(y, pred, target_names=["无", "有"], zero_division=0))
-
-    print(f"\n=== 留一日交叉验证 LOOCV (n={len(y)}) ===")
-    loocv_acc = accuracy_score(y, loo_pred)
-    print(f"accuracy: {loocv_acc:.3f}")
-    print(f"loocv_accuracy: {loocv_acc:.3f}")
-    print(f"brier: {brier_score_loss(y, loo_probs):.3f}")
-    if len(set(y)) > 1:
-        print(f"auc: {roc_auc_score(y, loo_probs):.3f}")
-
-    print("\n=== 逐日 LOOCV ===")
-    for i, m in enumerate(meta):
-        mark = "OK" if loo_pred[i] == y[i] else "X"
-        print(f"  {mark} {m['date']} 标注={m['status']:7} ml={loo_probs[i]*100:5.1f}%")
-
-    clf: LogisticRegression = model.named_steps["clf"]
-    coefs = dict(zip(DAY_FEATURE_NAMES, clf.coef_[0]))
-    print("\n=== 特征系数 (|coef| top 12) ===")
-    for k, v in sorted(coefs.items(), key=lambda x: abs(x[1]), reverse=True)[:12]:
-        print(f"  {k:20} {v:+.3f}")
-
-    artifact = {
-        "version": "cloudsea_ml_v2",
-        "algorithm": "logistic_regression_day",
-        "feature_names": DAY_FEATURE_NAMES,
-        "aggregation": "sunrise_window_03_07",
-        "model": model,
-        "trained_at": datetime.utcnow().isoformat(),
-        "n_days": len(y),
-        "loocv_accuracy": float(accuracy_score(y, loo_pred)),
-        "loocv_brier": float(brier_score_loss(y, loo_probs)),
-    }
-
-    out = Path(args.output)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out, "wb") as f:
-        pickle.dump(artifact, f)
-    print(f"\n模型已保存: {out}")
+    print(f"\n=== 训练汇总：成功 {len(trained)} 个点位 ===")
+    for item in trained:
+        print(
+            f"  {item['spot_id']}/{item['viewpoint_id']}: "
+            f"n={item['n_days']} LOOCV={item['loocv_accuracy']:.3f} -> {item['output']}"
+        )
 
 
 if __name__ == "__main__":
