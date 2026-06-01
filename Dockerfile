@@ -41,4 +41,6 @@ ENV TZ=Asia/Shanghai
 
 EXPOSE 8080
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# 多 worker：CPU 型回测/ML 会占满单核；2 worker 可并行处理请求（按 CPU 核数调整）
+ENV UVICORN_WORKERS=2
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers ${UVICORN_WORKERS}"]

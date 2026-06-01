@@ -57,6 +57,13 @@ def build_scenario(
     )
     if observable and viewing_mode == "peak_overlook":
         has_cloudsea_evidence = observable_cloudsea_evidence(observable)
+    elif observable and viewing_mode == "valley_fill":
+        obs_frac = float(observable.get("observable_fraction") or 0)
+        vis_km = float(visibility or 99999) / 1000.0
+        if obs_frac >= 0.35 and vis_km <= 2.0 and rh >= 62:
+            has_cloudsea_evidence = True
+        elif vis_km <= 2.0 and rh >= 68 and cloudsea_prob >= 38:
+            has_cloudsea_evidence = True
     elif viewing_mode == "peak_overlook" and cloudsea_prob >= 50:
         has_cloudsea_evidence = True
 
@@ -93,6 +100,28 @@ def build_scenario(
             cloudsea_prob,
         )
 
+    if (
+        viewing_mode == "peak_overlook"
+        and cloudsea_prob >= 55
+        and cloud_low >= 55
+        and rh >= 85
+    ):
+        if cloud_mid + cloud_high >= 50:
+            return _scenario(
+                "cloudsea_block_sun",
+                "有云海·日出难",
+                "峰顶低云/湿度条件好，可能有云海，但中高云或能见度限制日出。",
+                2,
+                cloudsea_prob - 5,
+            )
+        return _scenario(
+            "cloudsea_only",
+            "或有云海",
+            "峰顶湿度与低云条件较好，值得关注云海（日出另说）。",
+            2,
+            cloudsea_prob,
+        )
+
     if is_sunrise_window or (cloudsea_prob >= 55 and sunrise_prob >= 55):
         if (
             cloudsea_prob >= 70
@@ -121,6 +150,20 @@ def build_scenario(
                 int((cloudsea_prob + sunrise_prob) / 2),
             )
         if sunrise_prob >= 60 and not has_cloudsea_evidence:
+            if (
+                viewing_mode == "valley_fill"
+                and visibility is not None
+                and visibility <= 2000
+                and rh >= 65
+                and cloudsea_prob >= 35
+            ):
+                return _scenario(
+                    "sunrise_cloudsea_fair",
+                    "较可能日出云海",
+                    "能见度偏低且湿度较高，可能有谷地雾/云海，值得早起碰运气。",
+                    2,
+                    int((cloudsea_prob + sunrise_prob) / 2),
+                )
             if cloud_low <= 20 and total_cloud <= 40:
                 return _scenario(
                     "clear_sunrise",

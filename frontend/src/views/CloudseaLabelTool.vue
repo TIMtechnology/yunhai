@@ -55,7 +55,8 @@ const loading = ref(false)
 const session = ref<LabelSession | null>(null)
 const calendar = ref<Record<string, CalendarEntry>>({})
 const stats = ref<ContributorStats | null>(null)
-const accuracy = ref<{ total: number; correct: number; accuracy: number | null; details: Array<Record<string, unknown>> } | null>(null)
+const accuracy = ref<{ total: number; correct: number; accuracy: number | null; details: Array<Record<string, unknown>>; cached?: boolean } | null>(null)
+const accuracyLoading = ref(false)
 const selectedStatus = ref<LabelStatus | null>(null)
 const selectedSunriseQuality = ref<SunriseQuality | null>(null)
 const linkedCommunityId = ref('')
@@ -66,6 +67,7 @@ const editLocLng = ref<number | null>(null)
 const editLocElev = ref<number | null>(null)
 const savingLocation = ref(false)
 let loadSessionSeq = 0
+let loadAccuracySeq = 0
 
 interface LabelKeys {
   spotId: string
@@ -312,6 +314,30 @@ async function resolveLabelKeys(): Promise<LabelKeys> {
   }
 }
 
+async function loadAccuracy(refresh = false) {
+  if (!adminMode.value || !token.value) {
+    accuracy.value = null
+    return
+  }
+  const seq = ++loadAccuracySeq
+  accuracyLoading.value = true
+  try {
+    const keys = await resolveLabelKeys()
+    if (keys.spotId === 'community') {
+      if (seq === loadAccuracySeq) accuracy.value = null
+      return
+    }
+    accuracy.value = await fetchAccuracy(token.value, keys.spotId, keys.viewpointId, refresh)
+  } catch (err) {
+    if (seq === loadAccuracySeq) {
+      accuracy.value = null
+      message.error(refresh ? '刷新准确率失败（可能超时，请稍后重试）' : String(err))
+    }
+  } finally {
+    if (seq === loadAccuracySeq) accuracyLoading.value = false
+  }
+}
+
 async function loadSession() {
   const seq = ++loadSessionSeq
   loading.value = true
@@ -350,11 +376,6 @@ async function loadSession() {
           },
         ]),
       )
-      if (keys.spotId !== 'community') {
-        accuracy.value = await fetchAccuracy(token.value, keys.spotId, keys.viewpointId)
-      } else {
-        accuracy.value = null
-      }
       return
     }
 
@@ -525,6 +546,10 @@ watch(month, () => {
 watch([locationMode, spotId, viewpointId, locationId, currentDate, poiLat, poiLng], () => {
   if (!pageReady.value) return
   loadSession()
+})
+watch([locationMode, spotId, viewpointId], () => {
+  if (!pageReady.value || !adminMode.value) return
+  accuracy.value = null
 })
 watch(locationId, () => {
   if (pageReady.value) syncLocationEditFields()
@@ -791,11 +816,26 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               </div>
             </div>
 
-            <div v-if="accuracy && adminMode" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-              <div class="mb-2 font-semibold">回测准确率（已标注日）</div>
-              <div class="text-sm text-slate-300">
+            <div v-if="adminMode" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="font-semibold">回测准确率（已标注日）</div>
+                <n-button
+                  size="tiny"
+                  quaternary
+                  :loading="accuracyLoading"
+                  :disabled="accuracyLoading"
+                  @click="loadAccuracy(!!accuracy)"
+                >
+                  {{ accuracy ? '刷新' : '计算' }}
+                </n-button>
+              </div>
+              <div v-if="accuracy" class="text-sm text-slate-300">
                 {{ accuracy.correct }}/{{ accuracy.total }}
                 <span v-if="accuracy.accuracy != null">· {{ (accuracy.accuracy * 100).toFixed(1) }}%</span>
+                <span v-if="accuracy.cached" class="ml-1 text-xs text-slate-500">（缓存）</span>
+              </div>
+              <div v-else class="text-xs text-slate-500">
+                切换景区不会自动计算；点「计算」批量回测全部已标注日（首次约 30–60 秒，勿与标注操作同时点）。
               </div>
             </div>
           </div>

@@ -912,10 +912,12 @@ async def run_backtest_prediction(
         forecast_days=min(max((target_date - today).days + 1, 5), 16) if target_date >= today else 1,
     )
 
-    results = build_predictions_from_hourly(
+    # 标注/回测只需目标日逐时；live forecast 的 hourly 含 5–16 天，全量打分会拖垮 CPU
+    results = await asyncio.to_thread(
+        build_predictions_from_hourly,
         req=req,
         elevation=elevation,
-        hourly=hourly,
+        hourly=display_hourly,
         astronomy=astronomy,
         cloudsea_months=cloudsea_months,
         sunrise_months=sunrise_months,
@@ -928,8 +930,7 @@ async def run_backtest_prediction(
     window_hours = [
         h
         for h in results
-        if h.time.startswith(target_date.isoformat())
-        and window_start <= parse_shanghai_time(h.time).hour < window_end
+        if window_start <= parse_shanghai_time(h.time).hour < window_end
     ]
     peak = max(window_hours, key=lambda h: h.cloudsea.probability) if window_hours else None
 
@@ -973,4 +974,46 @@ async def run_backtest_prediction(
         "sunrise_window_summary": summary,
         "prediction": response.model_dump(),
     }
+
+
+async def backtest_sunrise_peak(
+    *,
+    req: PredictRequest,
+    target_date: date_cls,
+    model_tag: int = 0,
+    window_start: int = 3,
+    window_end: int = 7,
+    prefer_cached_meteo: bool = True,
+) -> dict:
+    """日出窗口峰值概率（accuracy 等批量场景用，带逐日 Redis 缓存）。"""
+    from app.services.cache import cache_get, cache_set
+
+    spot_id = req.spot_id or "_"
+    vp_id = req.viewpoint_id or "_"
+    date_key = target_date.isoformat()
+    cache_key = (
+        f"bt_peak:v1:{spot_id}:{vp_id}:{date_key}:{model_tag}:"
+        f"{window_start}:{window_end}"
+    )
+    cached = cache_get(cache_key)
+    if cached:
+        return dict(cached)
+
+    backtest = await run_backtest_prediction(
+        req=req,
+        target_date=target_date,
+        window_start=window_start,
+        window_end=window_end,
+        prefer_cached_meteo=prefer_cached_meteo,
+    )
+    summary = backtest.get("sunrise_window_summary") or {}
+    out = {
+        "date": date_key,
+        "peak_prob": summary.get("max_cloudsea_prob", 0),
+        "scenario": summary.get("scenario"),
+    }
+    today = datetime.now(TZ).date()
+    ttl = 600 if target_date >= today else 86400 * 7
+    cache_set(cache_key, out, ttl=ttl)
+    return out
 

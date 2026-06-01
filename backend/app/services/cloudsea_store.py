@@ -249,7 +249,15 @@ def upsert_label(
             """,
             (spot_id, viewpoint_id, date_key, window_start, window_end),
         ).fetchone()
-    return dict(row) if row else {}
+    result = dict(row) if row else {}
+    if result and review_status in (None, "approved"):
+        try:
+            from app.services.meteo_backfill import ensure_label_meteo_cached
+
+            ensure_label_meteo_cached(result)
+        except Exception:
+            pass
+    return result
 
 
 def list_approved_labels() -> list[dict[str, Any]]:

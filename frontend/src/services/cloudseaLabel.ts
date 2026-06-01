@@ -86,13 +86,26 @@ export async function fetchCalendar(token: string, spotId: string, viewpointId: 
   return resp.json() as Promise<{ labels: Array<{ date: string; status: string; sunrise_quality?: SunriseQuality | null }> }>
 }
 
-export async function fetchAccuracy(token: string, spotId: string, viewpointId: string) {
+export async function fetchAccuracy(
+  token: string,
+  spotId: string,
+  viewpointId: string,
+  refresh = false,
+) {
   const q = new URLSearchParams({ spot_id: spotId, viewpoint_id: viewpointId })
-  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/accuracy?${q}`, {
-    headers: headers(token),
-  })
-  if (!resp.ok) throw new Error(await resp.text())
-  return resp.json()
+  if (refresh) q.set('refresh', 'true')
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 180_000)
+  try {
+    const resp = await fetch(`${API_BASE}/api/internal/cloudsea/accuracy?${q}`, {
+      headers: headers(token),
+      signal: controller.signal,
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+    return resp.json()
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export async function fetchLabels(token: string, spotId: string, viewpointId: string, month: string) {

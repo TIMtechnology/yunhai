@@ -134,6 +134,9 @@ def merge_ml_cloudsea_score(
     ml_prob = ml.probability
     blended = int(round(ml_weight * ml_prob + (1.0 - ml_weight) * fuzzy_prob))
     if plausibility_cap is not None:
+        # 点位 ML 已用本地标注校准：融合结果不应被 NWP 干廓线 heuristic 压到低于 ML 估计
+        if ml_weight >= 0.75:
+            plausibility_cap = max(plausibility_cap, ml_prob)
         blended = min(blended, plausibility_cap)
     blended = max(0, min(100, blended))
 

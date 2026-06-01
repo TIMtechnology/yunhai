@@ -18,10 +18,26 @@ def _angular_diff(a: float, b: float) -> float:
     return min(d, 360.0 - d)
 
 
-def _visible_range_km(visibility_m: float | None, *, max_range_km: float = DEFAULT_MAX_RANGE_KM) -> float:
+def _visible_range_km(
+    visibility_m: float | None,
+    *,
+    max_range_km: float = DEFAULT_MAX_RANGE_KM,
+    viewing_mode: str = "valley_fill",
+    summit_cloud_low: float = 0.0,
+    summit_rh: float = 70.0,
+) -> float:
     if visibility_m is None or visibility_m <= 0:
         return max_range_km
-    return min(visibility_m / 1000.0, max_range_km)
+    vis_km = min(visibility_m / 1000.0, max_range_km)
+    # 峰顶厚低云日 NWP 能见度常偏短，扇区几何仍应看到数 km 外谷地
+    if (
+        viewing_mode == "peak_overlook"
+        and summit_cloud_low >= 70
+        and summit_rh >= 88
+        and vis_km < 5.0
+    ):
+        return max(vis_km, 5.0)
+    return vis_km
 
 
 def _moisture_factor(rh_850: float | None, rh_700: float | None) -> float:
@@ -94,7 +110,13 @@ def compute_observable_field(
     summit_rh: float = 70.0,
 ) -> dict[str, Any]:
     """计算当前时刻可观测云海场摘要。"""
-    vis_range = _visible_range_km(visibility_m, max_range_km=max_range_km)
+    vis_range = _visible_range_km(
+        visibility_m,
+        max_range_km=max_range_km,
+        viewing_mode=viewing_mode,
+        summit_cloud_low=summit_cloud_low,
+        summit_rh=summit_rh,
+    )
     moisture = _moisture_factor(rh_850, rh_700)
 
     if viewing_mode != "peak_overlook" or not elev_profile_sunrise:
@@ -198,7 +220,15 @@ def compute_observable_field(
     viewer_below_base = viewer_elev_m < cloud_base_m
     horizon_blocked = False
 
-    if viewer_below_base:
+    summit_in_cloud = summit_cloud_low >= 70 and summit_rh >= 88
+    if viewer_below_base and summit_in_cloud and viewing_mode == "peak_overlook":
+        # 峰顶报满低云+饱和湿度：人在云系内/云上，不应按「云下」压到 0
+        viewer_below_base = False
+        observable_fraction = max(
+            observable_fraction,
+            0.32 + min(summit_cloud_low, 100) / 100.0 * 0.25,
+        )
+    elif viewer_below_base:
         observable_fraction = min(observable_fraction, 0.08)
     elif viewer_above and observable_fraction >= 0.2:
         sector_dry = (

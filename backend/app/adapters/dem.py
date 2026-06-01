@@ -484,10 +484,19 @@ def get_terrain_context_sync(
     *,
     elevation: float | None = None,
     profile_date: date_cls | None = None,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
 ) -> dict[str, Any]:
     """训练脚本等同步环境使用。"""
     import asyncio
 
     return asyncio.run(
-        get_terrain_context(lat, lng, elevation=elevation, profile_date=profile_date)
+        get_terrain_context(
+            lat,
+            lng,
+            elevation=elevation,
+            profile_date=profile_date,
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
+        )
     )

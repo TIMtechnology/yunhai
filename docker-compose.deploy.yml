@@ -14,6 +14,7 @@ services:
 
   yunhai:
     image: yunhai:latest
+    command: ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers ${UVICORN_WORKERS:-2}"]
     ports:
       - "8088:8080"
     environment:
@@ -32,6 +33,7 @@ services:
       - CLOUDSEA_ML_ENABLED=true
       - CLOUDSEA_MODEL_PATH=/app/models/cloudsea_ml_v2.pkl
       - CLOUDSEA_CONTRIBUTE_ENABLED=true
+      - UVICORN_WORKERS=2
       - CLOUDSEA_DAILY_LABEL_CAP=30
       - CLOUDSEA_MAX_LOCATIONS_PER_CONTRIBUTOR=10
     volumes:

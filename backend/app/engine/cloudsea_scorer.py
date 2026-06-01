@@ -98,8 +98,10 @@ def _classify_cloudsea_archetype(
             viewing_mode == "peak_overlook"
             and rh_850 is not None
             and rh_850 >= 68
-            and observable
-            and observable.get("viewer_above_cloud")
+            and (
+                (observable and observable.get("viewer_above_cloud"))
+                or cloud_low >= 70
+            )
         )
         if not peak_inversion:
             return "fog_exclude", "模式低云偏高+高湿，非山谷云海型"
@@ -231,6 +233,21 @@ def _infer_effective_low_cloud(
         return cloud_low, ""
 
     vis_m = visibility
+    # 五女山等 valley_fill：NWP 低云=0 但贴地能见度差 + 高湿 → 谷雾/辐射雾代理
+    if (
+        500 <= elevation <= 1200
+        and cloud_low < 12
+        and vis_m <= 2000
+        and rh >= 65
+    ):
+        boost = 35.0
+        if vis_m <= 500:
+            boost = 55.0
+        elif vis_m <= 1000:
+            boost = 45.0
+        if rh >= 80:
+            boost += 8.0
+        return max(cloud_low, boost), f"能见度 {vis_m:.0f}m·高湿，推断谷地雾/云海"
     if rh >= 90:
         return cloud_low, ""
     if archetype == "type_b":
@@ -639,7 +656,16 @@ def score_cloudsea(
     if archetype == "fog_exclude":
         weighted = min(weighted, 0.25)
     elif archetype == "type_a":
-        weighted = max(weighted, 0.58)
+        floor = 0.58
+        obs_frac = float(observable.get("observable_fraction") or 0) if observable else 0.0
+        sector_low = observable.get("sector_cloud_low_mean") if observable else None
+        if is_peak and obs_frac >= 0.25:
+            floor = max(floor, 0.68)
+        elif is_peak and sector_low is not None and float(sector_low) >= 18:
+            floor = max(floor, 0.65)
+        elif cloud_low >= 70 and rh_850 is not None and rh_850 >= 72:
+            floor = max(floor, 0.66)
+        weighted = max(weighted, floor)
     elif archetype == "type_b":
         weighted = max(weighted, 0.48)
     elif archetype == "type_c":
@@ -651,7 +677,11 @@ def score_cloudsea(
         if elevation > cloud_top or elevation > elev_max_5km - 120:
             weighted = max(weighted, 0.50)
         if rh_850 >= 72 and cloud_base < elev_max_5km - 200:
-            weighted = max(weighted, 0.58)
+            obs_frac = float(observable.get("observable_fraction") or 0) if observable else 0.0
+            floor = 0.58
+            if obs_frac >= 0.22 or cloud_low >= 70:
+                floor = 0.68
+            weighted = max(weighted, floor)
 
     if cloud_low < 10 and not vis_proxy_note and fog_score < 0.5 and archetype == "neutral":
         weighted = min(weighted, 0.32)
