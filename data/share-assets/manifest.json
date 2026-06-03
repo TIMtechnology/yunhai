@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "sunrise_clear",
+      "file": "bg_sunrise_clear.png",
+      "prompt": "A premium cinematic Chinese mountain sunrise background for a weather forecast share card, distant layered ridges, warm dawn glow above sea of clouds, deep navy foreground, subtle mist, no text, no logos, clean empty space for UI overlay, elegant and realistic, 16:9"
+    },
+    {
+      "id": "cloudsea_strong",
+      "file": "bg_cloudsea_strong.png",
+      "prompt": "A dramatic high mountain cloud-sea background, viewpoint above thick valley fog, blue hour to golden sunrise gradient, refined travel-weather app aesthetic, no text, no people, no logos, darkened left area for readable data overlay, 16:9"
+    },
+    {
+      "id": "cautious_watch",
+      "file": "bg_cautious_watch.png",
+      "prompt": "A cautious mountain weather forecast background, thin valley mist, partial clouds, cool blue dawn, quiet realistic Chinese mountain silhouette, clear negative space for UI cards, no text, no logos, premium app share poster style, 16:9"
+    },
+    {
+      "id": "fog_valley",
+      "file": "bg_fog_valley.png",
+      "prompt": "A foggy mountain valley at pre-dawn, low visibility atmosphere, soft layered fog, dark blue and slate colors, understated realistic photography-poster hybrid, no text, no logo, suitable as background for forecast evidence card, 16:9"
+    }
+  ]
+}

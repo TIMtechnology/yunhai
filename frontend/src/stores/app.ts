@@ -180,7 +180,8 @@ export const useAppStore = defineStore('app', () => {
 
   function jumpToPeakCloudsea() {
     if (!prediction.value || !selectedDay.value) return
-    const indices = dayHourIndices.value
+    const sunriseIndices = dayHourIndices.value.filter((idx) => prediction.value!.hours[idx].is_sunrise_window)
+    const indices = sunriseIndices.length ? sunriseIndices : dayHourIndices.value
     let bestIdx = indices[0]
     let best = 0
     for (const idx of indices) {

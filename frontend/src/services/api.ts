@@ -85,6 +85,8 @@ export interface WeatherSnapshot {
   cloud_cover_mid: number
   cloud_cover_high: number
   wind_speed: number
+  wind_direction?: number
+  wind_gusts?: number
   visibility?: number
   weather_text: string
 }
@@ -113,6 +115,10 @@ export interface DaySummary {
   sunrise_hour_index?: number
   peak_cloudsea_prob: number
   peak_cloudsea_time?: string
+  full_day_peak_cloudsea_prob?: number
+  full_day_peak_cloudsea_time?: string
+  sunrise_window_peak_cloudsea_prob?: number
+  sunrise_window_peak_cloudsea_time?: string
   sunrise_scenario_label?: string
   sunrise_combined_score: number
   recommend_periods: string[]
@@ -176,6 +182,7 @@ export interface PredictResponse {
       scenario?: string
     }>
   }
+  forecast_meta?: Record<string, unknown>
 }
 
 export async function searchSpots(
@@ -233,6 +240,60 @@ export async function fetchDailyAdvisory(body: {
 }) {
   const { data } = await api.post<DailyAdvisoryResponse>('/advisory/daily-brief', body, {
     timeout: 90000,
+  })
+  return data
+}
+
+export interface MeteoProfileLevel {
+  pressure_hpa: number
+  height_m_asl: number
+  cloud_cover_pct?: number | null
+  rh_pct?: number | null
+}
+
+export interface MeteoProfileHour {
+  time: string
+  levels: MeteoProfileLevel[]
+  viewpoint_elevation_m?: number | null
+  cloud_base_estimate_m?: number | null
+}
+
+export interface MeteoProfileResponse {
+  date: string
+  source: string
+  model_note: string
+  lat: number
+  lng: number
+  elevation?: number | null
+  hours: MeteoProfileHour[]
+  levels_hpa: number[]
+}
+
+export async function fetchMeteoProfile(params: {
+  lat: number
+  lng: number
+  date: string
+  elevation?: number
+}) {
+  const { data } = await api.get<MeteoProfileResponse>('/meteo/profile', { params })
+  return data
+}
+
+export interface ShareSnapshotResponse {
+  id: string
+  url: string
+  expires_at: string
+}
+
+export async function createShareSnapshot(body: {
+  date: string
+  prediction: PredictResponse
+  include_ai?: boolean
+  ai_brief?: string
+  privacy?: 'hide_coords' | 'show_coords'
+}) {
+  const { data } = await api.post<ShareSnapshotResponse>('/share/snapshot', body, {
+    timeout: 60000,
   })
   return data
 }

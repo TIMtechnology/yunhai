@@ -276,7 +276,16 @@ def _build_day_summaries(
                     ),
                 )
 
-        peak = max(entries, key=lambda x: x[1].cloudsea.probability)
+        full_day_peak = max(entries, key=lambda x: x[1].cloudsea.probability)
+        sunrise_window = [
+            (i, h)
+            for i, h in entries
+            if h.is_sunrise_window or 3 <= parse_shanghai_time(h.time).hour < 7
+        ]
+        sunrise_window_peak = max(
+            sunrise_window or entries,
+            key=lambda x: x[1].cloudsea.probability,
+        )
         recommend: list[str] = []
         for idx, item in entries:
             if item.scenario.level <= 2 and item.scenario.combined_score >= 60:
@@ -295,8 +304,13 @@ def _build_day_summaries(
                 weekday=weekday,
                 sunrise_time=sunrise_time,
                 sunrise_hour_index=sunrise_idx,
-                peak_cloudsea_prob=peak[1].cloudsea.probability,
-                peak_cloudsea_time=parse_shanghai_time(peak[1].time).strftime("%H:%M"),
+                # Product-facing peak is the sunrise-window peak; full-day peak is preserved separately.
+                peak_cloudsea_prob=sunrise_window_peak[1].cloudsea.probability,
+                peak_cloudsea_time=parse_shanghai_time(sunrise_window_peak[1].time).strftime("%H:%M"),
+                full_day_peak_cloudsea_prob=full_day_peak[1].cloudsea.probability,
+                full_day_peak_cloudsea_time=parse_shanghai_time(full_day_peak[1].time).strftime("%H:%M"),
+                sunrise_window_peak_cloudsea_prob=sunrise_window_peak[1].cloudsea.probability,
+                sunrise_window_peak_cloudsea_time=parse_shanghai_time(sunrise_window_peak[1].time).strftime("%H:%M"),
                 sunrise_scenario_label=sunrise_item.scenario.label if sunrise_item else None,
                 sunrise_combined_score=sunrise_item.scenario.combined_score if sunrise_item else 0,
                 recommend_periods=recommend[:4],
@@ -364,6 +378,8 @@ def build_predictions_from_hourly(
     cloud_mid = hourly.get("cloud_cover_mid", [])
     cloud_high = hourly.get("cloud_cover_high", [])
     winds = hourly.get("wind_speed_10m", [])
+    wind_dirs = hourly.get("wind_direction_10m", [])
+    wind_gusts = hourly.get("wind_gusts_10m", [])
     visibilities = hourly.get("visibility", [])
     rh_850_series = hourly.get("relative_humidity_850hPa", [])
     rh_700_series = hourly.get("relative_humidity_700hPa", [])
@@ -417,6 +433,8 @@ def build_predictions_from_hourly(
         high = cloud_high[idx] if idx < len(cloud_high) and cloud_high[idx] is not None else 30
         total = cloud_total[idx] if idx < len(cloud_total) and cloud_total[idx] is not None else (low + mid + high) / 3
         wind = winds[idx] if idx < len(winds) and winds[idx] is not None else 3
+        wind_dir = wind_dirs[idx] if idx < len(wind_dirs) and wind_dirs[idx] is not None else None
+        wind_gust = wind_gusts[idx] if idx < len(wind_gusts) and wind_gusts[idx] is not None else None
         vis = visibilities[idx] if idx < len(visibilities) and visibilities[idx] is not None else None
         recent = _recent_precip(precips, idx)
 
@@ -610,6 +628,8 @@ def build_predictions_from_hourly(
                     cloud_cover_mid=round(mid, 0),
                     cloud_cover_high=round(high, 0),
                     wind_speed=round(wind, 1),
+                    wind_direction=round(wind_dir, 0) if wind_dir is not None else None,
+                    wind_gusts=round(wind_gust, 1) if wind_gust is not None else None,
                     visibility=round(vis, 0) if vis is not None else None,
                     weather_text=w_text,
                 ),
@@ -629,6 +649,7 @@ def _build_response(
     terrain: dict | None = None,
     viewing_mode: str = "valley_fill",
     viewing_mode_note: str = "",
+    forecast_meta: dict | None = None,
 ) -> PredictResponse:
     days = _build_day_summaries(results, astronomy)
 
@@ -684,6 +705,7 @@ def _build_response(
             "cloudsea": _find_best_windows(results, "cloudsea"),
             "sunrise": sunrise_days,
         },
+        forecast_meta=forecast_meta or {},
     )
 
 
@@ -709,6 +731,11 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
             viewpoint_id=req.viewpoint_id,
         ),
     )
+    forecast_meta = {
+        "source": "open-meteo",
+        "model": forecast.get("generationtime_ms") is not None and "seamless" or "open-meteo",
+        "fetched_at": now.isoformat(timespec="seconds"),
+    }
     hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
     astronomy = parse_daily_astronomy(forecast)
     satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
@@ -751,6 +778,7 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
         terrain=terrain,
         viewing_mode=viewing_mode,
         viewing_mode_note=viewing_mode_note,
+        forecast_meta=forecast_meta,
     )
 
 

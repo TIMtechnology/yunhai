@@ -19,6 +19,7 @@ from app.adapters.open_meteo import fetch_elevation, fetch_forecast
 from app.adapters.tianditu_poi import search_poi
 from app.adapters.dem import get_terrain_context
 from app.models.schemas import PredictRequest, PredictResponse, TerrainContextResponse
+from app.services.meteo_profile import build_meteo_profile
 from app.services.predictor import run_prediction
 from app.services.spot_loader import get_spot, get_viewpoint, search_spots
 
@@ -90,6 +91,14 @@ async def weather_raw(lat: float, lng: float):
     forecast = await fetch_forecast(lat, lng)
     elevation = await fetch_elevation(lat, lng)
     return {"forecast": forecast, "elevation": elevation}
+
+
+@router.get("/meteo/profile")
+async def meteo_profile(lat: float, lng: float, date: str, elevation: Optional[float] = None):
+    try:
+        return await build_meteo_profile(lat=lat, lng=lng, date_key=date, elevation=elevation)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="date 格式须为 YYYY-MM-DD") from exc
 
 
 @router.get("/terrain/context", response_model=TerrainContextResponse)

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>云海日出 · 气象可视化与分享能力规划报告</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #7dd3fc;
+      --ok: #86efac;
+      --warn: #fcd34d;
+      --bad: #fca5a5;
+      --info: #93c5fd;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      max-width: 1100px;
+      margin-inline: auto;
+      font-family: "PingFang SC", "SF Pro Text", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    h1 { color: var(--accent); font-size: 1.55rem; margin: 0 0 8px; }
+    h2 {
+      color: var(--muted);
+      font-size: 1.08rem;
+      margin: 2.2rem 0 0.75rem;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { color: #cbd5e1; font-size: 0.95rem; margin: 1.2rem 0 0.5rem; }
+    .meta { color: var(--muted); font-size: 0.86rem; margin-bottom: 1.5rem; }
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 1rem 0 1.5rem;
+    }
+    .toc ol { margin: 0; padding-left: 1.25rem; }
+    .toc a { color: var(--info); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0;
+    }
+    .box.ok { border-left: 4px solid #22c55e; }
+    .box.warn { border-left: 4px solid #eab308; }
+    .box.bad { border-left: 4px solid #ef4444; }
+    .box.info { border-left: 4px solid #3b82f6; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 10px 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #172033; color: #f1f5f9; font-weight: 600; }
+    tr:nth-child(even) td { background: rgba(30, 41, 59, 0.45); }
+    code, pre {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.78rem;
+    }
+    pre {
+      background: #0c1222;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-right: 4px;
+      font-weight: 600;
+    }
+    .tag.ok { background: rgba(34, 197, 94, 0.2); color: var(--ok); }
+    .tag.warn { background: rgba(234, 179, 8, 0.2); color: var(--warn); }
+    .tag.bad { background: rgba(239, 68, 68, 0.2); color: var(--bad); }
+    .tag.info { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+    .phase {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(30, 41, 59, 0.35);
+    }
+    .phase h4 { margin: 0 0 6px; color: var(--accent); font-size: 0.9rem; }
+    ul { margin: 0.4rem 0; padding-left: 1.2rem; }
+    .mermaid-wrap {
+      background: #fff;
+      color: #1e293b;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 12px 0;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+    .footnote { font-size: 0.78rem; color: var(--muted); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .gate { background: #172554; border: 1px dashed #3b82f6; border-radius: 10px; padding: 14px; margin: 16px 0; }
+    .gate strong { color: #93c5fd; }
+  </style>
+</head>
+<body>
+
+<h1>气象可视化对标 · 预测精度 · 分享依据 — 产品规划报告</h1>
+<p class="meta">
+  项目：日出云海 · 联合观测预测（yunhai） · 文档类型：<strong>规划评审稿（非实施承诺）</strong><br/>
+  生成：2026-06-03 · 状态：<strong>待产品确认后进入分期实施</strong> · 关联截图：meteoblue 风格多面板预报（太子尖 1557m，7 日逐时）
+</p>
+
+<nav class="toc">
+  <strong>目录</strong>
+  <ol>
+    <li><a href="#s1">竞品与数据源研判（截图对应能力）</a></li>
+    <li><a href="#s2">本项目现状与差距矩阵</a></li>
+    <li><a href="#s3">可借鉴方案（精度 + 展示）</a></li>
+    <li><a href="#s4">数据源可达性、成本与合规</a></li>
+    <li><a href="#s5">「分享预测 + 依据」功能设计</a></li>
+    <li><a href="#s6">数据结构与 API 草案</a></li>
+    <li><a href="#s7">分期路线图与验收标准</a></li>
+    <li><a href="#s8">风险、依赖与决策门禁</a></li>
+  </ol>
+</nav>
+
+<div class="gate">
+  <strong>阅读说明：</strong>本报告用于<strong>方案评审</strong>。您确认方向与分期优先级后，再启动开发；未标注「P0」的条目默认不纳入下一迭代。
+</div>
+
+<!-- ========== S1 ========== -->
+<h2 id="s1">1. 竞品与数据源研判</h2>
+
+<h3>1.1 截图产品形态识别</h3>
+<div class="box info">
+  截图特征：顶栏「日出日落月相」、底栏 meteoblue 品牌、<strong>太子尖 30.18°N 118.90°E · 1557 m asl</strong>、约 7 日逐时、四行面板：
+  <ul>
+    <li><strong>温度 + 天气图标</strong>（日/夜背景色带）</li>
+    <li><strong>降水柱状 + 湿度折线 + 降水概率</strong></li>
+    <li><strong>垂直云量剖面</strong>（高度 0–14 km 灰度云密，含站点海拔参考线）— 对云海最关键</li>
+    <li><strong>风速/阵风折线 + 风向箭头</strong></li>
+  </ul>
+  该类界面在行业中通常称为 <strong>Meteogram（气象ogram）/ All-in-One</strong>，meteoblue 文档对应产品为
+  <code>meteogram_one</code>、<code>crossSection_clouds</code> 等 Image/Vis API。
+</div>
+
+<h3>1.2 厂商侧数据源（meteoblue 公开文档归纳）</h3>
+<table>
+  <thead>
+    <tr>
+      <th>层级</th><th>内容</th><th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>核心 NWP</td>
+      <td><strong>NEMS 族</strong>（NEMS4 中欧 4km、NEMS12、NEMSGLOBAL 30km 等）</td>
+      <td>自研/运营区域高分辨率 + 全球背景场；强调地形与云发展</td>
+    </tr>
+    <tr>
+      <td>地形</td>
+      <td>DEM ~80m + 请求参数 <code>asl</code>（海拔米）</td>
+      <td>同经纬度不同海拔预报分离（山谷 vs 山顶）</td>
+    </tr>
+    <tr>
+      <td>同化/后处理</td>
+      <td>地面站、雷达、卫星；历史预报渐进订正</td>
+      <td>近时效预报随观测融合，非单纯模式直出</td>
+    </tr>
+    <tr>
+      <td>交付形态</td>
+      <td>Forecast API（JSON）、Images API（meteogram PNG/SVG）、Maps Tile API</td>
+      <td>App 可能嵌入图片 API 或自绘 + 自家后端聚合</td>
+    </tr>
+    <tr>
+      <td>商业</td>
+      <td>API Key 计费、域名白名单、调用量限制</td>
+      <td><span class="tag warn">需商务评估</span> 不适合无预算直接替换 Open-Meteo</td>
+    </tr>
+  </tbody>
+</table>
+<p class="muted" style="font-size:0.8rem">
+  参考：<a href="https://docs.meteoblue.com/en/meteo/data-sources/datasets" style="color:#7dd3fc">meteoblue Datasets</a> ·
+  <a href="https://docs.meteoblue.com/en/weather-apis/images-api/forecast-images" style="color:#7dd3fc">Forecast Images / Meteogram</a>
+</p>
+
+<h3>1.3 国内同类 App 常见组合（推断，需商务核实）</h3>
+<ul>
+  <li><strong>白标 meteoblue / Windy / 彩云</strong> 图表 + 自有 POI/摄影内容</li>
+  <li><strong>纯 Open-Meteo / ECMWF 开放数据</strong> 自研 UI（成本低，垂直云图需自算）</li>
+  <li><strong>景区合作站</strong> 实况探头（稀缺，难覆盖全国山头）</li>
+</ul>
+
+<!-- ========== S2 ========== -->
+<h2 id="s2">2. 本项目现状与差距矩阵</h2>
+
+<table>
+  <thead>
+    <tr><th>能力维度</th><th>yunhai 现状</th><th>截图竞品</th><th>差距</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>预报时长</td>
+      <td>5 天 × 24h（120 点）</td>
+      <td>约 7 天逐时</td>
+      <td><span class="tag warn">中</span> 可扩至 7d（Open-Meteo 支持，需评估负载）</td>
+    </tr>
+    <tr>
+      <td>海拔订正</td>
+      <td>观景点 elevation + DEM 地形因子；Open-Meteo 网格点 2m 场</td>
+      <td>显式 <code>asl=1557</code> 模式层订正</td>
+      <td><span class="tag warn">中</span> 未向模式传递「预报海拔」参数（Open-Meteo 无 asl，靠后处理）</td>
+    </tr>
+    <tr>
+      <td>垂直云结构</td>
+      <td>低/中/高云量 + 850/700/925hPa 湿度/逆温；<strong>无</strong> 0–14km 剖面图</td>
+      <td>云量垂直剖面（核心卖点）</td>
+      <td><span class="tag bad">大</span> 展示与机理解释弱</td>
+    </tr>
+    <tr>
+      <td>风场展示</td>
+      <td>10m 风速因子；无风向箭头时间条</td>
+      <td>风速/阵风 + 风向箭头</td>
+      <td><span class="tag warn">中</span> 数据已有 wind，UI 未展开展示</td>
+    </tr>
+    <tr>
+      <td>云海/日出预测</td>
+      <td>规则 fuzzy v2 + 点位 ML + 地形可观域；AI 解读</td>
+      <td>通用气象，未必有云海概率</td>
+      <td><span class="tag ok">优势</span> 垂直领域评分 + 标注闭环</td>
+    </tr>
+    <tr>
+      <td>卫星</td>
+      <td>Himawari 红外裁切 + 当天轻校正</td>
+      <td>meteoblue 卫星图层（全球产品）</td>
+      <td><span class="tag ok">部分优势</span> 东亚日出场景已接入</td>
+    </tr>
+    <tr>
+      <td>可解释/分享</td>
+      <td>因子列表、雷达图、AI 文字；<strong>无</strong> 对外分享页</td>
+      <td>截图分享为主</td>
+      <td><span class="tag bad">大</span> 缺「带依据的分享」</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box ok">
+  <strong>结论：</strong>竞品强在<strong>通用气象可视化（尤其垂直云剖面 + meteogram）</strong>；
+  我们强在<strong>云海/日出领域评分、ML 标注、地形观云模式</strong>。
+  不宜整体替换数据源；宜 <strong>Open-Meteo 深化 + 自研云海图层 + 可选商业补强</strong>。
+</div>
+
+<!-- ========== S3 ========== -->
+<h2 id="s3">3. 可借鉴方案（提高精度 + 展示效果）</h2>
+
+<div class="grid2">
+  <div class="phase">
+    <h4>方案 A · 零增量成本（推荐 P0 部分）</h4>
+    <span class="tag ok">数据源可达</span>
+    <ul>
+      <li><strong>垂直云剖面（自绘）</strong>：扩展 Open-Meteo 请求
+        <code>cloud_cover_*hPa</code> + <code>geopotential_height_*hPa</code>（多气压层），
+        将云量映射到高度轴；叠加观景点海拔红线、估算云底线。</li>
+      <li><strong>Meteogram 面板</strong>：前端 ECharts 四行（温/降水/剖面/风），复用现有 120 点 JSON。</li>
+      <li><strong>风向</strong>：补充 <code>wind_direction_10m</code>（Open-Meteo 已有变量，当前未请求）。</li>
+      <li><strong>日峰值云海</strong>：日摘要改为「日出窗口峰值」避免与卡片 27% 矛盾（已发现过的产品 bug 类问题）。</li>
+    </ul>
+  </div>
+  <div class="phase">
+    <h4>方案 B · 中等成本（P1）</h4>
+    <span class="tag warn">需开发 + 缓存</span>
+    <ul>
+      <li><strong>模式选择</strong>：Open-Meteo <code>models=icon_seamless</code> 或 regional 对比 ECMWF，A/B 显示「模式来源」。</li>
+      <li><strong>ICON 压力层云图</strong>：DWD ICON API 与现有 850/700 场交叉验证。</li>
+      <li><strong>剖面 → 评分</strong>：云底低于观景点且谷地湿度高 → 上调 plausibility；反之压制（与 terrain 模块联动）。</li>
+      <li><strong>分享卡片</strong>：见第 5 节。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="phase">
+    <h4>方案 C · 商业气象 API（P2 可选）</h4>
+    <span class="tag warn">付费 / 合规</span>
+    <ul>
+      <li><strong>meteoblue Forecast + crossSection_clouds</strong>：快速达到截图级剖面（嵌入图或 JSON）。</li>
+      <li><strong>Windy Point Forecast API</strong>：类似 alt 订正（需授权）。</li>
+      <li>建议：仅对<strong>精选景区</strong>试点，控制调用量；保留 Open-Meteo 为默认免费链路。</li>
+    </ul>
+  </div>
+  <div class="phase">
+    <h4>方案 D · 观测增强（P2+）</h4>
+    <span class="tag bad">难规模化</span>
+    <ul>
+      <li>景区微气象站、摄像头云况（非公开数据，合作成本高）。</li>
+      <li>Himawari 云顶高度反演（科研级，工程量大）。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.1 垂直云剖面 — 技术路径（方案 A 细化）</h3>
+<pre>{
+  "time": "2026-06-03T04:00:00+08:00",
+  "profile_levels": [
+    { "pressure_hpa": 1000, "height_m_asl": 320,  "cloud_cover_pct": 12, "rh_pct": 88 },
+    { "pressure_hpa": 975,  "height_m_asl": 480,  "cloud_cover_pct": 25, "rh_pct": 91 },
+    { "pressure_hpa": 950,  "height_m_asl": 650,  "cloud_cover_pct": 40, "rh_pct": 85 },
+    { "pressure_hpa": 925,  "height_m_asl": 850,  "cloud_cover_pct": 55, "rh_pct": 78 },
+    { "pressure_hpa": 850,  "height_m_asl": 1500, "cloud_cover_pct": 30, "rh_pct": 70 }
+  ],
+  "viewpoint_elevation_m": 1557,
+  "cloud_base_estimate_m": 980,
+  "interpretation": "观景点高于云底估算值，峰顶俯瞰云海理论可行"
+}</pre>
+<p class="muted">实现要点：后端 <code>predictor</code> 一次拉取多层变量并缓存；前端 heatmap（时间 × 高度）。与现有 <code>estimate_cloud_base</code>、<code>observable</code> 字段对齐。</p>
+
+<!-- ========== S4 ========== -->
+<h2 id="s4">4. 数据源可达性、成本与合规</h2>
+
+<table>
+  <thead>
+    <tr><th>数据源</th><th>可达性</th><th>关键变量</th><th>限制</th><th>本项目</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Open-Meteo Forecast</td>
+      <td><span class="tag ok">已用</span></td>
+      <td>2m 场、分层云、能见度、850/700/925、可扩展 wind_direction、多层 cloud_cover</td>
+      <td>非商业无限；需遵守 fair use；无 asl 参数</td>
+      <td>主链路，免费</td>
+    </tr>
+    <tr>
+      <td>Open-Meteo Historical Forecast</td>
+      <td><span class="tag ok">已用</span></td>
+      <td>标注回填、LOOCV</td>
+      <td>2021+；与训练一致性问题已文档化</td>
+      <td>ML 闭环</td>
+    </tr>
+    <tr>
+      <td>Copernicus DEM / Elevation API</td>
+      <td><span class="tag ok">已用</span></td>
+      <td>海拔、地形快照</td>
+      <td>—</td>
+      <td>terrain_store</td>
+    </tr>
+    <tr>
+      <td>Himawari GIBS</td>
+      <td><span class="tag ok">已用</span></td>
+      <td>红外云图、区域云量</td>
+      <td><strong>无未来</strong>；仅过去/临近实况</td>
+      <td>地图蒙版</td>
+    </tr>
+    <tr>
+      <td>meteoblue API</td>
+      <td><span class="tag warn">需签约</span></td>
+      <td>Meteogram 图、NEMS 预报、垂直云剖面</td>
+      <td>按量计费；中国区网络需测</td>
+      <td>P2 可选</td>
+    </tr>
+    <tr>
+      <td>天地图</td>
+      <td><span class="tag ok">已用</span></td>
+      <td>底图 POI</td>
+      <td>浏览器 Key；不涉及预报</td>
+      <td>前端</td>
+    </tr>
+    <tr>
+      <td>DeepSeek LLM</td>
+      <td><span class="tag ok">已用</span></td>
+      <td>出行解读</td>
+      <td>Token 成本；须与数值结论一致</td>
+      <td>辅助，非预报源</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ========== S5 ========== -->
+<h2 id="s5">5. 「分享预测 + 依据」功能设计</h2>
+
+<div class="box info">
+  <strong>产品目标：</strong>用户一键生成可转发链接/图片，包含
+  <strong>结论（云海/日出/综合）</strong> + <strong>可追溯依据</strong>（非黑盒），
+  提升传播与信任；默认免责声明与「非商业预报承诺」。
+</div>
+
+<h3>5.1 用户故事</h3>
+<ul>
+  <li>摄影师将「6 月 6 日 五女山点将台 · 谨慎前往 · 云海 27%」分享到微信群，好友点开可见依据摘要。</li>
+  <li>依据包含：日出窗口逐时表、规则%/ML%（若启用）、关键因子 Top3、AI 解读节选（可选）、卫星云图缩略（若有）。</li>
+</ul>
+
+<h3>5.2 功能点分解</h3>
+<table>
+  <thead>
+    <tr><th>ID</th><th>功能</th><th>说明</th><th>优先级</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>F1</td><td>生成分享</td><td>按钮「分享本日预测」；携带 spot/vp/date + 预测快照 hash</td><td><span class="tag ok">P0</span></td></tr>
+    <tr><td>F2</td><td>分享页 <code>/s/{id}</code></td><td>SSR 或静态 JSON + 轻量 Vue；SEO/OG 标签</td><td><span class="tag ok">P0</span></td></tr>
+    <tr><td>F3</td><td>依据面板</td><td>结构化 Evidence，非整页 PDF；可折叠「气象/规则/ML/地形」</td><td><span class="tag ok">P0</span></td></tr>
+    <tr><td>F4</td><td>快照不可变</td><td>分享时刻冻结 forecast + scores；显示「生成于 … 预报版本 …」</td><td><span class="tag ok">P0</span></td></tr>
+    <tr><td>F5</td><td>长图导出</td><td>html2canvas / 服务端 Puppeteer 出图 1080×长图</td><td><span class="tag warn">P1</span></td></tr>
+    <tr><td>F6</td><td>隐私选项</td><td>隐藏精确坐标（仅景区名）；默认不暴露用户 ID</td><td><span class="tag ok">P0</span></td></tr>
+    <tr><td>F7</td><td>过期策略</td><td>链接 7 天有效；过期显示「预报已过时」</td><td><span class="tag warn">P1</span></td></tr>
+    <tr><td>F8</td><td>反滥用</td><td>每 IP 每日生成上限；Redis 存快照</td><td><span class="tag ok">P0</span></td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 分享页信息架构（线框级）</h3>
+<pre>
+┌─────────────────────────────────────────────┐
+│ 五女山 · 点将台 · 2026-06-06（周六）          │
+│ 谨慎前往 │ 云海 27% 较差 │ 日出 71% 良好      │
+│ 综合 71 · 晴日日出 · 日出 04:06              │
+├─────────────────────────────────────────────┤
+│ [依据] 气象（03-07 表）│ 规则 17% │ ML 30%→27% │
+│ [机理] 高湿+低云薄 → 抑制云海（自动+AI）      │
+├─────────────────────────────────────────────┤
+│ [可选] 垂直云剖面缩略 │ Himawari 缩略图      │
+├─────────────────────────────────────────────┤
+│ 免责声明 · 生成时间 · 打开完整预测 →          │
+└─────────────────────────────────────────────┘
+</pre>
+
+<h3>5.4 与 AI 解读的关系</h3>
+<ul>
+  <li>分享依据以<strong>结构化 Evidence JSON</strong> 为准（与 <code>llm_advisory</code> 的 context 同源）。</li>
+  <li>AI 文案作为<strong>可选附录</strong>，须标注「AI 辅助」；禁止分享页仅一张 AI 截图无数字依据。</li>
+  <li>复用现有 <code>prediction_pipeline</code>、<code>verdict_hint</code>，保证与主页一致。</li>
+</ul>
+
+<!-- ========== S6 ========== -->
+<h2 id="s6">6. 数据结构与 API 草案</h2>
+
+<h3>6.1 分享快照 <code>ShareSnapshot</code>（存 Redis / SQLite）</h3>
+<pre>{
+  "id": "sh_8f3a2c1e",
+  "created_at": "2026-06-03T12:00:00+08:00",
+  "expires_at": "2026-06-10T12:00:00+08:00",
+  "version": 1,
+  "location": {
+    "display_name": "本溪五女山 · 点将台",
+    "spot_id": "wunvshan",
+    "viewpoint_id": "dianjiangtai",
+    "lat_rounded": 41.32,
+    "lng_rounded": 125.41,
+    "elevation_m": 804,
+    "viewing_mode": "valley_fill"
+  },
+  "target": {
+    "date": "2026-06-06",
+    "weekday": "周六",
+    "sunrise_time": "04:06"
+  },
+  "scores": {
+    "cloudsea_prob_pct": 27,
+    "cloudsea_grade": "较差",
+    "sunrise_prob_pct": 71,
+    "combined_score": 71,
+    "scenario_label": "晴日日出",
+    "verdict": "谨慎前往"
+  },
+  "evidence": {
+    "probability_note": "…",
+    "ui_display_scores": { },
+    "hourly_forecast_sunrise_window": [ ],
+    "prediction_pipeline": {
+      "ml_active": true,
+      "rule_engine_cloudsea_pct": 17,
+      "ml_raw_cloudsea_pct": 30,
+      "fused_display_cloudsea_pct": 27
+    },
+    "top_factors": [
+      { "label": "850hPa 湿度", "score": 0.82, "description": "…" }
+    ],
+    "meteo_analysis_hints": [ ],
+    "ml_calibration": { "loocv_accuracy": 0.769, "n_training_days": 52 }
+  },
+  "ai_brief_excerpt": "可选，最多 400 字",
+  "forecast_meta": {
+    "source": "open-meteo",
+    "model": "ecmwf_ifs",
+    "fetched_at": "2026-06-03T11:58:00+08:00"
+  },
+  "assets": {
+    "og_image_url": "/api/share/sh_8f3a2c1e/og.png",
+    "satellite_thumb": null
+  }
+}</pre>
+
+<h3>6.2 API 端点（草案）</h3>
+<table>
+  <thead>
+    <tr><th>方法</th><th>路径</th><th>请求</th><th>响应</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>POST</td>
+      <td><code>/api/share/snapshot</code></td>
+      <td><code>{ date, prediction, include_ai?: bool, privacy?: "hide_coords" }</code></td>
+      <td><code>{ id, url, expires_at }</code></td>
+    </tr>
+    <tr>
+      <td>GET</td>
+      <td><code>/api/share/{id}</code></td>
+      <td>—</td>
+      <td><code>ShareSnapshot</code>（公开只读）</td>
+    </tr>
+    <tr>
+      <td>GET</td>
+      <td><code>/s/{id}</code></td>
+      <td>—</td>
+      <td>HTML 分享页（OG meta）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>6.3 复用现有模块</h3>
+<ul>
+  <li><code>build_advisory_context()</code> → evidence 主体（已实现大部分字段）。</li>
+  <li><code>FactorList</code> / <code>FactorRadar</code> 数据 → <code>top_factors</code> 裁剪 Top N。</li>
+  <li>Redis <code>cache_set</code> TTL 7d；id 使用 url-safe 随机 16 字符。</li>
+</ul>
+
+<!-- ========== S7 ========== -->
+<h2 id="s7">7. 分期路线图与验收标准</h2>
+
+<table>
+  <thead>
+    <tr><th>阶段</th><th>范围</th><th>交付物</th><th>验收</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Phase 0</strong><br/>（建议立即）</td>
+      <td>产品修复 + 文档</td>
+      <td>日摘要云海峰值口径；AI/卡片一致（已部分完成）</td>
+      <td>同一日卡片与 AI 不出现 27% vs 79% 矛盾</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 1a</strong></td>
+      <td>Meteogram UI（自研）</td>
+      <td>主页底部或侧栏「气象详图」四面板；Open-Meteo 扩展变量</td>
+      <td>含垂直云剖面；加载 &lt; 3s（有缓存）</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 1b</strong></td>
+      <td>分享 MVP</td>
+      <td>POST snapshot + 分享页 + 微信 OG</td>
+      <td>链接打开可见依据表；无 ML 点位不出现 ML 字段</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 2</strong></td>
+      <td>精度增强</td>
+      <td>剖面参与 plausibility；模式来源标注；长图分享</td>
+      <td>AB 对比 LOOCV 或标注日回测不下降</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 3</strong></td>
+      <td>商业气象（可选）</td>
+      <td>meteoblue 试点 1–2 景区</td>
+      <td>商务合同 + 成本可控 + 视觉对标截图</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="mermaid-wrap">
+  <pre class="mermaid" style="background:transparent;margin:0">
+flowchart LR
+  subgraph inputs [数据输入]
+    OM[Open-Meteo 5-7d]
+    DEM[DEM / 地形]
+    SAT[Himawari 实况]
+    ML[点位 ML pkl]
+  end
+  subgraph engine [预测引擎]
+    RU[规则 fuzzy]
+    MG[ML 融合]
+    TR[地形可观域]
+  end
+  subgraph outputs [输出]
+    UI[主页卡片+时间轴]
+    MEG[Meteogram 剖面]
+    AI[AI 解读]
+    SH[分享快照 Evidence]
+  end
+  OM --> RU
+  OM --> MG
+  DEM --> TR
+  SAT --> RU
+  ML --> MG
+  RU --> UI
+  MG --> UI
+  TR --> UI
+  OM --> MEG
+  UI --> SH
+  AI --> SH
+  </pre>
+</div>
+<p class="muted">（上图可用 Mermaid 渲染；离线阅读时视为逻辑示意。）</p>
+
+<!-- ========== S8 ========== -->
+<h2 id="s8">8. 风险、依赖与决策门禁</h2>
+
+<table>
+  <thead>
+    <tr><th>风险</th><th>影响</th><th>缓解</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Open-Meteo 压力层云量由 RH 推算</td>
+      <td>垂直剖面与 meteoblue 视觉不一致</td>
+      <td>标注「模式估算剖面」；不声称雷达级精度</td>
+    </tr>
+    <tr>
+      <td>分享快照与实时预报不一致</td>
+      <td>用户质疑「链接与 App 不同」</td>
+      <td>冻结时间戳 + 明确「分享时预报」</td>
+    </tr>
+    <tr>
+      <td>无 ML 点位误展示 ML</td>
+      <td>信任受损</td>
+      <td><code>ml_active</code> 门禁（AI/分享共用）</td>
+    </tr>
+    <tr>
+      <td>meteoblue 成本</td>
+      <td>预算超支</td>
+      <td>Phase 3 可选；默认不自研依赖</td>
+    </tr>
+    <tr>
+      <td>多气压层 API 体积增大</td>
+      <td>预测变慢</td>
+      <td>剖面数据独立缓存键；与 predict 并行或懒加载</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="gate">
+  <strong>请您确认（回复时可勾选）：</strong>
+  <ol>
+    <li>是否同意 <strong>Phase 1a（自研 Meteogram + Open-Meteo 多层云）</strong> 优先于采购 meteoblue？</li>
+    <li>是否同意 <strong>Phase 1b（分享 + 依据 MVP）</strong> 与 1a 并行或紧随其后？</li>
+    <li>预报天数是否从 5 天扩展到 <strong>7 天</strong>？（影响缓存与前端时间轴）</li>
+    <li>分享链接是否需要<strong>登录/审核</strong>，还是完全公开只读？</li>
+  </ol>
+  <p style="margin:0.5rem 0 0">确认后下一步：输出 <strong>Phase 1 技术任务拆解</strong>（Issue 级）并开始实现，仍可按模块分批上线。</p>
+</div>
+
+<p class="footnote">
+  本地路径：<code>data/cloudsea/reports/product-roadmap_meteogram-share_2026-06.html</code><br/>
+  仓库内相关文档：<code>frontend/public/docs/data-sources.html</code> · <code>internal/llm-advisory.md</code> · <code>internal/terrain-cloudsea-plan.md</code>
+</p>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+</script>
+</body>
+</html>

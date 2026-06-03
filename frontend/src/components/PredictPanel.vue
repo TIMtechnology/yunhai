@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useMessage } from 'naive-ui'
 import { useAppStore } from '../stores/app'
 import { buildLabelPageUrl } from '../services/contributeLabel'
+import { createShareSnapshot } from '../services/api'
 import AiAdvisoryPanel from './AiAdvisoryPanel.vue'
 import CloudDebugPanel from './CloudDebugPanel.vue'
 import FactorList from './FactorList.vue'
 import FactorRadar from './FactorRadar.vue'
+import MeteogramPanel from './MeteogramPanel.vue'
 import ScenarioHero from './ScenarioHero.vue'
 
 const store = useAppStore()
+const message = useMessage()
 const hour = computed(() => store.currentHour())
 
 const viewingModeLabel: Record<string, string> = {
@@ -34,6 +38,34 @@ function openAnnotate() {
     }),
     '_blank',
   )
+}
+
+async function sharePrediction() {
+  await createShare(false)
+}
+
+async function shareImage() {
+  await createShare(true)
+}
+
+async function createShare(openImage: boolean) {
+  if (!store.prediction || !store.selectedDay) return
+  try {
+    const res = await createShareSnapshot({
+      date: store.selectedDay.date,
+      prediction: store.prediction,
+      include_ai: true,
+      privacy: 'hide_coords',
+    })
+    const url = res.url.startsWith('http') ? res.url : window.location.origin + res.url
+    const imagePath = `/api/share/${res.id}/image.png`
+    const imageUrl = window.location.origin + imagePath
+    await navigator.clipboard?.writeText(openImage ? imageUrl : url)
+    message.success(openImage ? '分享图地址已复制' : '分享链接已生成并复制')
+    window.open(openImage ? imagePath : res.url, '_blank')
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '分享生成失败')
+  }
 }
 </script>
 
@@ -84,11 +116,15 @@ function openAnnotate() {
         {{ store.prediction.location.ml_status.message }}
       </div>
       <div class="flex shrink-0 items-center justify-end gap-2">
+        <n-button size="tiny" type="primary" secondary @click="sharePrediction">分享本日预测</n-button>
+        <n-button size="tiny" type="primary" secondary @click="shareImage">生成分享图</n-button>
         <n-button size="tiny" type="info" secondary @click="openAnnotate">标注此点位</n-button>
       </div>
       <ScenarioHero :hour="hour" />
 
       <AiAdvisoryPanel />
+
+      <MeteogramPanel />
 
       <CloudDebugPanel v-if="store.showCloudDebug" />
 

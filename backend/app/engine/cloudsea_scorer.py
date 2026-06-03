@@ -212,6 +212,36 @@ def cloudsea_plausibility_cap(
     return cap
 
 
+def cloudsea_plausibility_from_profile(
+    profile_hour: dict | None,
+    *,
+    elevation_m: float,
+    viewing_mode: str = "valley_fill",
+) -> int | None:
+    """Estimate an additional plausibility cap from vertical cloud profile.
+
+    This is intentionally conservative: it only tightens clearly dry/thin low-cloud
+    profiles and leaves strong below-viewpoint cloud signals uncapped.
+    """
+    if not profile_hour:
+        return None
+    levels = profile_hour.get("levels") or []
+    if not levels:
+        return None
+    below = [
+        l
+        for l in levels
+        if l.get("height_m_asl") is not None and float(l["height_m_asl"]) <= elevation_m + 100
+    ]
+    low_cloud = [float(l.get("cloud_cover_pct") or 0) for l in below]
+    low_rh = [float(l.get("rh_pct") or 0) for l in below if l.get("rh_pct") is not None]
+    if low_cloud and max(low_cloud) >= 55 and (not low_rh or max(low_rh) >= 75):
+        return 100
+    if low_cloud and max(low_cloud) <= 12 and (not low_rh or max(low_rh) < 80):
+        return 35 if viewing_mode == "peak_overlook" else 30
+    return None
+
+
 def _infer_effective_low_cloud(
     *,
     cloud_low: float,

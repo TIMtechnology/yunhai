@@ -46,6 +46,16 @@ class Settings(BaseSettings):
     llm_advisory_cache_ttl: int = 86400
     llm_advisory_timeout_sec: float = 45.0
 
+    # 分享页 / OG 图
+    public_base_url: str = ""
+    share_snapshot_ttl: int = 604800
+    share_daily_ip_limit: int = 50
+    share_assets_dir: str = str(_PROJECT_ROOT / "data" / "share-assets")
+    share_cache_dir: str = str(_PROJECT_ROOT / "data" / "share-cache")
+    apimart_enabled: bool = False
+    apimart_api_key: str = ""
+    share_og_use_image2: bool = True
+
     class Config:
         env_file = ".env"
 

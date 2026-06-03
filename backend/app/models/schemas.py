@@ -71,6 +71,8 @@ class WeatherSnapshot(BaseModel):
     cloud_cover_mid: float
     cloud_cover_high: float
     wind_speed: float
+    wind_direction: Optional[float] = None
+    wind_gusts: Optional[float] = None
     visibility: Optional[float] = None
     weather_text: str = ""
 
@@ -99,6 +101,10 @@ class DaySummary(BaseModel):
     sunrise_hour_index: Optional[int] = None
     peak_cloudsea_prob: int = 0
     peak_cloudsea_time: Optional[str] = None
+    full_day_peak_cloudsea_prob: int = 0
+    full_day_peak_cloudsea_time: Optional[str] = None
+    sunrise_window_peak_cloudsea_prob: int = 0
+    sunrise_window_peak_cloudsea_time: Optional[str] = None
     sunrise_scenario_label: Optional[str] = None
     sunrise_combined_score: int = 0
     recommend_periods: List[str] = Field(default_factory=list)
@@ -125,6 +131,7 @@ class PredictResponse(BaseModel):
     hours: List[HourPrediction]
     days: List[DaySummary] = Field(default_factory=list)
     best_windows: Dict[str, List[Union[BestWindow, dict]]]
+    forecast_meta: dict = Field(default_factory=dict)
 
 
 class TerrainContextResponse(BaseModel):

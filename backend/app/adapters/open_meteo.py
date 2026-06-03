@@ -23,6 +23,8 @@ HOURLY_VARS = [
     "cloud_cover_mid",
     "cloud_cover_high",
     "wind_speed_10m",
+    "wind_direction_10m",
+    "wind_gusts_10m",
     "visibility",
     # 850 / 925 / 700 hPa — Phase A 垂直场（Open-Meteo pressure-level hourly）
     "temperature_850hPa",
@@ -35,10 +37,17 @@ HOURLY_VARS = [
     "relative_humidity_500hPa",
 ]
 
+PROFILE_LEVELS = [1000, 975, 950, 925, 900, 850, 700, 500]
+PROFILE_HOURLY_VARS = [
+    *(f"cloud_cover_{level}hPa" for level in PROFILE_LEVELS),
+    *(f"relative_humidity_{level}hPa" for level in PROFILE_LEVELS),
+    *(f"geopotential_height_{level}hPa" for level in PROFILE_LEVELS),
+]
+
 
 async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
     today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
-    cache_key = f"forecast:v5:{lat:.4f}:{lng:.4f}:{days}:{today}"
+    cache_key = f"forecast:v6:{lat:.4f}:{lng:.4f}:{days}:{today}"
     cached = cache_get(cache_key)
     if cached:
         return cached
@@ -48,6 +57,30 @@ async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
         "longitude": lng,
         "hourly": ",".join(HOURLY_VARS),
         "daily": "sunrise,sunset",
+        "forecast_days": days,
+        "timezone": "Asia/Shanghai",
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(FORECAST_URL, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+
+    cache_set(cache_key, data)
+    return data
+
+
+async def fetch_profile_forecast(lat: float, lng: float, days: int = 5) -> dict:
+    """Fetch pressure-level cloud profile data separately from the main prediction path."""
+    today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
+    cache_key = f"profile_forecast:v1:{lat:.4f}:{lng:.4f}:{days}:{today}"
+    cached = cache_get(cache_key)
+    if cached:
+        return cached
+
+    params = {
+        "latitude": lat,
+        "longitude": lng,
+        "hourly": ",".join(PROFILE_HOURLY_VARS + ["temperature_2m", "dew_point_2m"]),
         "forecast_days": days,
         "timezone": "Asia/Shanghai",
     }
