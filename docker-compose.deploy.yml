@@ -31,9 +31,14 @@ services:
       - CLOUDSEA_ADMIN_TOKEN=5fcd3e41983ef57e93cbee9769b05e375222c4e29677b21e
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
       - CLOUDSEA_ML_ENABLED=true
-      - CLOUDSEA_MODEL_PATH=/app/models/cloudsea_ml_v2.pkl
+      - CLOUDSEA_MODEL_PATH=/app/data/cloudsea/models/cloudsea_ml_v6.pkl
       - CLOUDSEA_CONTRIBUTE_ENABLED=true
       - UVICORN_WORKERS=2
+      # AI 出行解读（OpenAI 兼容 API，如 DeepSeek）
+      # - LLM_ADVISORY_ENABLED=true
+      # - LLM_API_KEY=sk-...
+      # - LLM_BASE_URL=https://api.deepseek.com
+      # - LLM_MODEL=deepseek-chat
       - CLOUDSEA_DAILY_LABEL_CAP=30
       - CLOUDSEA_MAX_LOCATIONS_PER_CONTRIBUTOR=10
     volumes:

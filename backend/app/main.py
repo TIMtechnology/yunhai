@@ -9,6 +9,7 @@ from app.middleware.analytics import AnalyticsMiddleware
 from app.routers.analytics import router as analytics_router
 from app.routers.cloudsea import router as cloudsea_router
 from app.routers.contribute import router as contribute_router
+from app.routers.advisory import router as advisory_router
 from app.routers.api import router
 from app.services.analytics_store import init_store, purge_expired
 from app.services.cache import cache_ping, cache_status
@@ -40,6 +41,7 @@ if settings.analytics_enabled:
     app.add_middleware(AnalyticsMiddleware)
 
 app.include_router(router)
+app.include_router(advisory_router)
 app.include_router(analytics_router)
 app.include_router(cloudsea_router)
 app.include_router(contribute_router)

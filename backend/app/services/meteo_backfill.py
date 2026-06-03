@@ -303,13 +303,42 @@ def backfill_all_labels(
 
 
 def ensure_label_meteo_cached(label: dict[str, Any]) -> None:
-    """标注落库后补缓存（后台线程，不阻塞 API）。"""
+    """标注落库后补缓存（后台线程，不阻塞 API）；失败时重试一次。"""
+    import logging
     import threading
 
+    log = logging.getLogger(__name__)
+
     def _run() -> None:
-        try:
-            backfill_label_meteo(label, force=False, sleep_sec=0.0)
-        except Exception:
-            pass
+        for attempt in range(2):
+            try:
+                result = backfill_label_meteo(label, force=False, sleep_sec=0.0)
+                status = result.get("status")
+                if status == "ok":
+                    log.info(
+                        "meteo backfill ok %s %s/%s",
+                        result.get("date"),
+                        label.get("spot_id"),
+                        label.get("viewpoint_id"),
+                    )
+                    return
+                if status == "skipped":
+                    return
+                log.warning(
+                    "meteo backfill %s %s/%s attempt=%s: %s",
+                    result.get("date"),
+                    label.get("spot_id"),
+                    label.get("viewpoint_id"),
+                    attempt + 1,
+                    result.get("error") or result.get("reason"),
+                )
+            except Exception as exc:
+                log.warning(
+                    "meteo backfill exception %s/%s attempt=%s: %s",
+                    label.get("spot_id"),
+                    label.get("viewpoint_id"),
+                    attempt + 1,
+                    exc,
+                )
 
     threading.Thread(target=_run, daemon=True).start()

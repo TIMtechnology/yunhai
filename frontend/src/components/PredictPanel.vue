@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useAppStore } from '../stores/app'
 import { buildLabelPageUrl } from '../services/contributeLabel'
+import AiAdvisoryPanel from './AiAdvisoryPanel.vue'
 import CloudDebugPanel from './CloudDebugPanel.vue'
 import FactorList from './FactorList.vue'
 import FactorRadar from './FactorRadar.vue'
@@ -37,7 +38,7 @@ function openAnnotate() {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-2 overflow-hidden border-l border-slate-800 p-3">
+  <div class="flex h-full min-h-0 flex-col gap-2 overflow-y-auto border-l border-slate-800 p-3">
     <template v-if="hour && store.prediction">
       <div
         v-if="store.prediction.location.viewing_mode"
@@ -82,10 +83,12 @@ function openAnnotate() {
       >
         {{ store.prediction.location.ml_status.message }}
       </div>
-      <div class="flex items-center justify-end gap-2">
-        <n-button size="tiny" secondary @click="openAnnotate">标注此点位</n-button>
+      <div class="flex shrink-0 items-center justify-end gap-2">
+        <n-button size="tiny" type="info" secondary @click="openAnnotate">标注此点位</n-button>
       </div>
       <ScenarioHero :hour="hour" />
+
+      <AiAdvisoryPanel />
 
       <CloudDebugPanel v-if="store.showCloudDebug" />
 

@@ -214,6 +214,29 @@ export async function predictCustom(payload: {
   return data
 }
 
+export interface DailyAdvisoryResponse {
+  enabled: boolean
+  date: string
+  brief?: string
+  message?: string
+  error?: string
+  model?: string
+  cached?: boolean
+  generated_at?: string
+  context?: Record<string, unknown>
+}
+
+export async function fetchDailyAdvisory(body: {
+  date: string
+  prediction: PredictResponse
+  refresh?: boolean
+}) {
+  const { data } = await api.post<DailyAdvisoryResponse>('/advisory/daily-brief', body, {
+    timeout: 90000,
+  })
+  return data
+}
+
 export async function fetchCloudImage(params: {
   lat: number
   lng: number

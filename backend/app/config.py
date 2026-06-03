@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     cloudsea_ml_min_labels_per_spot: int = 30
     cloudsea_model_min_loocv: float = 0.70
 
+    # 大模型「当日出行解读」（OpenAI 兼容接口，如 DeepSeek / 通义 / OpenAI）
+    llm_advisory_enabled: bool = False
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_model: str = "deepseek-chat"
+    llm_advisory_cache_ttl: int = 86400
+    llm_advisory_timeout_sec: float = 45.0
+
     class Config:
         env_file = ".env"
 

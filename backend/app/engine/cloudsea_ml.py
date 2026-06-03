@@ -296,6 +296,7 @@ def predict_day_cloudsea(
         return None
 
     feature_names = artifact.get("feature_names") or DAY_FEATURE_NAMES
+    infer_names = artifact.get("selected_feature_names") or feature_names
     use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
     day_feat = aggregate_day_features(
         hour_rows,
@@ -304,10 +305,15 @@ def predict_day_cloudsea(
         use_observable_field=use_observable,
     )
     model = artifact["model"]
-    x = np.array([[day_feat.get(n, 0.0) for n in feature_names]])
+    x = np.array([[day_feat.get(n, 0.0) for n in infer_names]])
     prob = float(model.predict_proba(x)[0, 1])
+    calibrator = artifact.get("calibrator")
+    if calibrator is not None:
+        from app.engine.ml_tuning import apply_calibrator
+
+        prob = float(apply_calibrator(calibrator, np.array([prob]))[0])
     probability = int(round(prob * 100))
-    explains = _explain(model, day_feat, feature_names)
+    explains = _explain(model, day_feat, infer_names)
 
     factors = {
         "ml_model": FactorDetail(

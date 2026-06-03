@@ -262,13 +262,17 @@ def save_artifact(
     viewpoint_id: str,
     feature_names: list[str],
     use_observable_field: bool,
+    tuning: dict | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    version = (
-        "cloudsea_ml_v5_dry_low_vis"
-        if use_observable_field
-        else "cloudsea_ml_v3_terrain"
-    )
+    if tuning:
+        version = "cloudsea_ml_v6_tuned"
+    else:
+        version = (
+            "cloudsea_ml_v5_dry_low_vis"
+            if use_observable_field
+            else "cloudsea_ml_v3_terrain"
+        )
     artifact = {
         "version": version,
         "algorithm": "logistic_regression_day",
@@ -286,6 +290,8 @@ def save_artifact(
         "loocv_brier": float(brier_score_loss(y, loo_probs)),
         "excludes_rainy_sunrise_window": True,
     }
+    if tuning:
+        artifact.update(tuning)
     with open(path, "wb") as f:
         pickle.dump(artifact, f)
 
@@ -320,6 +326,8 @@ def train_group(
     db_only: bool = False,
     no_save: bool = False,
     loocv_detail: bool = False,
+    enhanced: bool = False,
+    min_recall: float | None = None,
 ) -> dict | None:
     min_n = min_labels_for_ml()
     X, y, meta, feature_names = load_dataset(
@@ -342,10 +350,42 @@ def train_group(
         print("跳过：正负样本不足")
         return None
 
-    model, loo_probs, loo_pred = train_eval(X, y)
-    prob = model.predict_proba(X)[:, 1]
-    pred = (prob >= 0.5).astype(int)
-    loocv_acc = accuracy_score(y, loo_pred)
+    tuning_extra: dict | None = None
+    if enhanced:
+        from app.engine.ml_tuning import apply_calibrator, build_production_pipeline, train_tuned
+
+        tuned = train_tuned(
+            X, y, meta, feature_names, min_recall=min_recall, feature_strategy="none"
+        )
+        model = build_production_pipeline(X, y, tuned)
+        loo_probs = tuned.loo_probs_calibrated
+        loo_pred = (loo_probs >= tuned.decision_threshold).astype(int)
+        loocv_acc = float(tuned.metrics_tuned["accuracy"])
+        tuning_extra = {
+            "selected_feature_names": tuned.feature_names,
+            "decision_threshold": tuned.decision_threshold,
+            "calibrator": tuned.calibrator,
+            "tuning_c": tuned.c,
+            "tuning_c_grid_scores": tuned.c_grid_scores,
+            "monthly_cv": tuned.monthly_cv,
+            "loocv_f1": tuned.metrics_tuned["f1"],
+            "loocv_precision": tuned.metrics_tuned["precision"],
+            "loocv_recall": tuned.metrics_tuned["recall"],
+        }
+        print(f"增强训练: C={tuned.c} 阈值={tuned.decision_threshold:.2f} 特征={len(tuned.feature_names)}")
+        print(f"按月留一月 CV 准确率: {tuned.monthly_cv.get('overall_accuracy', 0):.3f}")
+        X_fit = X[:, tuned.feature_mask]
+        decision_thr = tuned.decision_threshold
+    else:
+        model, loo_probs, loo_pred = train_eval(X, y)
+        loocv_acc = accuracy_score(y, loo_pred)
+        X_fit = X
+        decision_thr = 0.5
+
+    prob = model.predict_proba(X_fit)[:, 1]
+    if enhanced and tuning_extra and tuning_extra.get("calibrator"):
+        prob = apply_calibrator(tuning_extra["calibrator"], prob)
+    pred = (prob >= decision_thr).astype(int)
     try:
         auc = roc_auc_score(y, loo_probs) if len(set(y)) > 1 else 0.0
     except ValueError:
@@ -381,6 +421,7 @@ def train_group(
         viewpoint_id=viewpoint_id,
         feature_names=feature_names,
         use_observable_field=use_observable_field,
+        tuning=tuning_extra,
     )
     print(f"模型已保存: {out}")
 
@@ -395,6 +436,7 @@ def train_group(
             viewpoint_id=viewpoint_id,
             feature_names=feature_names,
             use_observable_field=use_observable_field,
+            tuning=tuning_extra,
         )
         print(f"默认模型已同步: {default_output}")
 
@@ -466,6 +508,17 @@ def main() -> None:
         action="store_true",
         help="打印留一日交叉验证逐日明细",
     )
+    parser.add_argument(
+        "--enhanced",
+        action="store_true",
+        help="C 网格 + L1 特征 + 等渗校准 + LOOCV 阈值调优",
+    )
+    parser.add_argument(
+        "--min-recall",
+        type=float,
+        default=None,
+        help="增强模式下阈值调优的召回率下限",
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -524,6 +577,8 @@ def main() -> None:
             db_only=args.db_only,
             no_save=args.no_save,
             loocv_detail=args.loocv_detail,
+            enhanced=args.enhanced,
+            min_recall=args.min_recall,
         )
         if result:
             trained.append(result)
