@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>使用指南 · 云海日出观测概率预测</title>
   <meta name="description" content="云海日出预测工具使用说明：选点、地图定位、时间轴、数据刷新与概率解读。" />
+  <link rel="canonical" href="https://yunhai.timkj.com/docs/index.html" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     var _hmt = _hmt || [];
@@ -38,6 +39,9 @@
     <a href="prediction-model.html">预测模型</a>
     <a href="architecture.html">架构</a>
     <a href="ui-design.html">界面设计</a>
+    <a href="cloudsea-forecast.html">云海预测方法</a>
+    <a href="sunrise-cloudsea.html">日出云海</a>
+    <a href="how-to-read-meteogram.html">Meteogram</a>
     <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
   </nav>
 
@@ -54,6 +58,16 @@
     <div class="tip text-sm">
       <strong>数据时效：</strong>每次选点或刷新页面都会重新请求最新预报。你看到的概率对应当前时刻 Open-Meteo 返回的<strong>近 5 天逐小时数据</strong>，不同小时、不同时间打开页面，数值可能略有变化——这是数值天气预报正常更新，并非 bug。
     </div>
+
+    <section class="glass p-6">
+      <h2 class="text-xl font-semibold mb-4">云海预测专题</h2>
+      <div class="grid gap-3 sm:grid-cols-2 text-sm">
+        <a class="rounded-xl bg-sky-50 p-4 text-sky-700" href="cloudsea-forecast.html"><strong>云海预测方法</strong><br />如何根据湿度、低云、风速和逆温判断云海</a>
+        <a class="rounded-xl bg-orange-50 p-4 text-orange-700" href="sunrise-cloudsea.html"><strong>日出云海怎么看</strong><br />摄影出行前的气象判断指南</a>
+        <a class="rounded-xl bg-violet-50 p-4 text-violet-700" href="how-to-read-meteogram.html"><strong>Meteogram 怎么看</strong><br />用气象详图判断云海与日出概率</a>
+        <a class="rounded-xl bg-emerald-50 p-4 text-emerald-700" href="cloudsea-conditions.html"><strong>云海形成条件</strong><br />湿度、逆温、低云和风速如何影响云海</a>
+      </div>
+    </section>
 
     <section class="glass p-6">
       <h2 class="text-xl font-semibold mb-4">共建标注：POI → 社区点位 → 提交</h2>
