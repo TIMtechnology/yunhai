@@ -2,7 +2,7 @@
 
 # 🌅 日出云海 · 联合观测预测
 
-**未来 5 天逐小时云海 / 日出观测概率 · 模糊逻辑 + 标注驱动 ML · 天地图选点 · Himawari 卫星**
+**未来 5 天逐小时云海 / 日出观测概率 · 模糊逻辑 + 标注驱动 ML · Meteogram 气象详图 · AI 解读与分享图**
 
 <br />
 
@@ -54,9 +54,40 @@
 | ⏱️ **5 天时间轴** | 逐小时折线图，标注日出时刻与推荐观测窗口 |
 | 📡 **因子拆解** | 雷达图（加权评分维度）+ 列表（含模型层 / 观测层） |
 | 🛰️ **卫星云图** | Himawari 红外裁切，当天已发生时段轻量校正 |
+| 🌦️ **Meteogram 气象详图** | 温度、湿度/降水、分层云量、风速/阵风/风向，辅助对标专业气象产品 |
+| 🤖 **AI 出行解读** | DeepSeek/OpenAI 兼容接口，结合逐小时天气、规则引擎与 ML 输出给出一致性解读 |
+| 🔗 **预测分享** | 分享页、OG 预览图、竖版长图；分享图动态渲染，不落盘占用硬盘 |
 | 🏔️ **精选景区** | 预置观景点海拔、坐标、季节权重；支持全国 POI |
 | 📝 **开放标注** | 匿名贡献 ID、POI/社区点云海标注、审核后入训练集 |
 | 🔬 **标注回测** | 开放标注页、Historical Forecast 回测、Admin 审核与重训 API |
+
+---
+
+## 🆕 最新上线：气象详图与分享图
+
+### Meteogram 气象详图
+
+预测面板内置专业气象详图，方便把系统概率与底层天气条件一起核对：
+
+- **温度曲线**：展示全天温度变化，识别日出前后冷却条件。
+- **湿度 / 降水**：湿度曲线叠加降水柱，辅助判断水汽和扰动。
+- **分层云量**：按高 / 中 / 低云显示云层结构，替代单一总云量判断。
+- **风速 / 阵风 / 风向**：Open-Meteo 风向按“风吹向”展示，避免与气象原始“来向”混淆。
+
+![Meteogram 气象详图](docs/images/meteogram-panel.png)
+
+### 分享预测结果
+
+分享功能包含两类图片：
+
+- **OG 横版预览图**：`/api/share/{share_id}/og.png`，用于微信、社交平台链接卡片预览，尺寸 `1200x630`。
+- **竖版长分享图**：`/api/share/{share_id}/image.png`，用于用户打开后长按保存 / 转发。高度按内容动态计算，当前包含 24 小时气象详图、模型对照、系统关键数据与日出窗口逐时表。
+
+![分享 OG 横版预览图](docs/images/share-og-landscape.png)
+
+![竖版长分享图](docs/images/share-image-vertical.png)
+
+分享图本身**不是长期存储文件**，而是根据 Redis 中的分享快照动态渲染 PNG。默认分享快照有效期为 **3 天**（`SHARE_SNAPSHOT_TTL=259200`），过期后分享页和图片都会失效，不会持续占用系统硬盘。
 
 ---
 
@@ -157,7 +188,8 @@
 │  天地图 JS API 4.0 · Pinia · axios · suncalc                     │
 ├──────────────────────────────────────────────────────────────────┤
 │  FastAPI · Uvicorn · httpx · Pydantic · scikit-learn · Redis    │
-│  Open-Meteo Forecast / Historical · GIBS Himawari · SQLite       │
+│  Open-Meteo Forecast / Pressure Levels · GIBS Himawari · SQLite  │
+│  Pillow OG/分享图渲染 · DeepSeek/OpenAI 兼容 AI 解读              │
 │  模糊逻辑 v2（Archetype）· ML v2 · 标注样本库 · 行为分析          │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -221,6 +253,13 @@ docker compose -f docker-compose.prod.yml up -d
 | `GET` | `/api/spots/search?q=` | 搜索景区 |
 | `GET` | `/api/predict/{spot_id}/viewpoint/{viewpoint_id}` | 预置观景点预测 |
 | `POST` | `/api/predict` | 自定义坐标预测 |
+| `GET` | `/api/meteo/profile` | Meteogram 垂直云量 / 湿度 / 位势高度剖面 |
+| `POST` | `/api/advisory/daily-brief` | AI 当日出行解读（可刷新绕过缓存） |
+| `POST` | `/api/share/snapshot` | 创建预测分享快照 |
+| `GET` | `/api/share/{share_id}` | 读取分享快照 JSON |
+| `GET` | `/api/share/{share_id}/og.png` | 横版 OG 预览图（动态渲染） |
+| `GET` | `/api/share/{share_id}/image.png` | 竖版长分享图（动态渲染） |
+| `GET` | `/s/{share_id}` | 公开分享页 |
 | `GET` | `/api/contribute/cloudsea/*` | 开放标注（Header: `X-Contributor-Id`） |
 | `PATCH` | `/api/contribute/locations/{id}` | 编辑我的社区点位名称/坐标/海拔 |
 | `GET` | `/api/satellite/cloud` | Himawari 红外裁切 |
@@ -259,10 +298,11 @@ yunhai/
 ├── backend/app/
 │   ├── adapters/             # Open-Meteo、Historical、Himawari WMS
 │   ├── engine/               # cloudsea_scorer · cloudsea_ml · cloudsea_features
-│   ├── routers/              # api · cloudsea · contribute · analytics
-│   └── services/             # predictor · cloudsea_store · community_store
+│   ├── routers/              # api · advisory · share · cloudsea · contribute · analytics
+│   └── services/             # predictor · meteo_profile · share_store · share_og_renderer
 ├── data/
 │   ├── scenic-spots/         # 景区 JSON
+│   ├── share-assets/         # 分享图背景与中文字体资源
 │   └── cloudsea/             # 标注库 cloudsea.db · ML 模型
 ├── docs/docs/                # 用户文档（同步至 frontend/public/docs）
 ├── internal/                 # 标注说明 · 分析看板（本地内部）

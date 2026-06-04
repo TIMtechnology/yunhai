@@ -10,6 +10,7 @@ from app.services.cache import cache_get, cache_set
 from app.services.evidence_builder import build_evidence_context
 
 TZ = ZoneInfo("Asia/Shanghai")
+SHARE_TTL_SECONDS = 3 * 24 * 60 * 60
 
 
 def _now() -> datetime:
@@ -103,6 +104,7 @@ def create_share_snapshot(
     scenario = hour.get("scenario") or {}
     evidence = build_evidence_context(prediction, date_key)
     created = _now()
+    ttl = min(int(settings.share_snapshot_ttl), SHARE_TTL_SECONDS)
     sid = "sh_" + secrets.token_urlsafe(12).replace("-", "").replace("_", "")[:16]
     hide_coords = privacy != "show_coords"
     location = {
@@ -123,7 +125,7 @@ def create_share_snapshot(
         "id": sid,
         "version": 1,
         "created_at": created.isoformat(timespec="seconds"),
-        "expires_at": (created + timedelta(seconds=settings.share_snapshot_ttl)).isoformat(timespec="seconds"),
+        "expires_at": (created + timedelta(seconds=ttl)).isoformat(timespec="seconds"),
         "location": location,
         "target": {
             "date": date_key,
@@ -146,7 +148,7 @@ def create_share_snapshot(
         "url": public_url(f"/s/{sid}"),
         "og_image_url": public_url(f"/api/share/{sid}/og.png"),
     }
-    cache_set(_snapshot_key(sid), snapshot, ttl=settings.share_snapshot_ttl)
+    cache_set(_snapshot_key(sid), snapshot, ttl=ttl)
     return snapshot
 
 

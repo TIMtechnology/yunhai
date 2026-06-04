@@ -96,6 +96,8 @@ async def share_page(share_id: str):
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{_escape(title)}</title>
+  <meta name="robots" content="noindex,follow,noarchive" />
+  <link rel="canonical" href="https://yunhai.timkj.com/" />
   <meta property="og:title" content="{_escape(title)}" />
   <meta property="og:description" content="{_escape(desc)}" />
   <meta property="og:image" content="{_escape(snap.get('og_image_url'))}" />
