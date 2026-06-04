@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🌅 日出云海 · 联合观测预测
+# 🌅 日出云海预测 · 云海预报与山岳气象可视化
 
-**未来 5 天逐小时云海 / 日出观测概率 · 模糊逻辑 + 标注驱动 ML · Meteogram 气象详图 · AI 解读与分享图**
+**云海预测 · 日出云海 · Sea of Clouds Forecast · 未来 5 天逐小时概率 · Open-Meteo + Meteogram + 规则引擎 + ML**
 
 <br />
 
