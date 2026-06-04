@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>五女山 Open-Meteo + ML + WRF 对比报告</title>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f7fb; color: #172033; }
+    main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 56px; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin: 0 0 14px; font-size: 20px; }
+    p { color: #42526b; line-height: 1.7; }
+    section { background: #fff; border: 1px solid #e5eaf3; border-radius: 18px; padding: 20px; margin-top: 18px; box-shadow: 0 16px 40px rgba(34, 54, 84, .08); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #edf1f7; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f8fafc; color: #5a6b85; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #edf1f7; border-radius: 14px; padding: 14px; background: #fbfdff; }
+    .card b { display: block; margin-top: 6px; font-size: 24px; }
+    .warn { border-color: #ffd6a8; background: #fff8ef; }
+    .ok { border-color: #bae6c7; background: #f1fff5; }
+    .table-wrap { overflow-x: auto; }
+    .muted { color: #718096; font-size: 13px; }
+    code { background: #eef2f7; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>五女山 Open-Meteo + ML + WRF 对比报告</h1>
+  <p>点位：本溪五女山 · 点将台。该报告用于验证现有 Open-Meteo/规则/ML 基线，并检查 WRF 第一阶段运行条件。</p>
+  <p class="muted">生成时间：2026-06-04T06:21:48Z</p>
+
+  <section>
+    <h2>一句话结论</h2>
+    <p>本次 ML 融合相对规则基线变化 -42pct；WRF 已产出真实 wrfout，可用于佐证低云、云底、湿度、风场和逆温。</p>
+  </section>
+
+  <section>
+    <h2>核心分数对比</h2>
+    <div class="grid">
+      <div class="card">
+        规则基线 · 日出窗口云海峰值
+        <b>66%</b>
+        <span>全天峰值 66%</span>
+      </div>
+      <div class="card">
+        ML 融合 · 日出窗口云海峰值
+        <b>24%</b>
+        <span>相对规则 -42pct</span>
+      </div>
+      <div class="card">
+        ML 状态
+        <b>True</b>
+        <span>本点位有效标注 32 天，已启用 ML + 规则融合（五女山模型）</span>
+      </div>
+      <div class="card ok">
+        WRF 状态
+        <b>已实测</b>
+        <span>WRF 已完成本地真实运行并生成 wrfout 证据。</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open-Meteo 小时预测（ML 融合）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>时间</th><th>云海/日出</th><th>温度</th><th>湿度</th><th>低/中/高云</th><th>风</th><th>能见度</th><th>场景</th></tr></thead>
+        <tbody><tr><td>2026-06-04T00:00</td><td>60% / 59%</td><td>16.0°C</td><td>81%</td><td>35% / 49% / 82%</td><td>3.3m/s · 77°</td><td>1540.0km</td><td>较可能日出云海</td></tr>
+<tr><td>2026-06-04T01:00</td><td>66% / 59%</td><td>15.9°C</td><td>84%</td><td>38% / 29% / 83%</td><td>1.9m/s · 112°</td><td>560.0km</td><td>较可能日出云海</td></tr>
+<tr><td>2026-06-04T02:00</td><td>25% / 59%</td><td>15.4°C</td><td>91%</td><td>46% / 33% / 57%</td><td>3.6m/s · 233°</td><td>1020.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T03:00</td><td>24% / 59%</td><td>15.6°C</td><td>95%</td><td>37% / 35% / 100%</td><td>2.4m/s · 207°</td><td>800.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T04:00</td><td>21% / 59%</td><td>15.6°C</td><td>95%</td><td>27% / 28% / 89%</td><td>3.6m/s · 174°</td><td>4380.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T05:00</td><td>16% / 59%</td><td>15.6°C</td><td>94%</td><td>40% / 41% / 51%</td><td>3.1m/s · 234°</td><td>3240.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T06:00</td><td>16% / 59%</td><td>15.2°C</td><td>96%</td><td>55% / 64% / 75%</td><td>4.3m/s · 294°</td><td>5620.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T07:00</td><td>25% / 59%</td><td>14.1°C</td><td>94%</td><td>52% / 54% / 95%</td><td>7.9m/s · 317°</td><td>2860.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T08:00</td><td>57% / 59%</td><td>13.6°C</td><td>85%</td><td>52% / 64% / 77%</td><td>13.2m/s · 331°</td><td>3060.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T09:00</td><td>56% / 59%</td><td>13.2°C</td><td>86%</td><td>37% / 71% / 67%</td><td>14.5m/s · 346°</td><td>3800.0km</td><td>小雨影响</td></tr>
+<tr><td>2026-06-04T10:00</td><td>42% / 59%</td><td>13.1°C</td><td>89%</td><td>27% / 66% / 100%</td><td>12.5m/s · 348°</td><td>2280.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T11:00</td><td>47% / 59%</td><td>13.0°C</td><td>89%</td><td>30% / 65% / 90%</td><td>15.5m/s · 348°</td><td>3220.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T12:00</td><td>55% / 59%</td><td>12.9°C</td><td>86%</td><td>34% / 100% / 100%</td><td>20.1m/s · 331°</td><td>1840.0km</td><td>小雨影响</td></tr>
+<tr><td>2026-06-04T13:00</td><td>38% / 59%</td><td>12.3°C</td><td>85%</td><td>10% / 100% / 99%</td><td>13.7m/s · 30°</td><td>3120.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T14:00</td><td>38% / 59%</td><td>11.9°C</td><td>89%</td><td>3% / 98% / 100%</td><td>17.9m/s · 68°</td><td>6600.0km</td><td>阴雨不宜</td></tr>
+<tr><td>2026-06-04T15:00</td><td>60% / 59%</td><td>12.0°C</td><td>89%</td><td>24% / 90% / 97%</td><td>12.5m/s · 342°</td><td>5460.0km</td><td>小雨影响</td></tr>
+<tr><td>2026-06-04T16:00</td><td>43% / 59%</td><td>12.4°C</td><td>87%</td><td>21% / 54% / 99%</td><td>12.6m/s · 3°</td><td>9540.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T17:00</td><td>44% / 59%</td><td>12.6°C</td><td>85%</td><td>22% / 32% / 99%</td><td>10.1m/s · 6°</td><td>15120.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T18:00</td><td>52% / 59%</td><td>12.5°C</td><td>86%</td><td>25% / 40% / 93%</td><td>10.7m/s · 12°</td><td>15160.0km</td><td>条件一般</td></tr>
+<tr><td>2026-06-04T19:00</td><td>38% / 59%</td><td>12.2°C</td><td>85%</td><td>16% / 30% / 0%</td><td>10.4m/s · 2°</td><td>13400.0km</td><td>晴空少云</td></tr>
+<tr><td>2026-06-04T20:00</td><td>22% / 59%</td><td>11.6°C</td><td>86%</td><td>8% / 10% / 0%</td><td>10.9m/s · 354°</td><td>11500.0km</td><td>晴空少云</td></tr>
+<tr><td>2026-06-04T21:00</td><td>20% / 59%</td><td>11.1°C</td><td>85%</td><td>7% / 7% / 0%</td><td>11.2m/s · 4°</td><td>11500.0km</td><td>晴空少云</td></tr>
+<tr><td>2026-06-04T22:00</td><td>20% / 59%</td><td>10.7°C</td><td>86%</td><td>7% / 6% / 0%</td><td>9.4m/s · 7°</td><td>11500.0km</td><td>晴空少云</td></tr>
+<tr><td>2026-06-04T23:00</td><td>17% / 59%</td><td>10.1°C</td><td>88%</td><td>5% / 1% / 0%</td><td>7.0m/s · 339°</td><td>11500.0km</td><td>晴空少云</td></tr>
+<tr><td>2026-06-05T00:00</td><td>12% / 73%</td><td>9.5°C</td><td>91%</td><td>0% / 0% / 0%</td><td>3.1m/s · 324°</td><td>9340.0km</td><td>晴日日出</td></tr>
+<tr><td>2026-06-05T01:00</td><td>11% / 73%</td><td>9.0°C</td><td>94%</td><td>0% / 0% / 6%</td><td>5.2m/s · 348°</td><td>9340.0km</td><td>晴日日出</td></tr>
+<tr><td>2026-06-05T02:00</td><td>10% / 73%</td><td>8.6°C</td><td>96%</td><td>0% / 0% / 0%</td><td>6.2m/s · 324°</td><td>9340.0km</td><td>晴日日出</td></tr>
+<tr><td>2026-06-05T03:00</td><td>9% / 73%</td><td>8.4°C</td><td>95%</td><td>0% / 0% / 0%</td><td>6.4m/s · 344°</td><td>9340.0km</td><td>晴日日出</td></tr>
+<tr><td>2026-06-05T04:00</td><td>9% / 73%</td><td>8.4°C</td><td>94%</td><td>0% / 2% / 12%</td><td>5.9m/s · 11°</td><td>9340.0km</td><td>晴日日出</td></tr>
+<tr><td>2026-06-05T05:00</td><td>10% / 73%</td><td>8.5°C</td><td>93%</td><td>1% / 4% / 6%</td><td>5.2m/s · 12°</td><td>11500.0km</td><td>晴日日出</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open-Meteo 垂直廓线证据</h2>
+    <p>这是当前 Meteogram 使用的压力层资料，可作为未来 WRF wrfout 对比的基线。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>时间</th><th>估算云底</th><th>低层最大云量</th><th>中层最大云量</th><th>低层最大湿度</th></tr></thead>
+        <tbody><tr><td>2026-06-04T00:00</td><td>1216m</td><td>64%</td><td>28%</td><td>97%</td></tr>
+<tr><td>2026-06-04T01:00</td><td>1142m</td><td>60%</td><td>18%</td><td>97%</td></tr>
+<tr><td>2026-06-04T02:00</td><td>979m</td><td>76%</td><td>10%</td><td>99%</td></tr>
+<tr><td>2026-06-04T03:00</td><td>904m</td><td>76%</td><td>7%</td><td>99%</td></tr>
+<tr><td>2026-06-04T04:00</td><td>904m</td><td>60%</td><td>5%</td><td>97%</td></tr>
+<tr><td>2026-06-04T05:00</td><td>929m</td><td>44%</td><td>7%</td><td>94%</td></tr>
+<tr><td>2026-06-04T06:00</td><td>879m</td><td>34%</td><td>22%</td><td>90%</td></tr>
+<tr><td>2026-06-04T07:00</td><td>916m</td><td>34%</td><td>49%</td><td>90%</td></tr>
+<tr><td>2026-06-04T08:00</td><td>1104m</td><td>34%</td><td>100%</td><td>90%</td></tr>
+<tr><td>2026-06-04T09:00</td><td>1092m</td><td>37%</td><td>100%</td><td>91%</td></tr>
+<tr><td>2026-06-04T10:00</td><td>1029m</td><td>41%</td><td>100%</td><td>92%</td></tr>
+<tr><td>2026-06-04T11:00</td><td>1029m</td><td>37%</td><td>81%</td><td>92%</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>ML 因子解释（峰值小时）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>因子</th><th>名称</th><th>得分</th><th>权重</th><th>值</th></tr></thead>
+        <tbody><tr><td>low_cloud</td><td>低云量</td><td>0.7</td><td>0.2</td><td>35%</td></tr>
+<tr><td>rh_850</td><td>850 hPa 湿度</td><td>1.0</td><td>0.2</td><td>88%</td></tr>
+<tr><td>t_inversion_850_925</td><td>925–850 hPa 逆温</td><td>0.0</td><td>0.1</td><td>ΔT=-6.3°C</td></tr>
+<tr><td>rh_700</td><td>700 hPa 上干</td><td>0.5</td><td>0.1</td><td>68%</td></tr>
+<tr><td>humidity</td><td>近地面湿度</td><td>1.0</td><td>0.1</td><td>92%</td></tr>
+<tr><td>mid_layer</td><td>中低层湿度</td><td>0.7</td><td>0.1</td><td>中层云量 63%</td></tr>
+<tr><td>recent_rain</td><td>雨后放晴</td><td>0.7</td><td>0.1</td><td>近48h降水 9.0 mm</td></tr>
+<tr><td>wind</td><td>风速</td><td>0.9</td><td>0.1</td><td>2.0 m/s</td></tr>
+<tr><td>elevation_match</td><td>海拔与云底</td><td>1.0</td><td>0.1</td><td>云底≈150m / 观景点804m</td></tr>
+<tr><td>fog_vs_cloudsea</td><td>雾 vs 云海</td><td>1.0</td><td>0.1</td><td>能见度 3.6 km</td></tr>
+<tr><td>obs_pattern</td><td>云海型态</td><td>0.3</td><td>0.0</td><td>中性</td></tr>
+<tr><td>obs_cloud_layers</td><td>分层云量</td><td>1.0</td><td>0.0</td><td>低35% · 中63% · 高41%</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>WRF 实测云海证据</h2>
+    <p>来自本地 WRF 9km 单域 `wrfout` 后处理。云底/云顶为相对地面高度，低/中/高云为最近格点垂直层最大云量。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>时间</th><th>2m 温度</th><th>2m 湿度</th><th>低/中/高云</th><th>云底/云顶</th><th>低层逆温</th><th>10m 风</th></tr></thead>
+        <tbody><tr><td>2026-06-04_00:00:00</td><td>13.9°C</td><td>99%</td><td>0% / 0% / 0%</td><td>- / -</td><td>-0.5°C</td><td>1.7m/s · 349°</td></tr>
+<tr><td>2026-06-04_01:00:18</td><td>17.1°C</td><td>77%</td><td>100% / 100% / 100%</td><td>1158m / 10759m</td><td>-0.9°C</td><td>3.6m/s · 338°</td></tr>
+<tr><td>2026-06-04_02:00:36</td><td>17.4°C</td><td>73%</td><td>0% / 100% / 100%</td><td>3148m / 8855m</td><td>-0.6°C</td><td>4.6m/s · 351°</td></tr>
+<tr><td>2026-06-04_03:00:00</td><td>18.8°C</td><td>67%</td><td>0% / 100% / 0%</td><td>3150m / 5540m</td><td>-0.7°C</td><td>4.6m/s · 14°</td></tr>
+<tr><td>2026-06-04_04:00:18</td><td>18.8°C</td><td>65%</td><td>0% / 100% / 0%</td><td>2657m / 5532m</td><td>-0.9°C</td><td>5.9m/s · 8°</td></tr>
+<tr><td>2026-06-04_05:00:36</td><td>18.3°C</td><td>69%</td><td>0% / 100% / 100%</td><td>2655m / 8818m</td><td>-0.9°C</td><td>7.5m/s · 350°</td></tr>
+<tr><td>2026-06-04_06:00:00</td><td>18.0°C</td><td>71%</td><td>100% / 100% / 100%</td><td>900m / 8818m</td><td>-0.9°C</td><td>7.5m/s · 357°</td></tr>
+<tr><td>2026-06-04_07:00:18</td><td>17.2°C</td><td>72%</td><td>91% / 100% / 100%</td><td>1808m / 9765m</td><td>-0.9°C</td><td>5.5m/s · 14°</td></tr>
+<tr><td>2026-06-04_08:00:36</td><td>16.5°C</td><td>73%</td><td>0% / 100% / 100%</td><td>3127m / 9752m</td><td>-0.9°C</td><td>7.0m/s · 43°</td></tr>
+<tr><td>2026-06-04_09:00:00</td><td>15.6°C</td><td>77%</td><td>0% / 100% / 100%</td><td>2200m / 8787m</td><td>-0.8°C</td><td>3.7m/s · 50°</td></tr>
+<tr><td>2026-06-04_10:00:18</td><td>15.0°C</td><td>78%</td><td>0% / 2% / 100%</td><td>6227m / 7856m</td><td>-0.7°C</td><td>5.1m/s · 48°</td></tr>
+<tr><td>2026-06-04_11:00:36</td><td>12.7°C</td><td>88%</td><td>0% / 0% / 100%</td><td>7006m / 7006m</td><td>-0.6°C</td><td>2.8m/s · 38°</td></tr>
+<tr><td>2026-06-04_12:00:00</td><td>12.0°C</td><td>89%</td><td>0% / 0% / 0%</td><td>- / -</td><td>-0.4°C</td><td>2.8m/s · 7°</td></tr>
+<tr><td>2026-06-04_13:00:18</td><td>11.8°C</td><td>87%</td><td>0% / 0% / 0%</td><td>- / -</td><td>-0.5°C</td><td>3.7m/s · 341°</td></tr>
+<tr><td>2026-06-04_14:00:36</td><td>12.6°C</td><td>83%</td><td>100% / 0% / 0%</td><td>1803m / 1803m</td><td>-0.2°C</td><td>3.9m/s · 342°</td></tr>
+<tr><td>2026-06-04_15:00:00</td><td>11.6°C</td><td>86%</td><td>100% / 0% / 0%</td><td>1802m / 1802m</td><td>-0.0°C</td><td>3.8m/s · 328°</td></tr>
+<tr><td>2026-06-04_16:00:18</td><td>9.7°C</td><td>91%</td><td>0% / 0% / 0%</td><td>- / -</td><td>-0.0°C</td><td>3.3m/s · 322°</td></tr>
+<tr><td>2026-06-04_17:00:36</td><td>9.3°C</td><td>91%</td><td>0% / 0% / 0%</td><td>- / -</td><td>-0.1°C</td><td>3.5m/s · 321°</td></tr>
+<tr><td>2026-06-04_18:00:00</td><td>8.8°C</td><td>91%</td><td>0% / 0% / 0%</td><td>- / -</td><td>-0.1°C</td><td>3.6m/s · 322°</td></tr>
+<tr><td>2026-06-04_19:00:18</td><td>8.5°C</td><td>91%</td><td>0% / 0% / 0%</td><td>- / -</td><td>0.2°C</td><td>3.7m/s · 322°</td></tr>
+<tr><td>2026-06-04_20:00:36</td><td>7.9°C</td><td>90%</td><td>0% / 0% / 100%</td><td>7783m / 7783m</td><td>0.7°C</td><td>3.4m/s · 319°</td></tr>
+<tr><td>2026-06-04_21:00:00</td><td>9.8°C</td><td>83%</td><td>0% / 0% / 100%</td><td>6948m / 7775m</td><td>1.0°C</td><td>3.2m/s · 324°</td></tr>
+<tr><td>2026-06-04_22:00:18</td><td>12.4°C</td><td>75%</td><td>0% / 0% / 100%</td><td>6944m / 7772m</td><td>0.5°C</td><td>3.0m/s · 333°</td></tr>
+<tr><td>2026-06-04_23:00:36</td><td>14.8°C</td><td>67%</td><td>0% / 0% / 100%</td><td>6943m / 7769m</td><td>-0.0°C</td><td>3.4m/s · 331°</td></tr>
+<tr><td>2026-06-05_00:00:00</td><td>17.0°C</td><td>57%</td><td>0% / 1% / 100%</td><td>6177m / 7769m</td><td>-0.9°C</td><td>4.3m/s · 337°</td></tr>
+<tr><td>2026-06-05_01:00:18</td><td>18.6°C</td><td>49%</td><td>0% / 5% / 100%</td><td>6179m / 7770m</td><td>-0.9°C</td><td>4.6m/s · 335°</td></tr>
+<tr><td>2026-06-05_02:00:36</td><td>19.8°C</td><td>43%</td><td>0% / 14% / 100%</td><td>6181m / 7772m</td><td>-0.9°C</td><td>4.9m/s · 331°</td></tr>
+<tr><td>2026-06-05_03:00:00</td><td>20.6°C</td><td>41%</td><td>0% / 11% / 100%</td><td>6187m / 7777m</td><td>-0.9°C</td><td>5.2m/s · 326°</td></tr>
+<tr><td>2026-06-05_04:00:18</td><td>21.4°C</td><td>36%</td><td>0% / 4% / 100%</td><td>6958m / 7782m</td><td>-1.0°C</td><td>5.7m/s · 324°</td></tr>
+<tr><td>2026-06-05_05:00:36</td><td>22.0°C</td><td>35%</td><td>0% / 0% / 100%</td><td>6964m / 7788m</td><td>-1.0°C</td><td>6.2m/s · 323°</td></tr></tbody>
+      </table>
+    </div>
+    <p class="muted">证据文件：<code>/Volumes/work/2026/idea-yunhai/data/wrf-local/products/wunvshan/2026060400.cloudsea-evidence.json</code>；最近格点：<code>{&#x27;south_north&#x27;: 26, &#x27;west_east&#x27;: 26, &#x27;degree_distance&#x27;: 0.06762316823005676}</code></p>
+  </section>
+
+  <section>
+    <h2>WRF Readiness</h2>
+    <div class="grid">
+      <div class="card ok">缺失可执行文件<br><strong>无</strong></div>
+      <div class="card">固定资源目录<br><strong>/Volumes/work/2026/idea-yunhai/data/wrf-local/fixed</strong></div>
+      <div class="card">GFS 缓存 cycle<br><strong>2026060400, 2026060300</strong></div>
+      <div class="card ok">已生成运行配置<br><strong>2026060400, 2026060300</strong></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

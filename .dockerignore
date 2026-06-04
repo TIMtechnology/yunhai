@@ -9,3 +9,11 @@
 frontend/dist
 backend/.venv
 agent-transcripts
+data/wrf-local
+data/share-cache
+*.grib
+*.grib2
+*.nc
+wrfout_*
+wrfrst_*
+met_em.d*.*

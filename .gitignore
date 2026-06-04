@@ -16,3 +16,10 @@ yunhai-amd64.tar
 internal/config.local.json
 internal/PAPER-ABSTRACT.md
 internal/research-paper.html
+data/wrf-local/
+*.grib
+*.grib2
+*.nc
+wrfout_*
+wrfrst_*
+met_em.d*.*

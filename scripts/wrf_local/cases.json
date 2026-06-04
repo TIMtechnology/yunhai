@@ -1,0 +1,40 @@
+{
+  "wunvshan": {
+    "spot_id": "wunvshan",
+    "viewpoint_id": "dianjiangtai",
+    "name": "本溪五女山·点将台",
+    "domain": {
+      "resolution_km": 9,
+      "e_we": 55,
+      "e_sn": 55,
+      "dx": 9000,
+      "dy": 9000,
+      "map_proj": "lambert",
+      "truelat1": 35.0,
+      "truelat2": 45.0,
+      "stand_lon": 125.4
+    },
+    "forecast_hours": 48,
+    "output_interval_minutes": 60,
+    "notes": "第一阶段默认案例：3C4G 资源下优先验证 9km 单域。"
+  },
+  "donglingshan": {
+    "spot_id": "donglingshan",
+    "viewpoint_id": "fengding",
+    "name": "东灵山·峰顶",
+    "domain": {
+      "resolution_km": 9,
+      "e_we": 55,
+      "e_sn": 55,
+      "dx": 9000,
+      "dy": 9000,
+      "map_proj": "lambert",
+      "truelat1": 35.0,
+      "truelat2": 45.0,
+      "stand_lon": 115.5
+    },
+    "forecast_hours": 48,
+    "output_interval_minutes": 60,
+    "notes": "第二阶段候选案例：五女山跑通后串行增加，不与五女山并行。"
+  }
+}
