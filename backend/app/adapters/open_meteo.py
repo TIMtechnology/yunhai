@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -22,6 +23,8 @@ HOURLY_VARS = [
     "cloud_cover_mid",
     "cloud_cover_high",
     "wind_speed_10m",
+    "wind_direction_10m",
+    "wind_gusts_10m",
     "visibility",
     # 850 / 925 / 700 hPa — Phase A 垂直场（Open-Meteo pressure-level hourly）
     "temperature_850hPa",
@@ -34,10 +37,17 @@ HOURLY_VARS = [
     "relative_humidity_500hPa",
 ]
 
+PROFILE_LEVELS = [1000, 975, 950, 925, 900, 850, 700, 500]
+PROFILE_HOURLY_VARS = [
+    *(f"cloud_cover_{level}hPa" for level in PROFILE_LEVELS),
+    *(f"relative_humidity_{level}hPa" for level in PROFILE_LEVELS),
+    *(f"geopotential_height_{level}hPa" for level in PROFILE_LEVELS),
+]
+
 
 async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
     today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
-    cache_key = f"forecast:v5:{lat:.4f}:{lng:.4f}:{days}:{today}"
+    cache_key = f"forecast:v6:{lat:.4f}:{lng:.4f}:{days}:{today}"
     cached = cache_get(cache_key)
     if cached:
         return cached
@@ -59,21 +69,99 @@ async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
     return data
 
 
+async def fetch_profile_forecast(lat: float, lng: float, days: int = 5) -> dict:
+    """Fetch pressure-level cloud profile data separately from the main prediction path."""
+    today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
+    cache_key = f"profile_forecast:v1:{lat:.4f}:{lng:.4f}:{days}:{today}"
+    cached = cache_get(cache_key)
+    if cached:
+        return cached
+
+    params = {
+        "latitude": lat,
+        "longitude": lng,
+        "hourly": ",".join(PROFILE_HOURLY_VARS + ["temperature_2m", "dew_point_2m"]),
+        "forecast_days": days,
+        "timezone": "Asia/Shanghai",
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(FORECAST_URL, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+
+    cache_set(cache_key, data)
+    return data
+
+
 async def fetch_elevation(lat: float, lng: float) -> float:
     cache_key = f"elev:{lat:.4f}:{lng:.4f}"
     cached = cache_get(cache_key)
     if cached is not None:
         return float(cached)
 
-    params = {"latitude": lat, "longitude": lng}
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        resp = await client.get(ELEVATION_URL, params=params)
-        resp.raise_for_status()
-        data = resp.json()
-
-    elevation = float(data["elevation"][0])
+    elevs = await fetch_elevations_batch([lat], [lng])
+    elevation = elevs[0]
     cache_set(cache_key, elevation, ttl=86400)
     return elevation
+
+
+ELEVATION_BATCH_CHUNK = 60
+ELEVATION_MAX_RETRIES = 4
+
+
+async def _fetch_elevation_chunk(
+    client: httpx.AsyncClient,
+    chunk: list[tuple[float, float]],
+) -> list[float]:
+    params = {
+        "latitude": ",".join(str(p[0]) for p in chunk),
+        "longitude": ",".join(str(p[1]) for p in chunk),
+    }
+    for attempt in range(ELEVATION_MAX_RETRIES):
+        resp = await client.get(ELEVATION_URL, params=params)
+        if resp.status_code == 429 and attempt < ELEVATION_MAX_RETRIES - 1:
+            await asyncio.sleep(min(2 ** attempt + 1, 12))
+            continue
+        resp.raise_for_status()
+        return [float(x) for x in resp.json()["elevation"]]
+    raise httpx.HTTPStatusError(
+        "elevation rate limit",
+        request=resp.request,
+        response=resp,
+    )
+
+
+async def fetch_elevations_batch(lats: list[float], lngs: list[float]) -> list[float]:
+    """批量海拔（Copernicus GLO-90，与 Open-Meteo Elevation API 一致）。"""
+    if len(lats) != len(lngs):
+        raise ValueError("lats/lngs length mismatch")
+    if not lats:
+        return []
+
+    # 四舍五入减少重复请求
+    pairs = [(round(a, 5), round(b, 5)) for a, b in zip(lats, lngs)]
+    unique = list(dict.fromkeys(pairs))
+    cached_map: dict[tuple[float, float], float] = {}
+    missing: list[tuple[float, float]] = []
+    for p in unique:
+        ck = f"elev:{p[0]:.5f}:{p[1]:.5f}"
+        hit = cache_get(ck)
+        if hit is not None:
+            cached_map[p] = float(hit)
+        else:
+            missing.append(p)
+
+    if missing:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            for start in range(0, len(missing), ELEVATION_BATCH_CHUNK):
+                chunk = missing[start : start + ELEVATION_BATCH_CHUNK]
+                values = await _fetch_elevation_chunk(client, chunk)
+                for p, elev in zip(chunk, values):
+                    val = float(elev)
+                    cached_map[p] = val
+                    cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400 * 7)
+
+    return [cached_map[p] for p in pairs]
 
 
 def estimate_cloud_base(temp_c: float, dewpoint_c: float) -> float:

@@ -8,46 +8,111 @@ import numpy as np
 
 from app.config import settings
 from app.engine.cloudsea_features import DAY_FEATURE_NAMES, aggregate_day_features
+from app.engine.ml_eligibility import build_ml_status, spot_model_path
 from app.engine.utils import grade_from_probability
 from app.models.schemas import FactorDetail, PredictionScore
 
-_ARTIFACT: dict | None = None
 
-
-def _model_path() -> Path:
+def _default_model_path() -> Path:
     return Path(settings.cloudsea_model_path)
 
 
 @lru_cache(maxsize=1)
-def load_artifact() -> dict | None:
-    path = _model_path()
+def load_default_artifact() -> dict | None:
+    path = _default_model_path()
     if not path.is_file():
         return None
     with open(path, "rb") as f:
         return pickle.load(f)
 
 
+@lru_cache(maxsize=64)
+def load_spot_artifact(spot_id: str, viewpoint_id: str) -> dict | None:
+    path = spot_model_path(spot_id, viewpoint_id)
+    if path.is_file():
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    if spot_id == "wunvshan":
+        return load_default_artifact()
+    return None
+
+
 def ml_enabled() -> bool:
-    return settings.cloudsea_ml_enabled and load_artifact() is not None
+    return settings.cloudsea_ml_enabled and load_default_artifact() is not None
+
+
+def get_ml_status(spot_id: str | None, viewpoint_id: str | None) -> dict:
+    has_spot_model = False
+    model_trained_days = 0
+    if spot_id and viewpoint_id:
+        has_spot_model = spot_model_path(spot_id, viewpoint_id).is_file()
+        artifact = None
+        if has_spot_model:
+            try:
+                import pickle
+
+                with open(spot_model_path(spot_id, viewpoint_id), "rb") as f:
+                    artifact = pickle.load(f)
+            except Exception:
+                artifact = None
+        if spot_id == "wunvshan" and not has_spot_model:
+            default_path = _default_model_path()
+            has_spot_model = default_path.is_file()
+            if has_spot_model:
+                try:
+                    import pickle
+
+                    with open(default_path, "rb") as f:
+                        artifact = pickle.load(f)
+                except Exception:
+                    artifact = None
+        if artifact:
+            model_trained_days = int(artifact.get("n_days") or 0)
+    return build_ml_status(
+        spot_id,
+        viewpoint_id,
+        has_spot_model=has_spot_model,
+        model_trained_days=model_trained_days,
+    )
+
+
+def should_use_spot_ml(spot_id: str | None, viewpoint_id: str | None) -> bool:
+    if not settings.cloudsea_ml_enabled:
+        return False
+    status = get_ml_status(spot_id, viewpoint_id)
+    return bool(status.get("ml_active"))
+
+
+def resolve_ml_artifact(spot_id: str | None, viewpoint_id: str | None) -> dict | None:
+    if not should_use_spot_ml(spot_id, viewpoint_id):
+        return None
+    if not spot_id or not viewpoint_id:
+        return None
+    return load_spot_artifact(spot_id, viewpoint_id)
 
 
 def ml_calibration_weight(spot_id: str | None) -> float:
-    """标注样本越充分，ML 权重越高；未标定景区保留规则引擎主导。"""
+    """点位 ML 已启用时，按景区设定融合权重。"""
     if spot_id == "wunvshan":
         return 0.80
     if spot_id:
-        return 0.55
+        return 0.75
     return 0.45
 
 
-def _explain(model, day_feat: dict[str, float]) -> list[dict]:
+def _explain(
+    model,
+    day_feat: dict[str, float],
+    feature_names: list[str] | None = None,
+) -> list[dict]:
+    names = feature_names or DAY_FEATURE_NAMES
     scaler = model.named_steps["scaler"]
     clf = model.named_steps["clf"]
-    x = np.array([[day_feat[n] for n in DAY_FEATURE_NAMES]])
+    x = np.array([[day_feat.get(n, 0.0) for n in names]])
     xs = scaler.transform(x)[0]
     contribs = xs * clf.coef_[0]
     pairs = sorted(
-        zip(DAY_FEATURE_NAMES, contribs),
+        zip(names, contribs),
         key=lambda p: abs(p[1]),
         reverse=True,
     )
@@ -60,16 +125,26 @@ def merge_ml_cloudsea_score(
     *,
     observational: dict[str, FactorDetail] | None = None,
     spot_id: str | None = None,
+    viewpoint_id: str | None = None,
     plausibility_cap: int | None = None,
 ) -> PredictionScore:
-    """ML 与规则融合：按景区标定权重混合，并受观测场上限约束。"""
+    """ML 与规则融合：仅在本点位 ML 已启用时混合。"""
     ml_weight = ml_calibration_weight(spot_id)
     fuzzy_prob = fuzzy.probability
     ml_prob = ml.probability
     blended = int(round(ml_weight * ml_prob + (1.0 - ml_weight) * fuzzy_prob))
     if plausibility_cap is not None:
+        # 点位 ML 已用本地标注校准：融合结果不应被 NWP 干廓线 heuristic 压到低于 ML 估计
+        if ml_weight >= 0.75:
+            plausibility_cap = max(plausibility_cap, ml_prob)
         blended = min(blended, plausibility_cap)
     blended = max(0, min(100, blended))
+
+    status = get_ml_status(spot_id, viewpoint_id)
+    mode_note = {
+        "wunvshan_model": "五女山校准模型",
+        "spot_model": "本点位专属模型",
+    }.get(str(status.get("mode")), "ML 模型")
 
     artifact_ref = ml.factors["ml_model"].reference
     merged: dict[str, FactorDetail] = {
@@ -78,7 +153,7 @@ def merge_ml_cloudsea_score(
             weight=ml_weight,
             label="ML 云海模型",
             description=(
-                f"基于五女山标注训练；本点 ML 权重 {ml_weight:.0%}，"
+                f"{mode_note}；本点 ML 权重 {ml_weight:.0%}，"
                 f"与规则 {fuzzy_prob}% 融合为 {blended}%"
                 + (f"（观测场上限 {plausibility_cap}%）" if plausibility_cap is not None else "")
             ),
@@ -89,7 +164,7 @@ def merge_ml_cloudsea_score(
             score=fuzzy_prob / 100.0,
             weight=round(1.0 - ml_weight, 2),
             label="规则引擎参考",
-            description="模糊逻辑专家系统评分，与 ML 按景区标定权重融合",
+            description="模糊逻辑专家系统评分，与 ML 按点位权重融合",
             value=f"{fuzzy_prob}%",
             reference="fuzzy_v2_archetype",
         ),
@@ -212,24 +287,43 @@ def predict_day_cloudsea(
     *,
     elevation: float = 804.0,
     cloud_base_m: float = 0.0,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
+    terrain: dict | None = None,
 ) -> PredictionScore | None:
-    artifact = load_artifact()
+    artifact = resolve_ml_artifact(spot_id, viewpoint_id)
     if not artifact:
         return None
 
-    day_feat = aggregate_day_features(hour_rows, elevation=elevation)
+    feature_names = artifact.get("feature_names") or DAY_FEATURE_NAMES
+    infer_names = artifact.get("selected_feature_names") or feature_names
+    use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
+    day_feat = aggregate_day_features(
+        hour_rows,
+        elevation=elevation,
+        terrain=terrain,
+        use_observable_field=use_observable,
+    )
     model = artifact["model"]
-    x = np.array([[day_feat[n] for n in DAY_FEATURE_NAMES]])
+    x = np.array([[day_feat.get(n, 0.0) for n in infer_names]])
     prob = float(model.predict_proba(x)[0, 1])
+    calibrator = artifact.get("calibrator")
+    if calibrator is not None:
+        from app.engine.ml_tuning import apply_calibrator
+
+        prob = float(apply_calibrator(calibrator, np.array([prob]))[0])
     probability = int(round(prob * 100))
-    explains = _explain(model, day_feat)
+    explains = _explain(model, day_feat, infer_names)
 
     factors = {
         "ml_model": FactorDetail(
             score=prob,
             weight=1.0,
             label="ML 云海模型",
-            description=f"基于 {artifact.get('n_days', '?')} 日标注训练的 Logistic 回归（LOOCV {artifact.get('loocv_accuracy', 0):.0%}）",
+            description=(
+                f"基于 {artifact.get('n_days', '?')} 日有效标注训练"
+                f"（LOOCV {artifact.get('loocv_accuracy', 0):.0%}）"
+            ),
             value=f"P={probability}%",
             reference=artifact.get("version", "cloudsea_ml"),
         ),

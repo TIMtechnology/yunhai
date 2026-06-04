@@ -152,7 +152,7 @@ watch(() => props.token, loadQueue, { immediate: true })
     </n-spin>
 
     <div class="text-[11px] text-slate-500 leading-relaxed">
-      社区点位标注免审核、首次保存即自动落库精选。「落库」手动按钮用于补写。重训仅使用 approved 样本；部署新模型后 POI/社区点 03–07 点云海概率才会变化。
+      社区点位标注免审核、首次保存即自动落库精选。「落库」手动按钮用于补写。重训按点位分别训练（≥30 有效日、排除降水日）；仅 LOOCV 达标且部署对应 pkl 后，该点 03–07 点才会启用 ML。
     </div>
   </div>
 </template>

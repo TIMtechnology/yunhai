@@ -1,109 +1,79 @@
 #!/usr/bin/env python3
-"""回填 cloudsea.db 中 meteo_hourly 的完整垂直场特征（700hPa / 逆温 / 高云）。"""
+"""回填 cloudsea.db 中全部标注日的 meteo_hourly + meteo_day_cache（多点位，全日）。"""
 from __future__ import annotations
 
 import argparse
-import json
-import sqlite3
+import os
 import sys
-import time
-import urllib.request
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-from app.adapters.open_meteo import HOURLY_VARS  # noqa: E402
-from app.engine.cloudsea_features import build_meteo_hour_row, meteo_row_complete  # noqa: E402
-
-LAT, LNG = 41.31976, 125.40773
-WINDOW_START, WINDOW_END = 3, 7
-
-
-def fetch_day_hourly(day: str) -> dict:
-    url = (
-        "https://historical-forecast-api.open-meteo.com/v1/forecast?"
-        f"latitude={LAT}&longitude={LNG}&start_date={day}&end_date={day}"
-        f"&hourly={','.join(HOURLY_VARS)}&timezone=Asia%2FShanghai"
-    )
-    with urllib.request.urlopen(url, timeout=60) as resp:
-        return json.load(resp).get("hourly", {})
-
-
-def upsert_meteo(conn: sqlite3.Connection, *, ts: str, raw: dict, spot_id: str, viewpoint_id: str) -> None:
-    conn.execute(
-        """
-        INSERT INTO meteo_hourly
-        (spot_id, viewpoint_id, lat, lng, elevation, ts, source, raw_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(lat, lng, ts, source) DO UPDATE SET
-            raw_json=excluded.raw_json,
-            spot_id=excluded.spot_id,
-            viewpoint_id=excluded.viewpoint_id
-        """,
-        (
-            spot_id,
-            viewpoint_id,
-            LAT,
-            LNG,
-            804.0,
-            ts,
-            "historical_forecast",
-            json.dumps(raw, ensure_ascii=False),
-            datetime.now(timezone.utc).isoformat(),
-        ),
-    )
+from app.services.meteo_backfill import (  # noqa: E402
+    backfill_all_labels,
+    backfill_label_meteo,
+    sunrise_window_meteo_complete,
+)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="回填标注日历史气象到 cloudsea.db")
     parser.add_argument("--db", default=str(ROOT / "data" / "cloudsea" / "cloudsea.db"))
-    parser.add_argument("--sleep", type=float, default=0.3, help="API 请求间隔秒数")
+    parser.add_argument("--sleep", type=float, default=0.35, help="API 请求间隔秒数")
+    parser.add_argument("--spot-id", help="仅回填指定 spot")
+    parser.add_argument("--viewpoint-id", help="配合 --spot-id 指定 viewpoint")
+    parser.add_argument("--force", action="store_true", help="即使已完整也重新拉取")
+    parser.add_argument("--check", action="store_true", help="仅检查缺失，不请求 API")
     args = parser.parse_args()
 
     db_path = Path(args.db)
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    labels = conn.execute(
-        "SELECT DISTINCT date, spot_id, viewpoint_id FROM cloudsea_labels ORDER BY date"
-    ).fetchall()
+    os.environ["CLOUDSEA_DB_PATH"] = str(db_path.resolve())
 
-    updated = skipped = 0
-    for label in labels:
-        day = label["date"]
-        spot_id = label["spot_id"] or "wunvshan"
-        viewpoint_id = label["viewpoint_id"] or "dianjiangtai"
-        existing = conn.execute(
-            "SELECT ts, raw_json FROM meteo_hourly WHERE ts LIKE ? ORDER BY ts",
-            (f"{day}T%",),
+    if args.check:
+        import sqlite3
+
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        clauses = ["spot_id IS NOT NULL", "viewpoint_id IS NOT NULL"]
+        params: list = []
+        if args.spot_id:
+            clauses.append("spot_id=?")
+            params.append(args.spot_id)
+        if args.viewpoint_id:
+            clauses.append("viewpoint_id=?")
+            params.append(args.viewpoint_id)
+        labels = conn.execute(
+            f"""
+            SELECT DISTINCT spot_id, viewpoint_id, date FROM cloudsea_labels
+            WHERE {' AND '.join(clauses)} ORDER BY date
+            """,
+            params,
         ).fetchall()
-        existing_rows = [json.loads(r["raw_json"]) for r in existing]
-        if existing_rows and all(meteo_row_complete(r) for r in existing_rows):
-            skipped += 1
-            continue
-
-        print(f"fetch {day} ...")
-        hourly = fetch_day_hourly(day)
-        times = hourly.get("time", [])
-        for idx, t in enumerate(times):
-            hour = int(t[11:13])
-            if hour < WINDOW_START or hour >= WINDOW_END:
-                continue
-            raw = build_meteo_hour_row(hourly, idx)
-            upsert_meteo(
-                conn,
-                ts=t,
-                raw=raw,
-                spot_id=spot_id,
-                viewpoint_id=viewpoint_id,
+        conn.close()
+        missing = [
+            f"{r['date']} {r['spot_id']}/{r['viewpoint_id']}"
+            for r in labels
+            if not sunrise_window_meteo_complete(
+                r["spot_id"], r["viewpoint_id"], r["date"], db_path=db_path
             )
-            updated += 1
-        conn.commit()
-        time.sleep(args.sleep)
+        ]
+        print(f"标注日 {len(labels)}，缺失气象 {len(missing)}")
+        for line in missing:
+            print(f"  - {line}")
+        return
 
-    conn.close()
-    print(f"完成: 更新 {updated} 条 hourly 行, 跳过 {skipped} 个已完整日期")
+    stats = backfill_all_labels(
+        db_path,
+        spot_id=args.spot_id,
+        viewpoint_id=args.viewpoint_id,
+        force=args.force,
+        sleep_sec=args.sleep,
+    )
+    print(
+        f"完成: 更新 {stats['updated']} 天, "
+        f"跳过 {stats['skipped']} 天已完整, 失败 {stats['failed']} 天"
+    )
 
 
 if __name__ == "__main__":

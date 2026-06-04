@@ -41,6 +41,26 @@ export interface ContributorStats {
   quota_date: string
 }
 
+export interface MlStatus {
+  ml_active: boolean
+  mode: 'rule_only' | 'wunvshan_model' | 'spot_model'
+  min_labels: number
+  eligible_labels: number
+  total_labels: number
+  rain_excluded_labels: number
+  has_spot_model: boolean
+  message: string
+}
+
+export interface RainWindowInfo {
+  has_rain: boolean
+  rainy_hours: string[]
+  max_precip_mm: number
+  total_precip_mm: number
+  excluded_from_training: boolean
+  hint: string
+}
+
 export interface LabelSession {
   mode: 'curated' | 'community' | 'coordinates'
   spot_id: string
@@ -66,6 +86,11 @@ export interface LabelSession {
   }>
   stats?: ContributorStats
   data_source?: 'live_forecast' | 'historical_forecast'
+  ml_status?: MlStatus
+  rain_window?: RainWindowInfo
+  viewing_mode?: string
+  viewing_mode_note?: string
+  observable?: import('./api').ObservableSummary
 }
 
 export interface CalendarEntry {

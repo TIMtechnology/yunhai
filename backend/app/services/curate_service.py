@@ -31,6 +31,8 @@ def sync_curated_spot_from_location(location_id: str) -> None:
     if not loc or not loc.get("curated_spot_id"):
         return
     spot_id = loc["curated_spot_id"]
+    if not str(spot_id).startswith("cs_"):
+        return
     directory = _curated_spots_dir()
     target = directory / f"{spot_id}.json"
     if not target.exists():
@@ -77,6 +79,13 @@ def curate_community_location(location_id: str) -> dict[str, Any]:
         return {
             "spot_id": preferred_id,
             "file": str(target),
+            "location_id": location_id,
+            "already_curated": True,
+        }
+    curated_id = loc.get("curated_spot_id")
+    if curated_id and curated_id != preferred_id and not str(curated_id).startswith("cs_"):
+        return {
+            "spot_id": curated_id,
             "location_id": location_id,
             "already_curated": True,
         }
@@ -146,6 +155,9 @@ def maybe_auto_curate_location(location_id: str) -> Optional[dict[str, Any]]:
         target = curated_spots_dir() / f"{location_id}.json"
         if target.exists():
             return None
+    curated_id = loc.get("curated_spot_id")
+    if curated_id and curated_id != location_id and not str(curated_id).startswith("cs_"):
+        return None
     if int(loc.get("approved_label_count") or 0) < settings.cloudsea_curate_min_labels:
         return None
     try:

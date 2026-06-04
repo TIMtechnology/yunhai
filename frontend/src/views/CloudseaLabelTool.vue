@@ -55,7 +55,8 @@ const loading = ref(false)
 const session = ref<LabelSession | null>(null)
 const calendar = ref<Record<string, CalendarEntry>>({})
 const stats = ref<ContributorStats | null>(null)
-const accuracy = ref<{ total: number; correct: number; accuracy: number | null; details: Array<Record<string, unknown>> } | null>(null)
+const accuracy = ref<{ total: number; correct: number; accuracy: number | null; details: Array<Record<string, unknown>>; cached?: boolean } | null>(null)
+const accuracyLoading = ref(false)
 const selectedStatus = ref<LabelStatus | null>(null)
 const selectedSunriseQuality = ref<SunriseQuality | null>(null)
 const linkedCommunityId = ref('')
@@ -66,6 +67,7 @@ const editLocLng = ref<number | null>(null)
 const editLocElev = ref<number | null>(null)
 const savingLocation = ref(false)
 let loadSessionSeq = 0
+let loadAccuracySeq = 0
 
 interface LabelKeys {
   spotId: string
@@ -116,6 +118,9 @@ const dataSourceLabel = computed(() => {
   if (src === 'historical_forecast') return '历史预报存档（回测）'
   return ''
 })
+
+const mlStatus = computed(() => session.value?.ml_status)
+const rainWindow = computed(() => session.value?.rain_window)
 
 function parseUrlParams() {
   const q = new URLSearchParams(location.search)
@@ -309,6 +314,30 @@ async function resolveLabelKeys(): Promise<LabelKeys> {
   }
 }
 
+async function loadAccuracy(refresh = false) {
+  if (!adminMode.value || !token.value) {
+    accuracy.value = null
+    return
+  }
+  const seq = ++loadAccuracySeq
+  accuracyLoading.value = true
+  try {
+    const keys = await resolveLabelKeys()
+    if (keys.spotId === 'community') {
+      if (seq === loadAccuracySeq) accuracy.value = null
+      return
+    }
+    accuracy.value = await fetchAccuracy(token.value, keys.spotId, keys.viewpointId, refresh)
+  } catch (err) {
+    if (seq === loadAccuracySeq) {
+      accuracy.value = null
+      message.error(refresh ? '刷新准确率失败（可能超时，请稍后重试）' : String(err))
+    }
+  } finally {
+    if (seq === loadAccuracySeq) accuracyLoading.value = false
+  }
+}
+
 async function loadSession() {
   const seq = ++loadSessionSeq
   loading.value = true
@@ -347,11 +376,6 @@ async function loadSession() {
           },
         ]),
       )
-      if (keys.spotId !== 'community') {
-        accuracy.value = await fetchAccuracy(token.value, keys.spotId, keys.viewpointId)
-      } else {
-        accuracy.value = null
-      }
       return
     }
 
@@ -400,6 +424,9 @@ async function loadSession() {
 }
 
 async function applyLabel(status: LabelStatus, sunriseQuality?: SunriseQuality | null) {
+  if (session.value?.rain_window?.has_rain && status !== 'none') {
+    message.warning('日出窗口有降水，建议标注「无云海」；该日不计入 ML 有效样本')
+  }
   selectedStatus.value = status
   if (sunriseQuality !== undefined) {
     selectedSunriseQuality.value = sunriseQuality
@@ -520,6 +547,10 @@ watch([locationMode, spotId, viewpointId, locationId, currentDate, poiLat, poiLn
   if (!pageReady.value) return
   loadSession()
 })
+watch([locationMode, spotId, viewpointId], () => {
+  if (!pageReady.value || !adminMode.value) return
+  accuracy.value = null
+})
 watch(locationId, () => {
   if (pageReady.value) syncLocationEditFields()
 })
@@ -552,7 +583,20 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
       <div class="rounded-xl border border-sky-800/60 bg-sky-950/40 p-4">
         <div class="text-lg font-semibold text-sky-100">云海标注 · 开放贡献</div>
         <div class="mt-1 text-sm text-slate-400">
-          标注日出窗口（03:00–07:00）：云海三档 + 日出质量（可见/遮挡/不可拍）。云海标注纳入 ML；日出质量先入库，待样本足够后单独训练。匿名 ID：…{{ contributorIdShort() }}
+          标注日出窗口（03:00–07:00）：云海三档 + 日出质量。每个点位需累计
+          <strong class="text-slate-300">30 天有效标注</strong>（排除日出时段有雨）方可训练专属 ML；未达标时 03–07 点
+          <strong class="text-slate-300">仅规则引擎</strong>。匿名 ID：…{{ contributorIdShort() }}
+        </div>
+        <div v-if="mlStatus && !mlStatus.ml_active" class="mt-2 rounded-lg border border-amber-700/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+          {{ mlStatus.message }}
+        </div>
+        <div v-if="session?.viewing_mode === 'peak_overlook'" class="mt-2 rounded-lg border border-violet-700/50 bg-violet-950/30 px-3 py-2 text-xs text-violet-100">
+          <strong>峰顶俯瞰标注说明</strong>：请按<strong>日出方向、能见度范围内</strong>能看到的云海判断，而非仅脚下。
+          <ul class="mt-1 list-inside list-disc text-violet-200/90">
+            <li><strong>完整 (3)</strong>：可见范围内大面积谷地/坡地有清晰云海</li>
+            <li><strong>部分 (2)</strong>：仅部分山谷或远端有云，或云薄/间断</li>
+            <li><strong>无 (1)</strong>：可见方向均无观赏级云海（含人在云下、全晴无云）</li>
+          </ul>
         </div>
         <div v-if="stats && !adminMode" class="mt-2 text-xs text-slate-400">
           今日已标注 {{ stats.labels_today }}/{{ stats.daily_cap }} · 累计通过 {{ stats.labels_approved }} · 待审 {{ stats.labels_pending }}
@@ -686,6 +730,13 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                     </template>
                   </div>
                   <div v-if="dataSourceLabel" class="mt-1 text-xs text-slate-500">数据源：{{ dataSourceLabel }}</div>
+                  <div v-if="rainWindow?.has_rain" class="mt-2 rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-xs text-red-200">
+                    <div class="font-medium">日出窗口有降水（{{ rainWindow.rainy_hours.join('、') }}）</div>
+                    <div class="mt-1 text-red-300/90">
+                      建议直接标注「无云海 (1)」；该日
+                      <strong>不计入 ML 训练</strong>，也不计入 30 日达标计数。
+                    </div>
+                  </div>
                   <div v-if="session.label?.review_status === 'pending'" class="mt-1 text-xs text-sky-400">当前标注待审核</div>
                 </div>
                 <div class="flex flex-col gap-2 sm:items-end">
@@ -731,6 +782,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                   <thead class="text-slate-400">
                     <tr>
                       <th class="px-2 py-1 text-left">时间</th>
+                      <th class="px-2 py-1 text-right">降水</th>
                       <th class="px-2 py-1 text-right">低/中/高云</th>
                       <th class="px-2 py-1 text-right">能见度</th>
                       <th class="px-2 py-1 text-right">RH/RH850/RH700</th>
@@ -744,6 +796,12 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                   <tbody>
                     <tr v-for="row in session.raw_meteo" :key="String(row.time)" class="border-t border-slate-800">
                       <td class="px-2 py-1">{{ String(row.time).slice(11, 16) }}</td>
+                      <td
+                        class="px-2 py-1 text-right"
+                        :class="Number(row.precipitation) >= 0.1 ? 'text-red-300 font-medium' : ''"
+                      >
+                        {{ row.precipitation != null ? `${Number(row.precipitation).toFixed(1)}mm` : '—' }}
+                      </td>
                       <td class="px-2 py-1 text-right">{{ row.cloud_low }}/{{ row.cloud_mid }}/{{ row.cloud_high ?? '—' }}%</td>
                       <td class="px-2 py-1 text-right">{{ row.visibility }}m</td>
                       <td class="px-2 py-1 text-right">{{ row.rh }}/{{ row.rh_850 }}/{{ row.rh_700 ?? '—' }}%</td>
@@ -758,11 +816,26 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               </div>
             </div>
 
-            <div v-if="accuracy && adminMode" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-              <div class="mb-2 font-semibold">回测准确率（已标注日）</div>
-              <div class="text-sm text-slate-300">
+            <div v-if="adminMode" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="font-semibold">回测准确率（已标注日）</div>
+                <n-button
+                  size="tiny"
+                  quaternary
+                  :loading="accuracyLoading"
+                  :disabled="accuracyLoading"
+                  @click="loadAccuracy(!!accuracy)"
+                >
+                  {{ accuracy ? '刷新' : '计算' }}
+                </n-button>
+              </div>
+              <div v-if="accuracy" class="text-sm text-slate-300">
                 {{ accuracy.correct }}/{{ accuracy.total }}
                 <span v-if="accuracy.accuracy != null">· {{ (accuracy.accuracy * 100).toFixed(1) }}%</span>
+                <span v-if="accuracy.cached" class="ml-1 text-xs text-slate-500">（缓存）</span>
+              </div>
+              <div v-else class="text-xs text-slate-500">
+                切换景区不会自动计算；点「计算」批量回测全部已标注日（首次约 30–60 秒，勿与标注操作同时点）。
               </div>
             </div>
           </div>

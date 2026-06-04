@@ -1,14 +1,26 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useMessage } from 'naive-ui'
 import { useAppStore } from '../stores/app'
 import { buildLabelPageUrl } from '../services/contributeLabel'
+import { createShareSnapshot } from '../services/api'
+import AiAdvisoryPanel from './AiAdvisoryPanel.vue'
 import CloudDebugPanel from './CloudDebugPanel.vue'
 import FactorList from './FactorList.vue'
 import FactorRadar from './FactorRadar.vue'
+import MeteogramPanel from './MeteogramPanel.vue'
 import ScenarioHero from './ScenarioHero.vue'
 
 const store = useAppStore()
+const message = useMessage()
 const hour = computed(() => store.currentHour())
+
+const viewingModeLabel: Record<string, string> = {
+  valley_fill: '山谷填云',
+  peak_overlook: '峰顶俯瞰',
+  ridge_layer: '山脊层云',
+  plateau_edge: '台地边缘',
+}
 
 function openAnnotate() {
   const loc = store.prediction?.location
@@ -27,15 +39,92 @@ function openAnnotate() {
     '_blank',
   )
 }
+
+async function sharePrediction() {
+  await createShare(false)
+}
+
+async function shareImage() {
+  await createShare(true)
+}
+
+async function createShare(openImage: boolean) {
+  if (!store.prediction || !store.selectedDay) return
+  try {
+    const res = await createShareSnapshot({
+      date: store.selectedDay.date,
+      prediction: store.prediction,
+      include_ai: true,
+      privacy: 'hide_coords',
+    })
+    const url = res.url.startsWith('http') ? res.url : window.location.origin + res.url
+    const imagePath = `/api/share/${res.id}/image.png`
+    const imageUrl = window.location.origin + imagePath
+    await navigator.clipboard?.writeText(openImage ? imageUrl : url)
+    message.success(openImage ? '分享图地址已复制' : '分享链接已生成并复制')
+    window.open(openImage ? imagePath : res.url, '_blank')
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '分享生成失败')
+  }
+}
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-2 overflow-hidden border-l border-slate-800 p-3">
+  <div class="flex h-full min-h-0 flex-col gap-2 overflow-y-auto border-l border-slate-800 p-3">
     <template v-if="hour && store.prediction">
-      <div class="flex items-center justify-end gap-2">
-        <n-button size="tiny" secondary @click="openAnnotate">标注此点位</n-button>
+      <div
+        v-if="store.prediction.location.viewing_mode"
+        class="rounded-lg border border-sky-800/50 bg-sky-950/20 px-2 py-1.5 text-[10px] leading-snug text-sky-200"
+      >
+        观云模式 ·
+        {{ viewingModeLabel[store.prediction.location.viewing_mode] || store.prediction.location.viewing_mode }}
+        <span v-if="store.prediction.location.viewing_mode_note" class="block text-sky-400/90">
+          {{ store.prediction.location.viewing_mode_note }}
+        </span>
+        <span v-if="store.prediction.location.terrain" class="mt-0.5 block text-sky-400">
+          1km峰 {{ store.prediction.location.terrain.elev_max_1km_m }}m · 5km峰
+          {{ store.prediction.location.terrain.elev_max_5km_m }}m
+          <template v-if="store.prediction.location.terrain.sunrise_azimuth_deg != null">
+            · 日出方位 {{ store.prediction.location.terrain.sunrise_azimuth_deg }}°
+          </template>
+        </span>
+      </div>
+      <div
+        v-if="
+          store.prediction.location.viewing_mode === 'peak_overlook' &&
+          store.prediction.location.observable
+        "
+        class="rounded-lg border border-violet-800/50 bg-violet-950/25 px-2 py-1.5 text-[10px] leading-snug text-violet-100"
+      >
+        可观测云海 · 日出扇区约
+        {{ Math.round((store.prediction.location.observable.observable_fraction || 0) * 100) }}%
+        <span class="text-violet-300">
+          （可见 {{ store.prediction.location.observable.visible_range_km }} km · 可填云
+          {{ store.prediction.location.observable.fillable_points }}/{{
+            store.prediction.location.observable.eligible_points
+          }}
+          点）
+        </span>
+        <span v-if="store.prediction.location.observable.note" class="mt-0.5 block text-violet-300/90">
+          {{ store.prediction.location.observable.note }}
+        </span>
+      </div>
+      <div
+        v-if="store.prediction.location.ml_status && !store.prediction.location.ml_status.ml_active"
+        class="rounded-lg border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] leading-snug text-amber-200"
+      >
+        {{ store.prediction.location.ml_status.message }}
+      </div>
+      <div class="flex shrink-0 items-center justify-end gap-2">
+        <n-button size="tiny" type="primary" secondary @click="sharePrediction">分享本日预测</n-button>
+        <n-button size="tiny" type="primary" secondary @click="shareImage">生成分享图</n-button>
+        <n-button size="tiny" type="info" secondary @click="openAnnotate">标注此点位</n-button>
       </div>
       <ScenarioHero :hour="hour" />
+
+      <AiAdvisoryPanel />
+
+      <MeteogramPanel />
 
       <CloudDebugPanel v-if="store.showCloudDebug" />
 

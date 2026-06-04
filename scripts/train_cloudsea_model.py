@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""从 cloudsea.db 标注数据训练云海 ML 模型 v2（含 700hPa / 逆温 / 高云特征）。"""
+"""从 cloudsea.db 标注数据训练云海 ML（按点位分模型；排除日出窗口降水日）。"""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,7 @@ import pickle
 import sqlite3
 import sys
 import urllib.request
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
@@ -27,14 +28,31 @@ for _base in (ROOT / "backend", ROOT):
 from app.adapters.open_meteo import HOURLY_VARS  # noqa: E402
 from app.engine.cloudsea_features import (  # noqa: E402
     DAY_FEATURE_NAMES,
+    DAY_FEATURE_NAMES_V2,
+    DAY_FEATURE_NAMES_V3,
+    MIST_DISCRIM_FEATURE_NAMES,
+    OBSERVABLE_FEATURE_NAMES,
+    TERRAIN_FEATURE_NAMES,
     aggregate_day_features,
     build_meteo_hour_row,
     label_to_target,
     meteo_row_complete,
 )
+from app.adapters.dem import get_terrain_context_sync  # noqa: E402
+from app.engine.viewing_mode import resolve_viewing_mode  # noqa: E402
+from app.engine.ml_eligibility import (  # noqa: E402
+    min_labels_for_ml,
+    spot_model_path,
+    sunrise_window_rain_summary,
+)
+from app.services.meteo_backfill import (  # noqa: E402
+    load_label_sunrise_meteo,
+    resolve_label_coords,
+)
 
 LAT, LNG, ELEV = 41.31976, 125.40773, 804.0
 WINDOW_START, WINDOW_END = 3, 7
+WUNVSHAN_SPOT, WUNVSHAN_VP = "wunvshan", "dianjiangtai"
 
 
 def fetch_day_meteo(day: str, *, lat: float = LAT, lng: float = LNG) -> list[dict]:
@@ -56,74 +74,161 @@ def fetch_day_meteo(day: str, *, lat: float = LAT, lng: float = LNG) -> list[dic
     return rows
 
 
-def load_dataset(db_path: Path, *, approved_only: bool = False) -> tuple[np.ndarray, np.ndarray, list[dict]]:
-    """加载标注日特征。目标变量仅来自 status（云海）；sunrise_quality 字段暂不参与训练。"""
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    if approved_only:
-        labels = conn.execute(
-            """
-            SELECT * FROM cloudsea_labels
-            WHERE review_status='approved' OR review_status IS NULL
-            ORDER BY date
-            """
-        ).fetchall()
-    else:
-        labels = conn.execute("SELECT * FROM cloudsea_labels ORDER BY date").fetchall()
-
+def _resolve_coords(label: dict, meteo_by_ts: dict[str, dict]) -> tuple[float, float, float]:
+    from app.services.community_store import get_community_location
     from app.services.spot_loader import get_viewpoint
 
-    meteo_rows: list[sqlite3.Row] = conn.execute(
-        "SELECT ts, lat, lng, raw_json, spot_id, viewpoint_id FROM meteo_hourly"
+    lat, lng, elev = LAT, LNG, ELEV
+    if label.get("lat") is not None and label.get("lng") is not None:
+        lat, lng = float(label["lat"]), float(label["lng"])
+        elev = float(label["elevation"]) if label.get("elevation") is not None else ELEV
+    elif label["spot_id"] == "community" and label["viewpoint_id"]:
+        loc = get_community_location(label["viewpoint_id"])
+        if loc:
+            lat, lng = float(loc["lat"]), float(loc["lng"])
+            elev = float(loc["elevation"]) if loc.get("elevation") else ELEV
+    elif label["spot_id"] and label["viewpoint_id"] and label["spot_id"] != "community":
+        vp = get_viewpoint(label["spot_id"], label["viewpoint_id"])
+        if vp:
+            lat, lng = vp.lat, vp.lng
+            elev = vp.elevation or ELEV
+    return lat, lng, elev
+
+
+def load_meteo_rows(
+    label: dict,
+    *,
+    db_path: Path,
+    db_only: bool = False,
+) -> list[dict]:
+    spot_id = label["spot_id"]
+    viewpoint_id = label["viewpoint_id"]
+    day = label["date"]
+    hour_rows = load_label_sunrise_meteo(spot_id, viewpoint_id, day, db_path=db_path)
+    if hour_rows and all(meteo_row_complete(r) for r in hour_rows):
+        return hour_rows
+    if db_only:
+        return []
+    lat, lng, _ = resolve_label_coords(label)
+    return fetch_day_meteo(day, lat=lat, lng=lng)
+
+
+def load_dataset(
+    db_path: Path,
+    *,
+    approved_only: bool = False,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
+    exclude_rain: bool = True,
+    use_terrain: bool = True,
+    use_observable_field: bool = True,
+    db_only: bool = False,
+    use_mist_discrim_features: bool = True,
+) -> tuple[np.ndarray, np.ndarray, list[dict], list[str]]:
+    """加载标注日特征。排除未审核、降水日（默认）与气象缺失样本。"""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    clauses = ["1=1"]
+    params: list[object] = []
+    if approved_only:
+        clauses.append("(review_status='approved' OR review_status IS NULL)")
+    if spot_id:
+        clauses.append("spot_id=?")
+        params.append(spot_id)
+    if viewpoint_id:
+        clauses.append("viewpoint_id=?")
+        params.append(viewpoint_id)
+    labels = conn.execute(
+        f"SELECT * FROM cloudsea_labels WHERE {' AND '.join(clauses)} ORDER BY date",
+        params,
     ).fetchall()
-    meteo_by_ts: dict[str, dict] = {}
-    for row in meteo_rows:
-        meteo_by_ts[row["ts"]] = json.loads(row["raw_json"])
 
     X_rows: list[list[float]] = []
     y_rows: list[float] = []
     meta: list[dict] = []
+    terrain_cache: dict[tuple[str, str], dict] = {}
+
+    feature_names = (
+        DAY_FEATURE_NAMES
+        if use_terrain and use_observable_field
+        else DAY_FEATURE_NAMES_V3
+        if use_terrain
+        else DAY_FEATURE_NAMES_V2
+    )
+    if not use_mist_discrim_features:
+        feature_names = [n for n in feature_names if n not in MIST_DISCRIM_FEATURE_NAMES]
 
     for raw in labels:
         label = dict(raw)
         day = label["date"]
-        target = label_to_target(label["status"])
-        lat, lng, elev = LAT, LNG, ELEV
-        if label.get("lat") is not None and label.get("lng") is not None:
-            lat, lng = float(label["lat"]), float(label["lng"])
-            elev = float(label["elevation"]) if label.get("elevation") is not None else ELEV
-        elif label["spot_id"] == "community" and label["viewpoint_id"]:
-            from app.services.community_store import get_community_location
-
-            loc = get_community_location(label["viewpoint_id"])
-            if loc:
-                lat, lng = float(loc["lat"]), float(loc["lng"])
-                elev = float(loc["elevation"]) if loc.get("elevation") else ELEV
-        elif label["spot_id"] and label["viewpoint_id"] and label["spot_id"] != "community":
-            vp = get_viewpoint(label["spot_id"], label["viewpoint_id"])
-            if vp:
-                lat, lng = vp.lat, vp.lng
-                elev = vp.elevation or ELEV
-
-        hour_rows = sorted(
-            [v for k, v in meteo_by_ts.items() if k.startswith(f"{day}T")],
-            key=lambda r: str(r.get("time")),
-        )
-        if not hour_rows or not all(meteo_row_complete(r) for r in hour_rows):
-            hour_rows = fetch_day_meteo(day, lat=lat, lng=lng)
+        lat, lng, elev = resolve_label_coords(label)
+        hour_rows = load_meteo_rows(label, db_path=db_path, db_only=db_only)
         if not hour_rows:
-            print(f"skip {day}: no meteo")
+            reason = "DB 无缓存" if db_only else "no meteo"
+            print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: {reason}")
             continue
-        day_feat = aggregate_day_features(hour_rows, elevation=elev)
-        X_rows.append([day_feat[n] for n in DAY_FEATURE_NAMES])
-        y_rows.append(target)
-        meta.append({"date": day, "status": label["status"], "lat": lat, "lng": lng})
+        if not all(meteo_row_complete(r) for r in hour_rows):
+            print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: incomplete meteo")
+            continue
+        if exclude_rain and sunrise_window_rain_summary(hour_rows)["has_rain"]:
+            print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: rain in sunrise window")
+            continue
+
+        terrain: dict | None = None
+        if use_terrain:
+            tkey = (label["spot_id"], label["viewpoint_id"])
+            if tkey not in terrain_cache:
+                try:
+                    from datetime import date as date_cls
+
+                    profile_date = date_cls.fromisoformat(day)
+                    terrain_cache[tkey] = get_terrain_context_sync(
+                        lat,
+                        lng,
+                        elevation=elev,
+                        profile_date=profile_date,
+                        spot_id=label["spot_id"],
+                        viewpoint_id=label["viewpoint_id"],
+                    )
+                except Exception as exc:
+                    print(f"warn terrain {tkey}: {exc}")
+                    terrain_cache[tkey] = {}
+            terrain = dict(terrain_cache[tkey])
+            mode, _, _ = resolve_viewing_mode(
+                spot_id=label["spot_id"],
+                viewpoint_id=label["viewpoint_id"],
+                elevation=elev,
+                terrain=terrain,
+                location_id=label.get("location_id"),
+            )
+            terrain["viewing_mode"] = mode
+
+        day_feat = aggregate_day_features(
+            hour_rows,
+            elevation=elev,
+            terrain=terrain,
+            use_observable_field=use_observable_field and use_terrain,
+            use_mist_discrim_features=use_mist_discrim_features,
+        )
+        X_rows.append([day_feat[n] for n in feature_names])
+        y_rows.append(label_to_target(label["status"]))
+        meta.append(
+            {
+                "date": day,
+                "status": label["status"],
+                "lat": lat,
+                "lng": lng,
+                "spot_id": label["spot_id"],
+                "viewpoint_id": label["viewpoint_id"],
+                "viewing_mode": (terrain or {}).get("viewing_mode"),
+            }
+        )
 
     conn.close()
-    return np.array(X_rows), np.array(y_rows), meta
+    return np.array(X_rows), np.array(y_rows), meta, feature_names
 
 
-def train_eval(X: np.ndarray, y: np.ndarray, meta: list[dict], *, c: float = 0.3) -> tuple[Pipeline, np.ndarray, np.ndarray]:
+def train_eval(X: np.ndarray, y: np.ndarray, *, c: float = 0.3) -> tuple[Pipeline, np.ndarray, np.ndarray]:
     model = Pipeline(
         [
             ("scaler", StandardScaler()),
@@ -131,9 +236,6 @@ def train_eval(X: np.ndarray, y: np.ndarray, meta: list[dict], *, c: float = 0.3
         ]
     )
     model.fit(X, y)
-    prob = model.predict_proba(X)[:, 1]
-    pred = (prob >= 0.5).astype(int)
-
     loo = LeaveOneOut()
     loo_probs = np.zeros(len(y))
     for train_idx, test_idx in loo.split(X):
@@ -149,6 +251,221 @@ def train_eval(X: np.ndarray, y: np.ndarray, meta: list[dict], *, c: float = 0.3
     return model, loo_probs, loo_pred
 
 
+def save_artifact(
+    path: Path,
+    *,
+    model: Pipeline,
+    y: np.ndarray,
+    loo_probs: np.ndarray,
+    loo_pred: np.ndarray,
+    spot_id: str,
+    viewpoint_id: str,
+    feature_names: list[str],
+    use_observable_field: bool,
+    tuning: dict | None = None,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if tuning:
+        version = "cloudsea_ml_v6_tuned"
+    else:
+        version = (
+            "cloudsea_ml_v5_dry_low_vis"
+            if use_observable_field
+            else "cloudsea_ml_v3_terrain"
+        )
+    artifact = {
+        "version": version,
+        "algorithm": "logistic_regression_day",
+        "feature_names": feature_names,
+        "legacy_feature_names": DAY_FEATURE_NAMES_V2,
+        "terrain_feature_names": TERRAIN_FEATURE_NAMES,
+        "observable_feature_names": OBSERVABLE_FEATURE_NAMES if use_observable_field else [],
+        "aggregation": "sunrise_window_03_07",
+        "spot_id": spot_id,
+        "viewpoint_id": viewpoint_id,
+        "model": model,
+        "trained_at": datetime.utcnow().isoformat(),
+        "n_days": len(y),
+        "loocv_accuracy": float(accuracy_score(y, loo_pred)),
+        "loocv_brier": float(brier_score_loss(y, loo_probs)),
+        "excludes_rainy_sunrise_window": True,
+    }
+    if tuning:
+        artifact.update(tuning)
+    with open(path, "wb") as f:
+        pickle.dump(artifact, f)
+
+
+def print_loocv_details(
+    y: np.ndarray,
+    loo_probs: np.ndarray,
+    loo_pred: np.ndarray,
+    meta: list[dict],
+) -> None:
+    print("\n--- LOOCV 逐日 ---")
+    print(f"{'日期':<12} {'标注':<8} {'P_loo':>6} {'pred':>5} {'ok':>4}")
+    for i, m in enumerate(meta):
+        actual = "有" if y[i] >= 0.5 else "无"
+        pred = "有" if loo_pred[i] >= 0.5 else "无"
+        ok = "✓" if loo_pred[i] == y[i] else "✗"
+        print(f"{m['date']:<12} {m['status']:<8} {loo_probs[i]*100:5.0f}% {pred:>5} {ok:>4}")
+    wrong = sum(1 for i in range(len(y)) if loo_pred[i] != y[i])
+    print(f"错误 {wrong}/{len(y)}")
+
+
+def train_group(
+    db_path: Path,
+    spot_id: str,
+    viewpoint_id: str,
+    *,
+    approved_only: bool,
+    models_dir: Path,
+    default_output: Path | None = None,
+    use_terrain: bool = True,
+    use_observable_field: bool = True,
+    db_only: bool = False,
+    no_save: bool = False,
+    loocv_detail: bool = False,
+    enhanced: bool = False,
+    min_recall: float | None = None,
+) -> dict | None:
+    min_n = min_labels_for_ml()
+    X, y, meta, feature_names = load_dataset(
+        db_path,
+        approved_only=approved_only,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+        exclude_rain=True,
+        use_terrain=use_terrain,
+        use_observable_field=use_observable_field,
+        db_only=db_only,
+    )
+    pos = int(y.sum()) if len(y) else 0
+    print(f"\n=== {spot_id}/{viewpoint_id} ===")
+    print(f"有效标注日: {len(y)} | 有云海: {pos} | 无云海: {int(len(y) - pos)}")
+    if len(y) < min_n:
+        print(f"跳过：有效样本 {len(y)} < {min_n}")
+        return None
+    if len(set(y)) < 2:
+        print("跳过：正负样本不足")
+        return None
+
+    tuning_extra: dict | None = None
+    if enhanced:
+        from app.engine.ml_tuning import apply_calibrator, build_production_pipeline, train_tuned
+
+        tuned = train_tuned(
+            X, y, meta, feature_names, min_recall=min_recall, feature_strategy="none"
+        )
+        model = build_production_pipeline(X, y, tuned)
+        loo_probs = tuned.loo_probs_calibrated
+        loo_pred = (loo_probs >= tuned.decision_threshold).astype(int)
+        loocv_acc = float(tuned.metrics_tuned["accuracy"])
+        tuning_extra = {
+            "selected_feature_names": tuned.feature_names,
+            "decision_threshold": tuned.decision_threshold,
+            "calibrator": tuned.calibrator,
+            "tuning_c": tuned.c,
+            "tuning_c_grid_scores": tuned.c_grid_scores,
+            "monthly_cv": tuned.monthly_cv,
+            "loocv_f1": tuned.metrics_tuned["f1"],
+            "loocv_precision": tuned.metrics_tuned["precision"],
+            "loocv_recall": tuned.metrics_tuned["recall"],
+        }
+        print(f"增强训练: C={tuned.c} 阈值={tuned.decision_threshold:.2f} 特征={len(tuned.feature_names)}")
+        print(f"按月留一月 CV 准确率: {tuned.monthly_cv.get('overall_accuracy', 0):.3f}")
+        X_fit = X[:, tuned.feature_mask]
+        decision_thr = tuned.decision_threshold
+    else:
+        model, loo_probs, loo_pred = train_eval(X, y)
+        loocv_acc = accuracy_score(y, loo_pred)
+        X_fit = X
+        decision_thr = 0.5
+
+    prob = model.predict_proba(X_fit)[:, 1]
+    if enhanced and tuning_extra and tuning_extra.get("calibrator"):
+        prob = apply_calibrator(tuning_extra["calibrator"], prob)
+    pred = (prob >= decision_thr).astype(int)
+    try:
+        auc = roc_auc_score(y, loo_probs) if len(set(y)) > 1 else 0.0
+    except ValueError:
+        auc = 0.0
+    print(f"全量 accuracy: {accuracy_score(y, pred):.3f}")
+    print(f"LOOCV accuracy: {loocv_acc:.3f}")
+    print(f"LOOCV AUC: {auc:.3f}")
+    print(f"LOOCV Brier: {brier_score_loss(y, loo_probs):.3f}")
+    print(f"loocv_accuracy:{loocv_acc:.4f}")
+    print(classification_report(y, pred, target_names=["无", "有"], zero_division=0))
+    if loocv_detail:
+        print_loocv_details(y, loo_probs, loo_pred, meta)
+
+    if no_save:
+        print("（--no-save：未写入模型文件）")
+        return {
+            "spot_id": spot_id,
+            "viewpoint_id": viewpoint_id,
+            "n_days": len(y),
+            "loocv_accuracy": loocv_acc,
+            "loocv_auc": auc,
+            "output": None,
+        }
+
+    out = spot_model_path(spot_id, viewpoint_id, models_dir=models_dir)
+    save_artifact(
+        out,
+        model=model,
+        y=y,
+        loo_probs=loo_probs,
+        loo_pred=loo_pred,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+        feature_names=feature_names,
+        use_observable_field=use_observable_field,
+        tuning=tuning_extra,
+    )
+    print(f"模型已保存: {out}")
+
+    if default_output is not None:
+        save_artifact(
+            default_output,
+            model=model,
+            y=y,
+            loo_probs=loo_probs,
+            loo_pred=loo_pred,
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
+            feature_names=feature_names,
+            use_observable_field=use_observable_field,
+            tuning=tuning_extra,
+        )
+        print(f"默认模型已同步: {default_output}")
+
+    return {
+        "spot_id": spot_id,
+        "viewpoint_id": viewpoint_id,
+        "n_days": len(y),
+        "loocv_accuracy": loocv_acc,
+        "output": str(out),
+    }
+
+
+def list_label_groups(db_path: Path, *, approved_only: bool) -> list[tuple[str, str]]:
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    clauses = ["1=1"]
+    if approved_only:
+        clauses.append("(review_status='approved' OR review_status IS NULL)")
+    rows = conn.execute(
+        f"""
+        SELECT DISTINCT spot_id, viewpoint_id FROM cloudsea_labels
+        WHERE {' AND '.join(clauses)}
+        ORDER BY spot_id, viewpoint_id
+        """
+    ).fetchall()
+    conn.close()
+    return [(r["spot_id"], r["viewpoint_id"]) for r in rows]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", default=str(ROOT / "data" / "cloudsea" / "cloudsea.db"))
@@ -157,58 +474,121 @@ def main() -> None:
         default=str(ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.pkl"),
     )
     parser.add_argument("--approved-only", action="store_true")
+    parser.add_argument("--spot-id")
+    parser.add_argument("--viewpoint-id")
+    parser.add_argument("--no-terrain", action="store_true", help="训练时不加入 DEM 地形特征")
+    parser.add_argument(
+        "--use-observable-field",
+        action="store_true",
+        default=True,
+        help="训练时加入可观测场特征（v4，默认开启；与 --no-terrain 互斥）",
+    )
+    parser.add_argument(
+        "--no-observable-field",
+        action="store_true",
+        help="禁用可观测场特征，仅使用 v3 地形特征",
+    )
+    parser.add_argument(
+        "--compare-terrain",
+        action="store_true",
+        help="对比 v2 特征 vs v3 地形特征的 LOOCV",
+    )
+    parser.add_argument(
+        "--db-only",
+        action="store_true",
+        help="仅使用 DB 缓存气象，缺失则跳过（不请求 Open-Meteo）",
+    )
+    parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="只做 LOOCV 评估，不写入 pkl",
+    )
+    parser.add_argument(
+        "--loocv-detail",
+        action="store_true",
+        help="打印留一日交叉验证逐日明细",
+    )
+    parser.add_argument(
+        "--enhanced",
+        action="store_true",
+        help="C 网格 + L1 特征 + 等渗校准 + LOOCV 阈值调优",
+    )
+    parser.add_argument(
+        "--min-recall",
+        type=float,
+        default=None,
+        help="增强模式下阈值调优的召回率下限",
+    )
     args = parser.parse_args()
 
-    X, y, meta = load_dataset(Path(args.db), approved_only=args.approved_only)
-    print(f"标注日: {len(y)} | 有云海: {int(y.sum())} | 无云海: {int(len(y) - y.sum())}")
-    print(f"特征数: {len(DAY_FEATURE_NAMES)}")
+    db_path = Path(args.db)
+    models_dir = Path(args.output).resolve().parent
 
-    model, loo_probs, loo_pred = train_eval(X, y, meta)
-    prob = model.predict_proba(X)[:, 1]
-    pred = (prob >= 0.5).astype(int)
+    use_terrain = not args.no_terrain
+    use_observable = use_terrain and not args.no_observable_field
 
-    print(f"\n=== 全量拟合 (n={len(y)}) ===")
-    print(f"accuracy: {accuracy_score(y, pred):.3f}")
-    print(f"brier: {brier_score_loss(y, prob):.3f}")
-    print(f"auc: {roc_auc_score(y, prob):.3f}")
-    print(classification_report(y, pred, target_names=["无", "有"], zero_division=0))
+    if args.compare_terrain:
+        X2, y2, _, _ = load_dataset(
+            db_path, approved_only=args.approved_only, use_terrain=False, db_only=args.db_only
+        )
+        X3, y3, _, _ = load_dataset(
+            db_path,
+            approved_only=args.approved_only,
+            use_terrain=True,
+            use_observable_field=False,
+            db_only=args.db_only,
+        )
+        X4, y4, _, _ = load_dataset(
+            db_path,
+            approved_only=args.approved_only,
+            use_terrain=True,
+            use_observable_field=True,
+            db_only=args.db_only,
+        )
+        if len(y2) >= 5 and len(set(y2)) >= 2:
+            _, _, pred2 = train_eval(X2, y2)
+            print(f"LOOCV v2 (无地形): {accuracy_score(y2, pred2):.3f} n={len(y2)}")
+        if len(y3) >= 5 and len(set(y3)) >= 2:
+            _, _, pred3 = train_eval(X3, y3)
+            print(f"LOOCV v3 (含地形): {accuracy_score(y3, pred3):.3f} n={len(y3)}")
+        if len(y4) >= 5 and len(set(y4)) >= 2:
+            _, _, pred4 = train_eval(X4, y4)
+            print(f"LOOCV v4 (可观测场): {accuracy_score(y4, pred4):.3f} n={len(y4)}")
+        return
 
-    print(f"\n=== 留一日交叉验证 LOOCV (n={len(y)}) ===")
-    loocv_acc = accuracy_score(y, loo_pred)
-    print(f"accuracy: {loocv_acc:.3f}")
-    print(f"loocv_accuracy: {loocv_acc:.3f}")
-    print(f"brier: {brier_score_loss(y, loo_probs):.3f}")
-    if len(set(y)) > 1:
-        print(f"auc: {roc_auc_score(y, loo_probs):.3f}")
+    groups: list[tuple[str, str]]
+    if args.spot_id and args.viewpoint_id:
+        groups = [(args.spot_id, args.viewpoint_id)]
+    else:
+        groups = list_label_groups(db_path, approved_only=args.approved_only)
 
-    print("\n=== 逐日 LOOCV ===")
-    for i, m in enumerate(meta):
-        mark = "OK" if loo_pred[i] == y[i] else "X"
-        print(f"  {mark} {m['date']} 标注={m['status']:7} ml={loo_probs[i]*100:5.1f}%")
+    trained: list[dict] = []
+    for spot_id, viewpoint_id in groups:
+        default_out = Path(args.output) if (spot_id, viewpoint_id) == (WUNVSHAN_SPOT, WUNVSHAN_VP) else None
+        result = train_group(
+            db_path,
+            spot_id,
+            viewpoint_id,
+            approved_only=args.approved_only,
+            models_dir=models_dir,
+            default_output=default_out,
+            use_terrain=use_terrain,
+            use_observable_field=use_observable,
+            db_only=args.db_only,
+            no_save=args.no_save,
+            loocv_detail=args.loocv_detail,
+            enhanced=args.enhanced,
+            min_recall=args.min_recall,
+        )
+        if result:
+            trained.append(result)
 
-    clf: LogisticRegression = model.named_steps["clf"]
-    coefs = dict(zip(DAY_FEATURE_NAMES, clf.coef_[0]))
-    print("\n=== 特征系数 (|coef| top 12) ===")
-    for k, v in sorted(coefs.items(), key=lambda x: abs(x[1]), reverse=True)[:12]:
-        print(f"  {k:20} {v:+.3f}")
-
-    artifact = {
-        "version": "cloudsea_ml_v2",
-        "algorithm": "logistic_regression_day",
-        "feature_names": DAY_FEATURE_NAMES,
-        "aggregation": "sunrise_window_03_07",
-        "model": model,
-        "trained_at": datetime.utcnow().isoformat(),
-        "n_days": len(y),
-        "loocv_accuracy": float(accuracy_score(y, loo_pred)),
-        "loocv_brier": float(brier_score_loss(y, loo_probs)),
-    }
-
-    out = Path(args.output)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out, "wb") as f:
-        pickle.dump(artifact, f)
-    print(f"\n模型已保存: {out}")
+    print(f"\n=== 训练汇总：成功 {len(trained)} 个点位 ===")
+    for item in trained:
+        print(
+            f"  {item['spot_id']}/{item['viewpoint_id']}: "
+            f"n={item['n_days']} LOOCV={item['loocv_accuracy']:.3f} -> {item['output']}"
+        )
 
 
 if __name__ == "__main__":

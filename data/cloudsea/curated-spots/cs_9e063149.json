@@ -1,0 +1,66 @@
+{
+  "id": "cs_9e063149",
+  "name": "东灵山",
+  "aliases": [
+    "东灵山"
+  ],
+  "region": "社区精选",
+  "peak_elevation": 2274.0,
+  "viewpoints": [
+    {
+      "id": "main",
+      "name": "东灵山",
+      "lat": 40.0161,
+      "lng": 115.50136,
+      "elevation": 2274.0,
+      "tags": [
+        "sunrise",
+        "cloudsea",
+        "community"
+      ],
+      "note": "社区贡献点位 · cs_9e063149"
+    }
+  ],
+  "seasonality": {
+    "cloudsea_months": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sunrise_months": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sunrise_best": "all_year"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 70
+  },
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.0
+  },
+  "source": "curated",
+  "community_location_id": "cs_9e063149"
+}

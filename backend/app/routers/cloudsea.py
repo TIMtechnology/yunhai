@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from datetime import date as date_cls
 from typing import Optional
 
@@ -26,8 +28,10 @@ from app.services.community_store import (
 )
 from app.services.curate_service import curate_community_location, run_model_training
 from app.services.label_session import build_label_session_payload
-from app.services.predictor import run_backtest_prediction
+from app.services.predictor import backtest_sunrise_peak, run_backtest_prediction
 from app.services.spot_loader import get_spot, get_viewpoint
+from app.services.cache import cache_get, cache_set
+from app.engine.ml_eligibility import spot_model_path
 
 router = APIRouter(tags=["cloudsea"])
 
@@ -108,6 +112,7 @@ def _resolve_location(
             elevation=vp.elevation,
             name=f"{spot.name} · {vp.name}" if spot else vp.name,
             spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
             hours=24,
         )
     if lat is None or lng is None:
@@ -212,41 +217,54 @@ async def cloudsea_calendar(
 async def cloudsea_accuracy(
     spot_id: str,
     viewpoint_id: str,
+    refresh: bool = False,
     _: None = Depends(verify_cloudsea_token),
 ):
+    model_path = spot_model_path(spot_id, viewpoint_id)
+    model_tag = int(model_path.stat().st_mtime) if model_path.is_file() else 0
+    cache_key = f"cloudsea_accuracy:{spot_id}:{viewpoint_id}:{model_tag}"
+    if not refresh:
+        cached = cache_get(cache_key)
+        if cached:
+            cached["cached"] = True
+            return cached
+
     req = _resolve_location(spot_id, viewpoint_id, None, None, None, None)
     labels = list_labels(spot_id=spot_id, viewpoint_id=viewpoint_id)
-    details = []
-    correct = 0
-    for label in labels:
-        backtest = await run_backtest_prediction(
-            req=req,
-            target_date=date_cls.fromisoformat(label["date"]),
-        )
-        summary = backtest.get("sunrise_window_summary") or {}
-        peak_prob = summary.get("max_cloudsea_prob", 0)
+    sem = asyncio.Semaphore(2)
+
+    async def _eval_label(label: dict) -> dict:
+        async with sem:
+            peak = await backtest_sunrise_peak(
+                req=req,
+                target_date=date_cls.fromisoformat(label["date"]),
+                model_tag=model_tag,
+                prefer_cached_meteo=True,
+            )
+        peak_prob = float(peak.get("peak_prob") or 0)
         actual_pos = label["status"] in ("full", "partial")
         pred_pos = peak_prob >= 50
-        ok = actual_pos == pred_pos
-        if ok:
-            correct += 1
-        details.append(
-            {
-                "date": label["date"],
-                "status": label["status"],
-                "peak_prob": peak_prob,
-                "scenario": summary.get("scenario"),
-                "predicted_positive": pred_pos,
-                "correct": ok,
-            }
-        )
+        return {
+            "date": label["date"],
+            "status": label["status"],
+            "peak_prob": peak_prob,
+            "scenario": peak.get("scenario"),
+            "predicted_positive": pred_pos,
+            "correct": actual_pos == pred_pos,
+        }
+
+    details = list(await asyncio.gather(*[_eval_label(label) for label in labels]))
+    correct = sum(1 for row in details if row["correct"])
     total = len(details)
-    return {
+    payload = {
         "total": total,
         "correct": correct,
         "accuracy": round(correct / total, 3) if total else None,
         "details": details,
+        "cached": False,
     }
+    cache_set(cache_key, payload, ttl=3600)
+    return payload
 
 
 @router.get("/api/internal/cloudsea/labels")

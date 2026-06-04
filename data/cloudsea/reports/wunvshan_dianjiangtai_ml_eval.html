@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>云海 ML 评估 · wunvshan/dianjiangtai</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #0f172a; color: #e2e8f0; }
+    body { margin: 0; padding: 24px; max-width: 1100px; margin-inline: auto; }
+    h1 { font-size: 1.35rem; color: #7dd3fc; }
+    h2 { font-size: 1.05rem; margin-top: 2rem; color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+    .muted { color: #94a3b8; font-size: 0.9rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin: 16px 0; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; }
+    .card b { display: block; font-size: 1.4rem; color: #f8fafc; }
+    .card span { font-size: 0.75rem; color: #94a3b8; }
+    .explain { background: #172554; border-left: 3px solid #3b82f6; padding: 12px 14px; margin: 12px 0; font-size: 0.88rem; line-height: 1.55; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) { .charts { grid-template-columns: 1fr; } }
+    .chart-box { background: #1e293b; border-radius: 10px; padding: 12px; min-height: 280px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 12px; }
+    th, td { border: 1px solid #334155; padding: 6px 8px; text-align: left; }
+    th { background: #1e293b; }
+    tr.ok { background: rgba(34,197,94,0.08); }
+    tr.bad { background: rgba(239,68,68,0.12); }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .tag-pos { background: #14532d; color: #86efac; }
+    .tag-neg { background: #450a0a; color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <h1>云海 ML 评估报告</h1>
+  <p class="muted">wunvshan · dianjiangtai · 生成于 2026-06-03T16:46:39+08:00 · 特征 43 维 · 有效样本 52 天（排除日出降水日）</p>
+
+  <div class="explain">
+    <strong>如何读这份报告</strong><br/>
+    本项目是<strong>按日</strong>二分类（日出窗口 03–07 是否有观赏级云海）。样本约 52 天，必须用 <strong>LOOCV（留一日验证）</strong> 估计真实泛化能力；「全量拟合」是在全部数据上训练再在同一批数据上打分，通常会<strong>偏乐观</strong>。<br/>
+    <strong>准确率</strong>：判对的比例。<strong>精确率</strong>：预测「有云海」里真有云海的比例（少误报）。<strong>召回率</strong>：真实有云海的日子被找出来的比例（少漏报）。<strong>ROC-AUC</strong>：排序能力，0.5=瞎猜，1=完美。<strong>Brier</strong>：概率校准误差，越小越好。
+  </div>
+
+  <h2>核心指标（LOOCV，阈值 50%）</h2>
+  <div class="grid">
+    <div class="card"><b>76.9%</b><span>准确率 Accuracy</span></div>
+    <div class="card"><b>58.8%</b><span>精确率 Precision</span></div>
+    <div class="card"><b>66.7%</b><span>召回率 Recall</span></div>
+    <div class="card"><b>62.5%</b><span>F1 分数</span></div>
+    <div class="card"><b>81.1%</b><span>特异度（真负例识别）</span></div>
+    <div class="card"><b>75.3%</b><span>ROC-AUC</span></div>
+    <div class="card"><b>0.186</b><span>Brier 分数</span></div>
+    <div class="card"><b>15/37</b><span>有云海 / 无云海 样本</span></div>
+  </div>
+
+  <h2>混淆矩阵（LOOCV）</h2>
+  <div class="explain">
+    行=真实，列=预测。TN=真无云且判无；FP=无云却判有（误报）；FN=有云却判无（漏报）；TP=有云且判有。
+  </div>
+  <table>
+    <tr><th></th><th>预测：无</th><th>预测：有</th></tr>
+    <tr><th>真实：无</th><td>TN = 30</td><td>FP = 7</td></tr>
+    <tr><th>真实：有</th><td>FN = 5</td><td>TP = 10</td></tr>
+  </table>
+
+  <p class="muted">全量拟合准确率 88.5%（与 LOOCV 差距 +11.5 个百分点，差距大说明过拟合风险高）</p>
+
+  <h2>图表</h2>
+  <div class="charts">
+    <div class="chart-box"><canvas id="rocChart"></canvas></div>
+    <div class="chart-box"><canvas id="calChart"></canvas></div>
+    <div class="chart-box"><canvas id="histChart"></canvas></div>
+    <div class="chart-box"><canvas id="cmChart"></canvas></div>
+  </div>
+
+  <h2>逐日明细（LOOCV 概率）</h2>
+  <table id="dailyTable">
+    <thead><tr><th>日期</th><th>标注</th><th>真实</th><th>P(LOOCV)</th><th>P(全量)</th><th>LOOCV判</th><th>对错</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+  const DATA = {"generated_at": "2026-06-03T16:46:39+08:00", "spot_id": "wunvshan", "viewpoint_id": "dianjiangtai", "db_path": "/app/data/cloudsea/cloudsea.db", "feature_count": 43, "artifact": {"path": "/app/data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl", "version": "cloudsea_ml_v5_dry_low_vis", "n_days": 51, "trained_at": "2026-06-02T05:17:04.168927", "saved_loocv": 0.7647058823529411, "saved_brier": 0.18917510013211583}, "loocv": {"label": "LOOCV（留一日交叉验证）", "n": 52, "positive": 15, "negative": 37, "accuracy": 0.7692307692307693, "precision": 0.5882352941176471, "recall": 0.6666666666666666, "f1": 0.625, "specificity": 0.8108108108108109, "brier": 0.18617525190787718, "confusion": {"tn": 30, "fp": 7, "fn": 5, "tp": 10}, "roc_auc": 0.7531531531531531, "roc": {"fpr": [0.0, 0.0, 0.0, 0.02702702702702703, 0.02702702702702703, 0.16216216216216217, 0.16216216216216217, 0.21621621621621623, 0.21621621621621623, 0.4594594594594595, 0.4594594594594595, 0.4864864864864865, 0.4864864864864865, 0.8378378378378378, 0.8378378378378378, 0.972972972972973, 0.972972972972973, 1.0], "tpr": [0.0, 0.06666666666666667, 0.2, 0.2, 0.4, 0.4, 0.6666666666666666, 0.6666666666666666, 0.7333333333333333, 0.7333333333333333, 0.8, 0.8, 0.8666666666666667, 0.8666666666666667, 0.9333333333333333, 0.9333333333333333, 1.0, 1.0], "thresholds": [Infinity, 0.9492717589666424, 0.9128706616165501, 0.8988356266826851, 0.7964380893611976, 0.6593437085276943, 0.5217827595930997, 0.47534224666253083, 0.4709977737014822, 0.31917445738047623, 0.29636225185724924, 0.28751842234925434, 0.2613618850579468, 0.059109937399931124, 0.04726779443567189, 0.020397943427587006, 0.00454446351791742, 0.0003981347595044869]}}, "in_sample": {"label": "全量拟合（易乐观，仅作对比）", "n": 52, "positive": 15, "negative": 37, "accuracy": 0.8846153846153846, "precision": 0.7368421052631579, "recall": 0.9333333333333333, "f1": 0.8235294117647058, "specificity": 0.8648648648648649, "brier": 0.09002430765326118, "confusion": {"tn": 32, "fp": 5, "fn": 1, "tp": 14}, "roc_auc": 0.9693693693693695, "roc": {"fpr": [0.0, 0.0, 0.0, 0.02702702702702703, 0.02702702702702703, 0.08108108108108109, 0.08108108108108109, 0.10810810810810811, 0.10810810810810811, 0.13513513513513514, 0.13513513513513514, 1.0], "tpr": [0.0, 0.06666666666666667, 0.4666666666666667, 0.4666666666666667, 0.8, 0.8, 0.8666666666666667, 0.8666666666666667, 0.9333333333333333, 0.9333333333333333, 1.0, 1.0], "thresholds": [Infinity, 0.9483641478905595, 0.8499965815225751, 0.785375236314097, 0.6358875027446345, 0.5800369811488728, 0.560035894713713, 0.5436795563439134, 0.5251643846124753, 0.5221345711743545, 0.4630896370691685, 0.013398318107779045]}}, "calibration_loo": {"centers": [0.05, 0.15000000000000002, 0.25, 0.35000000000000003, 0.45, 0.55, 0.6500000000000001, 0.75, 0.8500000000000001, 0.95], "pred_mean": [0.036067890984699376, 0.15170970361454422, 0.269847409651236, 0.3305421638136977, 0.44705951320814713, 0.5220823800976125, 0.6746502000678354, 0.7856543764200286, 0.8727965442051353, 0.9280449074464204], "actual_rate": [0.18181818181818182, 0.0, 0.5, 0.0, 0.14285714285714285, 0.8, 0.0, 0.5, 0.6666666666666666, 1.0], "counts": [11, 9, 4, 4, 7, 5, 4, 2, 3, 3]}, "calibration_full": {"centers": [0.05, 0.15000000000000002, 0.25, 0.35000000000000003, 0.45, 0.55, 0.6500000000000001, 0.75, 0.8500000000000001, 0.95], "pred_mean": [0.038634402072984304, 0.12987595372814423, 0.2677033391937875, 0.3265755849056814, 0.4383650451672951, 0.5462102775986658, 0.6314724826828393, 0.7333942947447163, 0.8726707377017155, 0.9295444799426863], "actual_rate": [0.0, 0.0, 0.0, 0.0, 0.3333333333333333, 0.4, 0.5, 0.8, 1.0, 1.0], "counts": [9, 9, 8, 4, 3, 5, 2, 5, 3, 4]}, "histogram": {"edges": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], "positive": [2, 0, 2, 0, 1, 4, 0, 1, 2, 3], "negative": [9, 9, 2, 4, 6, 1, 4, 1, 1, 0]}, "daily": [{"date": "2023-05-23", "status": "full", "actual": 1, "p_loo": 83.6, "p_full": 87.6, "pred_loo": 1, "ok_loo": true}, {"date": "2024-10-05", "status": "full", "actual": 1, "p_loo": 92.2, "p_full": 93.0, "pred_loo": 1, "ok_loo": true}, {"date": "2024-10-13", "status": "full", "actual": 1, "p_loo": 53.4, "p_full": 71.1, "pred_loo": 1, "ok_loo": true}, {"date": "2025-05-24", "status": "full", "actual": 1, "p_loo": 29.6, "p_full": 52.5, "pred_loo": 0, "ok_loo": false}, {"date": "2025-06-05", "status": "partial", "actual": 1, "p_loo": 94.9, "p_full": 91.7, "pred_loo": 1, "ok_loo": true}, {"date": "2025-08-11", "status": "full", "actual": 1, "p_loo": 88.3, "p_full": 89.2, "pred_loo": 1, "ok_loo": true}, {"date": "2025-08-14", "status": "full", "actual": 1, "p_loo": 91.3, "p_full": 92.3, "pred_loo": 1, "ok_loo": true}, {"date": "2025-10-01", "status": "none", "actual": 0, "p_loo": 47.5, "p_full": 36.5, "pred_loo": 0, "ok_loo": true}, {"date": "2025-10-02", "status": "none", "actual": 0, "p_loo": 45.8, "p_full": 33.9, "pred_loo": 0, "ok_loo": true}, {"date": "2025-10-03", "status": "full", "actual": 1, "p_loo": 52.5, "p_full": 71.6, "pred_loo": 1, "ok_loo": true}, {"date": "2025-10-04", "status": "none", "actual": 0, "p_loo": 67.9, "p_full": 58.0, "pred_loo": 1, "ok_loo": false}, {"date": "2025-10-05", "status": "none", "actual": 0, "p_loo": 77.5, "p_full": 62.7, "pred_loo": 1, "ok_loo": false}, {"date": "2025-10-06", "status": "none", "actual": 0, "p_loo": 2.5, "p_full": 2.8, "pred_loo": 0, "ok_loo": true}, {"date": "2025-10-07", "status": "none", "actual": 0, "p_loo": 8.4, "p_full": 7.5, "pred_loo": 0, "ok_loo": true}, {"date": "2025-10-08", "status": "none", "actual": 0, "p_loo": 66.6, "p_full": 54.4, "pred_loo": 1, "ok_loo": false}, {"date": "2025-10-13", "status": "none", "actual": 0, "p_loo": 41.5, "p_full": 30.0, "pred_loo": 0, "ok_loo": true}, {"date": "2025-10-14", "status": "full", "actual": 1, "p_loo": 52.7, "p_full": 74.3, "pred_loo": 1, "ok_loo": true}, {"date": "2026-04-20", "status": "full", "actual": 1, "p_loo": 0.5, "p_full": 46.3, "pred_loo": 0, "ok_loo": false}, {"date": "2026-05-01", "status": "none", "actual": 0, "p_loo": 14.2, "p_full": 13.3, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-02", "status": "none", "actual": 0, "p_loo": 89.9, "p_full": 78.5, "pred_loo": 1, "ok_loo": false}, {"date": "2026-05-03", "status": "none", "actual": 0, "p_loo": 43.2, "p_full": 27.7, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-04", "status": "full", "actual": 1, "p_loo": 79.6, "p_full": 85.0, "pred_loo": 1, "ok_loo": true}, {"date": "2026-05-05", "status": "none", "actual": 0, "p_loo": 69.4, "p_full": 44.3, "pred_loo": 1, "ok_loo": false}, {"date": "2026-05-06", "status": "none", "actual": 0, "p_loo": 5.9, "p_full": 6.1, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-07", "status": "none", "actual": 0, "p_loo": 17.5, "p_full": 13.1, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-08", "status": "none", "actual": 0, "p_loo": 65.9, "p_full": 52.2, "pred_loo": 1, "ok_loo": false}, {"date": "2026-05-09", "status": "full", "actual": 1, "p_loo": 47.1, "p_full": 71.1, "pred_loo": 0, "ok_loo": false}, {"date": "2026-05-10", "status": "none", "actual": 0, "p_loo": 40.9, "p_full": 29.8, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-11", "status": "none", "actual": 0, "p_loo": 17.5, "p_full": 12.5, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-12", "status": "none", "actual": 0, "p_loo": 50.2, "p_full": 40.9, "pred_loo": 1, "ok_loo": false}, {"date": "2026-05-13", "status": "none", "actual": 0, "p_loo": 2.1, "p_full": 2.1, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-14", "status": "none", "actual": 0, "p_loo": 15.9, "p_full": 14.3, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-15", "status": "none", "actual": 0, "p_loo": 23.4, "p_full": 21.7, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-16", "status": "none", "actual": 0, "p_loo": 31.9, "p_full": 28.4, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-17", "status": "none", "actual": 0, "p_loo": 35.7, "p_full": 30.2, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-18", "status": "none", "actual": 0, "p_loo": 28.8, "p_full": 25.1, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-19", "status": "none", "actual": 0, "p_loo": 11.9, "p_full": 10.7, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-20", "status": "full", "actual": 1, "p_loo": 26.1, "p_full": 56.0, "pred_loo": 0, "ok_loo": false}, {"date": "2026-05-21", "status": "none", "actual": 0, "p_loo": 13.3, "p_full": 12.0, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-22", "status": "full", "actual": 1, "p_loo": 52.2, "p_full": 63.6, "pred_loo": 1, "ok_loo": true}, {"date": "2026-05-23", "status": "none", "actual": 0, "p_loo": 2.0, "p_full": 2.0, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-24", "status": "none", "actual": 0, "p_loo": 32.6, "p_full": 24.5, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-25", "status": "none", "actual": 0, "p_loo": 17.5, "p_full": 15.0, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-26", "status": "none", "actual": 0, "p_loo": 32.1, "p_full": 27.4, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-27", "status": "none", "actual": 0, "p_loo": 0.0, "p_full": 1.3, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-28", "status": "none", "actual": 0, "p_loo": 46.9, "p_full": 29.5, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-29", "status": "full", "actual": 1, "p_loo": 4.7, "p_full": 94.8, "pred_loo": 0, "ok_loo": false}, {"date": "2026-05-30", "status": "none", "actual": 0, "p_loo": 8.0, "p_full": 7.5, "pred_loo": 0, "ok_loo": true}, {"date": "2026-05-31", "status": "none", "actual": 0, "p_loo": 3.0, "p_full": 3.1, "pred_loo": 0, "ok_loo": true}, {"date": "2026-06-01", "status": "none", "actual": 0, "p_loo": 2.5, "p_full": 2.4, "pred_loo": 0, "ok_loo": true}, {"date": "2026-06-02", "status": "none", "actual": 0, "p_loo": 13.3, "p_full": 11.8, "pred_loo": 0, "ok_loo": true}, {"date": "2026-06-03", "status": "none", "actual": 0, "p_loo": 15.4, "p_full": 14.1, "pred_loo": 0, "ok_loo": true}], "gap_accuracy": 0.11538461538461531};
+  const loocv = DATA.loocv;
+
+  new Chart(document.getElementById('rocChart'), {
+    type: 'line',
+    data: {
+      labels: loocv.roc.fpr.map((x,i) => (x*100).toFixed(0)+'% FPR'),
+      datasets: [{
+        label: 'ROC (LOOCV) AUC=' + (loocv.roc_auc != null ? (loocv.roc_auc*100).toFixed(1)+'%' : '—'),
+        data: loocv.roc.tpr.map((t,i) => ({x: loocv.roc.fpr[i]*100, y: t*100})),
+        borderColor: '#38bdf8',
+        backgroundColor: 'rgba(56,189,248,0.1)',
+        fill: true,
+        tension: 0.2,
+        pointRadius: 0,
+      }, {
+        label: '随机猜测',
+        data: [{x:0,y:0},{x:100,y:100}],
+        borderColor: '#64748b',
+        borderDash: [6,4],
+        pointRadius: 0,
+      }],
+    },
+    options: {
+      parsing: false,
+      scales: {
+        x: { type: 'linear', min: 0, max: 100, title: { display: true, text: '假阳性率 FPR %', color: '#94a3b8' } },
+        y: { min: 0, max: 100, title: { display: true, text: '真阳性率 TPR %', color: '#94a3b8' } },
+      },
+      plugins: { legend: { labels: { color: '#e2e8f0' } } },
+    },
+  });
+
+  const cal = DATA.calibration_loo;
+  new Chart(document.getElementById('calChart'), {
+    type: 'bar',
+    data: {
+      labels: cal.centers.map(c => (c*100).toFixed(0)+'%'),
+      datasets: [
+        { label: '预测概率均值', data: cal.pred_mean.map(x => x*100), backgroundColor: 'rgba(56,189,248,0.6)' },
+        { label: '实际有云海比例', data: cal.actual_rate.map(x => x*100), backgroundColor: 'rgba(74,222,128,0.6)' },
+      ],
+    },
+    options: {
+      scales: { y: { min: 0, max: 100, title: { display: true, text: '%', color: '#94a3b8' } } },
+      plugins: { title: { display: true, text: '校准图（LOOCV）', color: '#e2e8f0' }, legend: { labels: { color: '#e2e8f0' } } },
+    },
+  });
+
+  const h = DATA.histogram;
+  const labels = h.edges.slice(0,-1).map((e,i) => e+'–'+h.edges[i+1]+'%');
+  new Chart(document.getElementById('histChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: '标注：有云海', data: h.positive, backgroundColor: 'rgba(74,222,128,0.7)' },
+        { label: '标注：无云海', data: h.negative, backgroundColor: 'rgba(248,113,113,0.7)' },
+      ],
+    },
+    options: {
+      scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: '天数', color: '#94a3b8' } } },
+      plugins: { title: { display: true, text: 'LOOCV 概率分布', color: '#e2e8f0' }, legend: { labels: { color: '#e2e8f0' } } },
+    },
+  });
+
+  new Chart(document.getElementById('cmChart'), {
+    type: 'bar',
+    data: {
+      labels: ['TN','FP','FN','TP'],
+      datasets: [{ data: [loocv.confusion.tn, loocv.confusion.fp, loocv.confusion.fn, loocv.confusion.tp],
+        backgroundColor: ['#334155','#f87171','#fb923c','#4ade80'] }],
+    },
+    options: {
+      plugins: { title: { display: true, text: '混淆矩阵计数', color: '#e2e8f0' }, legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+    },
+  });
+
+  const tbody = document.querySelector('#dailyTable tbody');
+  DATA.daily.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = r.ok_loo ? 'ok' : 'bad';
+    const act = r.actual ? '<span class="tag tag-pos">有</span>' : '<span class="tag tag-neg">无</span>';
+    const pred = r.pred_loo ? '<span class="tag tag-pos">有</span>' : '<span class="tag tag-neg">无</span>';
+    tr.innerHTML = `<td>${r.date}</td><td>${r.status}</td><td>${act}</td><td>${r.p_loo}%</td><td>${r.p_full}%</td><td>${pred}</td><td>${r.ok_loo ? '✓' : '✗'}</td>`;
+    tbody.appendChild(tr);
+  });
+  </script>
+</body>
+</html>

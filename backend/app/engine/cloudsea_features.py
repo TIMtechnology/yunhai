@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from app.adapters.dem import estimate_cloud_top_m
+from app.adapters.open_meteo import estimate_cloud_base
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, _infer_effective_low_cloud
+from app.engine.observable_field import compute_observable_field
 
 FEATURE_NAMES = [
     "cloud_low",
@@ -47,7 +50,67 @@ DAY_FEATURE_NAMES = [
     "hour_count_type_b",
     "hour_count_fog",
     "effective_low_mean",
+    # v5：低 vis 按 rh 分层，避免 vis 单独压分；加强 fog 区分力
+    "hour_count_dry_low_vis",
+    "hour_count_dry_low_vis_boost",
+    "hour_count_wet_low_vis",
+    "day_dry_low_vis_flag",
+    "hour_count_fog_boost",
 ]
+
+VIS_LOW_THRESHOLD_M = 500.0
+RH_DRY_THRESHOLD = 75.0
+RH_WET_THRESHOLD = 85.0
+FOG_BOOST_FACTOR = 2.0
+DRY_LOW_VIS_BOOST_FACTOR = 2.0
+MIST_DISCRIM_FEATURE_NAMES = [
+    "hour_count_dry_low_vis",
+    "hour_count_dry_low_vis_boost",
+    "hour_count_wet_low_vis",
+    "day_dry_low_vis_flag",
+    "hour_count_fog_boost",
+]
+
+# 三元组诊断（5/29·5/25·5/28）重点特征
+TRIPLET_DISCRIM_FEATURE_NAMES = [
+    "vis_min",
+    "rh_mean",
+    "rh850_mean",
+    "hour_count_fog",
+    "hour_count_fog_boost",
+    "hour_count_dry_low_vis",
+    "hour_count_dry_low_vis_boost",
+    "hour_count_wet_low_vis",
+    "day_dry_low_vis_flag",
+    "effective_low_mean",
+    "observable_depth_mean",
+]
+
+TERRAIN_FEATURE_NAMES = [
+    "elev_view_m",
+    "elev_max_1km_m",
+    "elev_max_5km_m",
+    "relief_5km_m",
+    "is_peak_overlook",
+    "cloud_base_minus_peak_mean",
+    "hours_above_cloud",
+    "hours_valley_fill",
+]
+
+OBSERVABLE_FEATURE_NAMES = [
+    "observable_fraction_mean",
+    "observable_fraction_max",
+    "observable_depth_mean",
+    "sunrise_sector_relief_m",
+    "horizon_blocked",
+    "vis_limited_range_km_mean",
+    "hours_observable_gt_03",
+    "cloud_base_minus_valley_mean",
+]
+
+DAY_FEATURE_NAMES_V2 = list(DAY_FEATURE_NAMES)
+DAY_FEATURE_NAMES_V3 = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES
+DAY_FEATURE_NAMES = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES + OBSERVABLE_FEATURE_NAMES
 
 _REQUIRED_METEO_KEYS = ("rh_700", "cloud_high", "inversion")
 
@@ -79,6 +142,7 @@ def build_meteo_hour_row(hourly: dict, idx: int, *, precip48: float | None = Non
     inversion = (float(t_850) - float(t_925)) if t_850 is not None and t_925 is not None else None
     return {
         "time": t_str,
+        "precipitation": _series_val(hourly.get("precipitation", []), idx),
         "cloud_low": _series_val(hourly.get("cloud_cover_low", []), idx),
         "cloud_mid": _series_val(hourly.get("cloud_cover_mid", []), idx),
         "cloud_high": _series_val(hourly.get("cloud_cover_high", []), idx),
@@ -91,6 +155,8 @@ def build_meteo_hour_row(hourly: dict, idx: int, *, precip48: float | None = Non
         "inversion": inversion,
         "wind": _series_val(hourly.get("wind_speed_10m", []), idx),
         "precip48": precip48,
+        "temp": _series_val(hourly.get("temperature_2m", []), idx),
+        "dewpoint": _series_val(hourly.get("dew_point_2m", []), idx),
     }
 
 
@@ -141,6 +207,19 @@ def build_feature_row(
         archetype=archetype,
     )
 
+    vis_for_thresh = vis if visibility is not None else 10000.0
+    is_fog = archetype == "fog_exclude"
+    is_dry_low_vis = (
+        1.0
+        if vis_for_thresh <= VIS_LOW_THRESHOLD_M and rh < RH_DRY_THRESHOLD and not is_fog
+        else 0.0
+    )
+    is_wet_low_vis = (
+        1.0
+        if vis_for_thresh <= VIS_LOW_THRESHOLD_M and (is_fog or rh >= RH_WET_THRESHOLD)
+        else 0.0
+    )
+
     return {
         "cloud_low": cloud_low,
         "cloud_mid": cloud_mid,
@@ -158,7 +237,9 @@ def build_feature_row(
         "inversion": inversion,
         "is_type_a": 1.0 if archetype == "type_a" else 0.0,
         "is_type_b": 1.0 if archetype == "type_b" else 0.0,
-        "is_fog_exclude": 1.0 if archetype == "fog_exclude" else 0.0,
+        "is_fog_exclude": 1.0 if is_fog else 0.0,
+        "is_dry_low_vis": is_dry_low_vis,
+        "is_wet_low_vis": is_wet_low_vis,
     }
 
 
@@ -167,10 +248,134 @@ def feature_vector(raw: dict, *, elevation: float = 804.0) -> list[float]:
     return [row[name] for name in FEATURE_NAMES]
 
 
-def aggregate_day_features(hour_rows: list[dict], *, elevation: float = 804.0) -> dict[str, float]:
+def _terrain_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float,
+    terrain: dict | None,
+) -> dict[str, float]:
+    defaults = {n: 0.0 for n in TERRAIN_FEATURE_NAMES}
+    if not terrain:
+        return defaults
+
+    elev_max_5km = float(terrain.get("elev_max_5km_m") or elevation)
+    viewing_mode = str(terrain.get("viewing_mode") or "valley_fill")
+    base_minus_peak: list[float] = []
+    above_hours = 0
+    valley_hours = 0
+
+    for row in hour_rows:
+        temp = row.get("temp")
+        dew = row.get("dewpoint")
+        if temp is None or dew is None:
+            continue
+        cloud_base = estimate_cloud_base(float(temp), float(dew))
+        cloud_low = float(row.get("cloud_low") or 0)
+        cloud_mid = float(row.get("cloud_mid") or 0)
+        cloud_top = estimate_cloud_top_m(cloud_base, cloud_low, cloud_mid)
+        base_minus_peak.append(cloud_base - elev_max_5km)
+        if elevation > cloud_top:
+            above_hours += 1
+        if cloud_base < elev_max_5km and elevation >= elev_max_5km - 200:
+            valley_hours += 1
+
+    return {
+        "elev_view_m": float(elevation),
+        "elev_max_1km_m": float(terrain.get("elev_max_1km_m") or 0),
+        "elev_max_5km_m": elev_max_5km,
+        "relief_5km_m": float(terrain.get("relief_5km_m") or 0),
+        "is_peak_overlook": 1.0 if viewing_mode == "peak_overlook" else 0.0,
+        "cloud_base_minus_peak_mean": float(np.mean(base_minus_peak)) if base_minus_peak else 0.0,
+        "hours_above_cloud": float(above_hours),
+        "hours_valley_fill": float(valley_hours),
+    }
+
+
+def _observable_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float,
+    terrain: dict | None,
+    viewing_mode: str,
+) -> dict[str, float]:
+    defaults = {n: 0.0 for n in OBSERVABLE_FEATURE_NAMES}
+    if not hour_rows:
+        return defaults
+
+    fractions: list[float] = []
+    depths: list[float] = []
+    vis_ranges: list[float] = []
+    valley_gaps: list[float] = []
+    hours_gt = 0.0
+    horizon = 0.0
+    sector_relief = float((terrain or {}).get("sunrise_sector_relief_m") or 0.0)
+
+    for row in hour_rows:
+        temp = row.get("temp")
+        dew = row.get("dewpoint")
+        if temp is None or dew is None:
+            continue
+        cloud_base = estimate_cloud_base(float(temp), float(dew))
+        cloud_low = float(row.get("cloud_low") or 0)
+        cloud_mid = float(row.get("cloud_mid") or 0)
+        cloud_top = estimate_cloud_top_m(cloud_base, cloud_low, cloud_mid)
+        vis = row.get("visibility")
+        vis_m = float(vis) if vis is not None else None
+        obs = compute_observable_field(
+            viewer_elev_m=elevation,
+            cloud_base_m=cloud_base,
+            cloud_top_m=cloud_top,
+            visibility_m=vis_m,
+            elev_profile_sunrise=(terrain or {}).get("elev_profile_sunrise"),
+            viewing_mode=viewing_mode,
+            rh_850=row.get("rh_850"),
+            rh_700=row.get("rh_700"),
+            sunrise_azimuth_deg=(terrain or {}).get("sunrise_azimuth_deg"),
+            elev_max_5km_m=float((terrain or {}).get("elev_max_5km_m") or elevation),
+        )
+        frac = float(obs.get("observable_fraction") or 0.0)
+        fractions.append(frac)
+        depths.append(float(obs.get("observable_depth_m") or 0.0))
+        vis_ranges.append(float(obs.get("visible_range_km") or 0.0))
+        valley_gaps.append(float(obs.get("cloud_base_minus_valley_m") or 0.0))
+        if frac >= 0.3:
+            hours_gt += 1.0
+        if obs.get("horizon_blocked"):
+            horizon = 1.0
+        if obs.get("sunrise_sector_relief_m") is not None:
+            sector_relief = float(obs["sunrise_sector_relief_m"])
+
+    if not fractions:
+        return defaults
+
+    return {
+        "observable_fraction_mean": float(np.mean(fractions)),
+        "observable_fraction_max": float(np.max(fractions)),
+        "observable_depth_mean": float(np.mean(depths)),
+        "sunrise_sector_relief_m": sector_relief,
+        "horizon_blocked": horizon,
+        "vis_limited_range_km_mean": float(np.mean(vis_ranges)),
+        "hours_observable_gt_03": hours_gt,
+        "cloud_base_minus_valley_mean": float(np.mean(valley_gaps)),
+    }
+
+
+def aggregate_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float = 804.0,
+    terrain: dict | None = None,
+    use_observable_field: bool = True,
+    use_mist_discrim_features: bool = True,
+) -> dict[str, float]:
     feats = [build_feature_row(r, elevation=elevation) for r in hour_rows]
+    names_out = (
+        DAY_FEATURE_NAMES
+        if use_mist_discrim_features
+        else [n for n in DAY_FEATURE_NAMES if n not in MIST_DISCRIM_FEATURE_NAMES]
+    )
     if not feats:
-        return {n: 0.0 for n in DAY_FEATURE_NAMES}
+        return {n: 0.0 for n in names_out}
 
     mids = [f["cloud_mid"] for f in feats]
     lows = [f["cloud_low"] for f in feats]
@@ -182,7 +387,7 @@ def aggregate_day_features(hour_rows: list[dict], *, elevation: float = 804.0) -
     winds = [f["wind"] for f in feats]
     inversions = [f["inversion"] for f in feats]
 
-    return {
+    base = {
         "cloud_mid_mean": float(np.mean(mids)),
         "cloud_mid_max": float(np.max(mids)),
         "cloud_low_mean": float(np.mean(lows)),
@@ -206,6 +411,38 @@ def aggregate_day_features(hour_rows: list[dict], *, elevation: float = 804.0) -
         "hour_count_fog": float(sum(f["is_fog_exclude"] for f in feats)),
         "effective_low_mean": float(np.mean([f["effective_low"] for f in feats])),
     }
+    fog_count = int(base["hour_count_fog"])
+    if use_mist_discrim_features:
+        dry_count = float(sum(f["is_dry_low_vis"] for f in feats))
+        base["hour_count_dry_low_vis"] = dry_count
+        base["hour_count_dry_low_vis_boost"] = dry_count * DRY_LOW_VIS_BOOST_FACTOR
+        base["hour_count_wet_low_vis"] = float(sum(f["is_wet_low_vis"] for f in feats))
+        base["day_dry_low_vis_flag"] = (
+            DRY_LOW_VIS_BOOST_FACTOR
+            if base["vis_min"] <= VIS_LOW_THRESHOLD_M
+            and base["rh_mean"] < RH_DRY_THRESHOLD
+            and fog_count == 0
+            else 0.0
+        )
+        base["hour_count_fog_boost"] = float(fog_count * FOG_BOOST_FACTOR)
+    base.update(_terrain_day_features(hour_rows, elevation=elevation, terrain=terrain))
+    if use_observable_field:
+        viewing_mode = str((terrain or {}).get("viewing_mode") or "valley_fill")
+        base.update(
+            _observable_day_features(
+                hour_rows,
+                elevation=elevation,
+                terrain=terrain,
+                viewing_mode=viewing_mode,
+            )
+        )
+    else:
+        for name in OBSERVABLE_FEATURE_NAMES:
+            base[name] = 0.0
+    if not use_mist_discrim_features:
+        for name in MIST_DISCRIM_FEATURE_NAMES:
+            base.pop(name, None)
+    return {n: float(base.get(n, 0.0)) for n in names_out}
 
 
 def hour_raw_from_forecast(
@@ -223,6 +460,8 @@ def hour_raw_from_forecast(
     t_925_series: list | None = None,
     winds: list,
     precips: list,
+    temps: list | None = None,
+    dews: list | None = None,
 ) -> dict:
     precip48 = sum(p or 0 for p in precips[max(0, idx - 48) : idx + 1])
     t_850 = _series_val(t_850_series or [], idx)
@@ -242,4 +481,6 @@ def hour_raw_from_forecast(
         "inversion": inversion,
         "wind": winds[idx] if idx < len(winds) else 3,
         "precip48": precip48,
+        "temp": _series_val(temps or [], idx),
+        "dewpoint": _series_val(dews or [], idx),
     }

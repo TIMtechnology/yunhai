@@ -16,6 +16,7 @@ class Viewpoint(BaseModel):
     elevation: float
     tags: List[str] = Field(default_factory=list)
     note: str = ""
+    viewing_mode: Optional[str] = None
 
 
 class ScenicSpot(BaseModel):
@@ -70,6 +71,8 @@ class WeatherSnapshot(BaseModel):
     cloud_cover_mid: float
     cloud_cover_high: float
     wind_speed: float
+    wind_direction: Optional[float] = None
+    wind_gusts: Optional[float] = None
     visibility: Optional[float] = None
     weather_text: str = ""
 
@@ -98,6 +101,10 @@ class DaySummary(BaseModel):
     sunrise_hour_index: Optional[int] = None
     peak_cloudsea_prob: int = 0
     peak_cloudsea_time: Optional[str] = None
+    full_day_peak_cloudsea_prob: int = 0
+    full_day_peak_cloudsea_time: Optional[str] = None
+    sunrise_window_peak_cloudsea_prob: int = 0
+    sunrise_window_peak_cloudsea_time: Optional[str] = None
     sunrise_scenario_label: Optional[str] = None
     sunrise_combined_score: int = 0
     recommend_periods: List[str] = Field(default_factory=list)
@@ -115,6 +122,7 @@ class PredictRequest(BaseModel):
     elevation: Optional[float] = None
     name: str = "自定义位置"
     spot_id: Optional[str] = None
+    viewpoint_id: Optional[str] = None
     hours: int = 120
 
 
@@ -123,3 +131,35 @@ class PredictResponse(BaseModel):
     hours: List[HourPrediction]
     days: List[DaySummary] = Field(default_factory=list)
     best_windows: Dict[str, List[Union[BestWindow, dict]]]
+    forecast_meta: dict = Field(default_factory=dict)
+
+
+class TerrainContextResponse(BaseModel):
+    lat: float
+    lng: float
+    source: str
+    dem_version: str
+    elev_viewpoint_m: float
+    elev_open_meteo_m: float
+    elev_curated_m: Optional[float] = None
+    elev_curated_delta_m: Optional[float] = None
+    elev_max_1km_m: float
+    elev_min_1km_m: float
+    elev_max_5km_m: float
+    elev_min_5km_m: float
+    relief_1km_m: float
+    relief_5km_m: float
+    slope_deg: float
+    aspect_deg: float
+    viewing_mode: str
+    viewing_mode_note: str
+    viewing_mode_source: str
+    sample_counts: dict
+    profile_date: Optional[str] = None
+    sunrise_azimuth_deg: Optional[float] = None
+    elev_profile_sunrise: Optional[List[dict]] = None
+    elev_min_sunrise_15km_m: Optional[float] = None
+    elev_max_sunrise_30km_m: Optional[float] = None
+    sunrise_sector_relief_m: Optional[float] = None
+    cloud_layer: Optional[dict] = None
+    problems_dem_solves: List[dict] = Field(default_factory=list)

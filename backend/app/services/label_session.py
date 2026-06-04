@@ -2,16 +2,37 @@ from __future__ import annotations
 
 from datetime import date as date_cls, datetime as dt_cls
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
+from app.engine.cloudsea_ml import get_ml_status
+from app.engine.ml_eligibility import (
+    load_sunrise_window_meteo,
+    spot_model_path,
+    sunrise_window_rain_summary,
+)
 from app.models.schemas import PredictRequest
-from app.services.cloudsea_store import get_label, save_meteo_hourly
+from app.services.cache import cache_get, cache_set
+from app.services.cloudsea_store import get_label
 from app.services.community_store import (
     COMMUNITY_SPOT_ID,
     community_label_keys,
     get_community_location,
+    label_keys_for_location,
 )
 from app.services.predictor import run_backtest_prediction
 from app.services.spot_loader import get_spot, get_viewpoint
+
+TZ = ZoneInfo("Asia/Shanghai")
+
+
+def _label_session_cache_ttl(date_key: str) -> int:
+    today = dt_cls.now(TZ).date()
+    target = date_cls.fromisoformat(date_key)
+    if target < today:
+        return 86400
+    if target == today:
+        return 600
+    return 1800
 
 
 def build_predict_request(
@@ -34,21 +55,48 @@ def build_predict_request(
         loc = get_community_location(loc_id)
         if not loc:
             raise ValueError("社区点位未找到")
-        comm_spot_id, comm_viewpoint_id = community_label_keys(loc_id)
+        spot_id, viewpoint_id = label_keys_for_location(loc)
+        if spot_id == COMMUNITY_SPOT_ID:
+            req = PredictRequest(
+                lat=loc["lat"],
+                lng=loc["lng"],
+                elevation=loc.get("elevation"),
+                name=loc["name"],
+                spot_id=spot_id,
+                viewpoint_id=viewpoint_id,
+                hours=24,
+            )
+            meta.update(
+                {
+                    "mode": "community",
+                    "location_id": loc_id,
+                    "spot_id": spot_id,
+                    "viewpoint_id": viewpoint_id,
+                    "location_name": loc["name"],
+                }
+            )
+            return req, meta
+
+        spot = get_spot(spot_id)
+        vp = get_viewpoint(spot_id, viewpoint_id)
+        display = loc["name"]
+        if spot and vp:
+            display = f"{spot.name} · {vp.name}"
         req = PredictRequest(
             lat=loc["lat"],
             lng=loc["lng"],
-            elevation=loc.get("elevation"),
-            name=loc["name"],
-            spot_id=None,
+            elevation=loc.get("elevation") or (vp.elevation if vp else None),
+            name=display,
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
             hours=24,
         )
         meta.update(
             {
-                "mode": "community",
+                "mode": "curated",
                 "location_id": loc_id,
-                "spot_id": comm_spot_id,
-                "viewpoint_id": comm_viewpoint_id,
+                "spot_id": spot_id,
+                "viewpoint_id": viewpoint_id,
                 "location_name": loc["name"],
             }
         )
@@ -71,6 +119,7 @@ def build_predict_request(
             elevation=vp.elevation,
             name=f"{spot.name} · {vp.name}" if spot else vp.name,
             spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
             hours=24,
         )
         meta["mode"] = "curated"
@@ -101,6 +150,20 @@ async def build_label_session_payload(
     location_id: Optional[str] = None,
     location_name: Optional[str] = None,
 ) -> dict[str, Any]:
+    model_path = spot_model_path(spot_id, viewpoint_id)
+    model_tag = int(model_path.stat().st_mtime) if model_path.is_file() else 0
+    cache_key = (
+        f"label_session:v1:{spot_id}:{viewpoint_id}:{date_key}:"
+        f"{window_start}:{window_end}:{model_tag}"
+    )
+    if location_id:
+        cache_key = f"{cache_key}:loc:{location_id}"
+    cached = cache_get(cache_key)
+    if cached:
+        out = dict(cached)
+        out["cached"] = True
+        return out
+
     if location_id:
         req, meta = build_predict_request(location_id=location_id)
     else:
@@ -112,26 +175,22 @@ async def build_label_session_payload(
         target_date=target,
         window_start=window_start,
         window_end=window_end,
+        prefer_cached_meteo=True,
     )
     label = get_label(spot_id, viewpoint_id, date_key, window_start, window_end)
-    for row in backtest["raw_meteo"]:
-        save_meteo_hourly(
-            spot_id=spot_id,
-            viewpoint_id=viewpoint_id,
-            lat=req.lat,
-            lng=req.lng,
-            elevation=req.elevation,
-            ts=str(row["time"]),
-            source="historical_forecast",
-            raw=row,
-        )
     window_hours = [
         h
         for h in backtest["prediction"]["hours"]
         if str(h["time"]).startswith(date_key)
         and window_start <= dt_cls.fromisoformat(h["time"]).hour < window_end
     ]
-    return {
+    meteo_rows = backtest["raw_meteo"] or load_sunrise_window_meteo(
+        spot_id, viewpoint_id, date_key, window_start=window_start, window_end=window_end
+    )
+    rain_window = sunrise_window_rain_summary(meteo_rows)
+    ml_status = get_ml_status(spot_id, viewpoint_id)
+    loc = backtest["prediction"].get("location") or {}
+    payload = {
         **meta,
         "spot_id": spot_id,
         "viewpoint_id": viewpoint_id,
@@ -145,4 +204,11 @@ async def build_label_session_payload(
         "lat": req.lat,
         "lng": req.lng,
         "elevation": req.elevation,
+        "ml_status": ml_status,
+        "rain_window": rain_window,
+        "viewing_mode": loc.get("viewing_mode"),
+        "viewing_mode_note": loc.get("viewing_mode_note"),
+        "observable": loc.get("observable"),
     }
+    cache_set(cache_key, payload, ttl=_label_session_cache_ttl(date_key))
+    return payload

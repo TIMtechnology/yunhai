@@ -21,6 +21,7 @@ watch(localQuery, (q) => {
 
 const presets = [
   { id: 'wunvshan', label: '五女山' },
+  { id: 'donglingshan', label: '东灵山' },
   { id: 'daheishan', label: '大黑山' },
   { id: 'huangshan', label: '黄山' },
   { id: 'lushan', label: '庐山' },

@@ -17,7 +17,9 @@ from app.adapters.nsmc_wms import (
 from app.engine.satellite_analyzer import analyze_ir_image
 from app.adapters.open_meteo import fetch_elevation, fetch_forecast
 from app.adapters.tianditu_poi import search_poi
-from app.models.schemas import PredictRequest, PredictResponse
+from app.adapters.dem import get_terrain_context
+from app.models.schemas import PredictRequest, PredictResponse, TerrainContextResponse
+from app.services.meteo_profile import build_meteo_profile
 from app.services.predictor import run_prediction
 from app.services.spot_loader import get_spot, get_viewpoint, search_spots
 
@@ -78,6 +80,7 @@ async def predict_viewpoint(spot_id: str, viewpoint_id: str, hours: int = 120):
         elevation=vp.elevation,
         name=f"{spot.name} · {vp.name}" if spot else vp.name,
         spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
         hours=hours,
     )
     return await run_prediction(req)
@@ -88,6 +91,56 @@ async def weather_raw(lat: float, lng: float):
     forecast = await fetch_forecast(lat, lng)
     elevation = await fetch_elevation(lat, lng)
     return {"forecast": forecast, "elevation": elevation}
+
+
+@router.get("/meteo/profile")
+async def meteo_profile(lat: float, lng: float, date: str, elevation: Optional[float] = None):
+    try:
+        return await build_meteo_profile(lat=lat, lng=lng, date_key=date, elevation=elevation)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="date 格式须为 YYYY-MM-DD") from exc
+
+
+@router.get("/terrain/context", response_model=TerrainContextResponse)
+async def terrain_context(
+    lat: float,
+    lng: float,
+    elevation: Optional[float] = None,
+    cloud_base_m: Optional[float] = None,
+    cloud_top_m: Optional[float] = None,
+    cloud_low_pct: Optional[float] = None,
+    cloud_mid_pct: Optional[float] = None,
+    temp_c: Optional[float] = None,
+    dewpoint_c: Optional[float] = None,
+    visibility_m: Optional[float] = None,
+    profile_date: Optional[str] = None,
+    spot_id: Optional[str] = None,
+    viewpoint_id: Optional[str] = None,
+):
+    """DEM v0：周边地形统计 + 日出方向剖面 + 观云模式 + 可选云高–地形相对位置。"""
+    from datetime import date as date_cls
+
+    parsed_date = None
+    if profile_date:
+        try:
+            parsed_date = date_cls.fromisoformat(profile_date)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="profile_date 格式须为 YYYY-MM-DD") from exc
+    return await get_terrain_context(
+        lat,
+        lng,
+        elevation=elevation,
+        cloud_base_m=cloud_base_m,
+        cloud_top_m=cloud_top_m,
+        cloud_low_pct=cloud_low_pct,
+        cloud_mid_pct=cloud_mid_pct,
+        temp_c=temp_c,
+        dewpoint_c=dewpoint_c,
+        visibility_m=visibility_m,
+        profile_date=parsed_date,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+    )
 
 
 @router.get("/satellite/cloud")

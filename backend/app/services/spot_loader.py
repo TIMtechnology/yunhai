@@ -57,10 +57,21 @@ def get_spot(spot_id: str) -> ScenicSpot | None:
     return load_spots().get(spot_id)
 
 
+def _superseded_community_spot_ids() -> set[str]:
+    return {
+        spot.community_location_id
+        for spot in load_spots().values()
+        if spot.community_location_id
+    }
+
+
 def search_spots(query: str) -> list[SpotSearchResult]:
     query = query.strip().lower()
     by_key: dict[str, SpotSearchResult] = {}
+    superseded = _superseded_community_spot_ids()
     for spot in load_spots().values():
+        if spot.id in superseded:
+            continue
         names = [spot.name.lower(), *[a.lower() for a in spot.aliases]]
         if query and not any(query in name or name in query for name in names):
             continue
@@ -80,7 +91,9 @@ def search_spots(query: str) -> list[SpotSearchResult]:
             viewpoint_count=len(spot.viewpoints),
         )
         prev = by_key.get(dedupe_key)
-        if prev is None or spot.id.startswith("cs_"):
+        if prev is None:
+            by_key[dedupe_key] = item
+        elif prev.id.startswith("cs_") and not spot.id.startswith("cs_"):
             by_key[dedupe_key] = item
     results = list(by_key.values())
     results.sort(key=lambda item: item.name)

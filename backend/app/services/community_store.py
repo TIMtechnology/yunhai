@@ -76,6 +76,14 @@ def migrate_community_schema() -> None:
         _add_column(conn, "cloudsea_labels", "reviewed_at", "TEXT")
         _add_column(conn, "cloudsea_labels", "reviewed_by", "TEXT")
         _add_column(conn, "cloudsea_labels", "sunrise_quality", "TEXT")
+        _add_column(conn, "community_locations", "viewing_mode", "TEXT")
+        _add_column(conn, "community_locations", "viewing_mode_source", "TEXT")
+        conn.execute(
+            """
+            UPDATE community_locations SET viewing_mode='peak_overlook', viewing_mode_source='admin'
+            WHERE elevation >= 1800 AND (viewing_mode IS NULL OR viewing_mode='')
+            """
+        )
         conn.execute(
             "UPDATE cloudsea_labels SET review_status='approved' WHERE review_status IS NULL"
         )
@@ -507,6 +515,27 @@ def resolve_or_create_location(
 
 def community_label_keys(location_id: str) -> tuple[str, str]:
     return COMMUNITY_SPOT_ID, location_id
+
+
+def label_keys_for_location(location: dict[str, Any]) -> tuple[str, str]:
+    """社区点标注键：已关联精选景区时写入 spot/viewpoint，否则 community/location_id。"""
+    curated_id = location.get("curated_spot_id")
+    loc_id = location["id"]
+    if not curated_id or curated_id == loc_id or str(curated_id).startswith("cs_"):
+        return community_label_keys(loc_id)
+    from app.services.spot_loader import get_spot
+
+    spot = get_spot(str(curated_id))
+    if not spot or not spot.viewpoints:
+        return community_label_keys(loc_id)
+    return spot.id, spot.viewpoints[0].id
+
+
+def label_keys_for_location_id(location_id: str) -> tuple[str, str]:
+    loc = get_community_location(location_id)
+    if not loc:
+        return community_label_keys(location_id)
+    return label_keys_for_location(loc)
 
 
 def get_contributor_stats(contributor_id: str) -> dict[str, Any]:

@@ -9,10 +9,14 @@ from app.middleware.analytics import AnalyticsMiddleware
 from app.routers.analytics import router as analytics_router
 from app.routers.cloudsea import router as cloudsea_router
 from app.routers.contribute import router as contribute_router
+from app.routers.advisory import router as advisory_router
+from app.routers.share import router as share_router
 from app.routers.api import router
 from app.services.analytics_store import init_store, purge_expired
+from app.services.cache import cache_ping, cache_status
 from app.services.cloudsea_store import init_store as init_cloudsea_store
 from app.services.spot_loader import load_spots
+from app.services.terrain_store import preload_snapshots_to_cache
 
 _docs_url = None if settings.analytics_enabled else "/docs"
 _redoc_url = None if settings.analytics_enabled else "/redoc"
@@ -38,14 +42,21 @@ if settings.analytics_enabled:
     app.add_middleware(AnalyticsMiddleware)
 
 app.include_router(router)
+app.include_router(advisory_router)
+app.include_router(share_router)
 app.include_router(analytics_router)
 app.include_router(cloudsea_router)
 app.include_router(contribute_router)
 
+_startup_baked_count = 0
+
 
 @app.on_event("startup")
 async def startup():
+    global _startup_baked_count
     load_spots()
+    _startup_baked_count = preload_snapshots_to_cache()
+    cache_ping()
     if settings.analytics_enabled:
         init_store()
         purge_expired()
@@ -55,7 +66,11 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "cache": cache_status(),
+        "terrain_snapshots_preloaded": _startup_baked_count,
+    }
 
 
 _static_dir = settings.static_dir

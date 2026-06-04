@@ -3,16 +3,24 @@ services:
   redis:
     image: docker.1ms.run/library/redis:7-alpine
     restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     volumes:
       - redis_data:/data
 
   yunhai:
     image: yunhai:latest
+    command: ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers ${UVICORN_WORKERS:-2}"]
     ports:
       - "8088:8080"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
+      - TERRAIN_SNAPSHOTS_DIR=/app/data/terrain
       - STATIC_DIR=/app/static
       - TZ=Asia/Shanghai
       - ANALYTICS_ENABLED=true
@@ -23,17 +31,25 @@ services:
       - CLOUDSEA_ADMIN_TOKEN=5fcd3e41983ef57e93cbee9769b05e375222c4e29677b21e
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
       - CLOUDSEA_ML_ENABLED=true
-      - CLOUDSEA_MODEL_PATH=/app/models/cloudsea_ml_v2.pkl
+      - CLOUDSEA_MODEL_PATH=/app/data/cloudsea/models/cloudsea_ml_v6.pkl
       - CLOUDSEA_CONTRIBUTE_ENABLED=true
+      - UVICORN_WORKERS=2
+      # AI 出行解读（OpenAI 兼容 API，如 DeepSeek）
+      # - LLM_ADVISORY_ENABLED=true
+      # - LLM_API_KEY=sk-...
+      # - LLM_BASE_URL=https://api.deepseek.com
+      # - LLM_MODEL=deepseek-chat
       - CLOUDSEA_DAILY_LABEL_CAP=30
       - CLOUDSEA_MAX_LOCATIONS_PER_CONTRIBUTOR=10
     volumes:
       - analytics_data:/app/data/analytics
       - cloudsea_data:/app/data/cloudsea
+      # DEM 快照内嵌镜像 data/terrain，勿挂载空卷覆盖
       # 精选景区 JSON 使用镜像内嵌数据；勿挂载空目录，否则会覆盖导致 /api/spots/* 全部 404
       # 精选落库（curate）写入需配合部署脚本同步，见 scripts/sync-scenic-spots.sh
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

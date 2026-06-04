@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     tianditu_key: str = ""
     redis_url: str = "redis://localhost:6379/0"
     cache_ttl_seconds: int = 1800
+    terrain_snapshots_dir: str = str(_PROJECT_ROOT / "data" / "terrain")
     scenic_spots_dir: str = str(_PROJECT_ROOT / "data" / "scenic-spots")
     static_dir: str = ""
     cors_origins: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -33,8 +34,27 @@ class Settings(BaseSettings):
     cloudsea_community_auto_approve: bool = True
     cloudsea_curate_min_labels: int = 1
     cloudsea_curated_spots_dir: str = ""
-    cloudsea_train_min_approved: int = 20
+    cloudsea_train_min_approved: int = 30
+    cloudsea_ml_min_labels_per_spot: int = 30
     cloudsea_model_min_loocv: float = 0.70
+
+    # 大模型「当日出行解读」（OpenAI 兼容接口，如 DeepSeek / 通义 / OpenAI）
+    llm_advisory_enabled: bool = False
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_model: str = "deepseek-chat"
+    llm_advisory_cache_ttl: int = 86400
+    llm_advisory_timeout_sec: float = 45.0
+
+    # 分享页 / OG 图
+    public_base_url: str = ""
+    share_snapshot_ttl: int = 259200
+    share_daily_ip_limit: int = 50
+    share_assets_dir: str = str(_PROJECT_ROOT / "data" / "share-assets")
+    share_cache_dir: str = str(_PROJECT_ROOT / "data" / "share-cache")
+    apimart_enabled: bool = False
+    apimart_api_key: str = ""
+    share_og_use_image2: bool = True
 
     class Config:
         env_file = ".env"

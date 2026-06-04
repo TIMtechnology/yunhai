@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.engine.cloudsea_scorer import cloudsea_visual_evidence
+from app.engine.observable_field import observable_cloudsea_evidence
 from app.engine.utils import clamp
 
 
@@ -40,8 +40,13 @@ def build_scenario(
     visibility: float | None = None,
     elevation: float = 0.0,
     rh: float = 70.0,
+    viewing_mode: str = "valley_fill",
+    terrain: dict | None = None,
+    observable: dict | None = None,
 ) -> dict:
     """联合云海+日出+天气给出观赏场景；云海标签需低云或能见度补偿证据。"""
+    from app.engine.cloudsea_scorer import cloudsea_visual_evidence
+
     total_cloud = (cloud_low + cloud_mid + cloud_high) / 3
     effective_low, has_cloudsea_evidence = cloudsea_visual_evidence(
         cloud_low=cloud_low,
@@ -50,6 +55,17 @@ def build_scenario(
         elevation=elevation,
         rh=rh,
     )
+    if observable and viewing_mode == "peak_overlook":
+        has_cloudsea_evidence = observable_cloudsea_evidence(observable)
+    elif observable and viewing_mode == "valley_fill":
+        obs_frac = float(observable.get("observable_fraction") or 0)
+        vis_km = float(visibility or 99999) / 1000.0
+        if obs_frac >= 0.35 and vis_km <= 2.0 and rh >= 62:
+            has_cloudsea_evidence = True
+        elif vis_km <= 2.0 and rh >= 68 and cloudsea_prob >= 38:
+            has_cloudsea_evidence = True
+    elif viewing_mode == "peak_overlook" and cloudsea_prob >= 50:
+        has_cloudsea_evidence = True
 
     if precip >= 1.0:
         return _scenario(
@@ -67,6 +83,43 @@ def build_scenario(
             "有小雨，视野与日出均受影响，不建议专程观赏。",
             3,
             min(cloudsea_prob, sunrise_prob) - 10,
+        )
+
+    if viewing_mode == "peak_overlook" and cloudsea_prob >= 55 and has_cloudsea_evidence:
+        frac = float((observable or {}).get("observable_fraction") or 0)
+        vis_km = float((observable or {}).get("visible_range_km") or 0)
+        narrative = (
+            f"峰顶条件配合日出方向可见范围内约 {frac:.0%} 地形可填云"
+            f"（可见约 {vis_km:.0f} km），较可能看到脚下云海。"
+        )
+        return _scenario(
+            "above_cloudsea",
+            "站在云海之上 · 俯瞰",
+            narrative,
+            1 if cloudsea_prob >= 70 else 2,
+            cloudsea_prob,
+        )
+
+    if (
+        viewing_mode == "peak_overlook"
+        and cloudsea_prob >= 55
+        and cloud_low >= 55
+        and rh >= 85
+    ):
+        if cloud_mid + cloud_high >= 50:
+            return _scenario(
+                "cloudsea_block_sun",
+                "有云海·日出难",
+                "峰顶低云/湿度条件好，可能有云海，但中高云或能见度限制日出。",
+                2,
+                cloudsea_prob - 5,
+            )
+        return _scenario(
+            "cloudsea_only",
+            "或有云海",
+            "峰顶湿度与低云条件较好，值得关注云海（日出另说）。",
+            2,
+            cloudsea_prob,
         )
 
     if is_sunrise_window or (cloudsea_prob >= 55 and sunrise_prob >= 55):
@@ -97,6 +150,20 @@ def build_scenario(
                 int((cloudsea_prob + sunrise_prob) / 2),
             )
         if sunrise_prob >= 60 and not has_cloudsea_evidence:
+            if (
+                viewing_mode == "valley_fill"
+                and visibility is not None
+                and visibility <= 2000
+                and rh >= 65
+                and cloudsea_prob >= 35
+            ):
+                return _scenario(
+                    "sunrise_cloudsea_fair",
+                    "较可能日出云海",
+                    "能见度偏低且湿度较高，可能有谷地雾/云海，值得早起碰运气。",
+                    2,
+                    int((cloudsea_prob + sunrise_prob) / 2),
+                )
             if cloud_low <= 20 and total_cloud <= 40:
                 return _scenario(
                     "clear_sunrise",

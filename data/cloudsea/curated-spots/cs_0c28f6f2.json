@@ -1,0 +1,66 @@
+{
+  "id": "cs_0c28f6f2",
+  "name": "黄丫口",
+  "aliases": [
+    "黄丫口"
+  ],
+  "region": "社区精选",
+  "peak_elevation": 751.0,
+  "viewpoints": [
+    {
+      "id": "main",
+      "name": "黄丫口",
+      "lat": 40.478146,
+      "lng": 122.98325,
+      "elevation": 751.0,
+      "tags": [
+        "sunrise",
+        "cloudsea",
+        "community"
+      ],
+      "note": "社区贡献点位 · cs_0c28f6f2"
+    }
+  ],
+  "seasonality": {
+    "cloudsea_months": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sunrise_months": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sunrise_best": "all_year"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 70
+  },
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.0
+  },
+  "source": "curated",
+  "community_location_id": "cs_0c28f6f2"
+}
