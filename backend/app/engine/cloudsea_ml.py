@@ -91,13 +91,45 @@ def resolve_ml_artifact(spot_id: str | None, viewpoint_id: str | None) -> dict |
     return load_spot_artifact(spot_id, viewpoint_id)
 
 
-def ml_calibration_weight(spot_id: str | None) -> float:
-    """点位 ML 已启用时，按景区设定融合权重。"""
-    if spot_id == "wunvshan":
-        return 0.80
-    if spot_id:
-        return 0.75
-    return 0.45
+def ml_calibration_weight(
+    spot_id: str | None,
+    *,
+    visibility: float | None = None,
+    rh: float | None = None,
+    fuzzy_prob: int | None = None,
+) -> float:
+    """点位 ML 已启用时，按景区设定融合权重；谷地雾信号时降低 ML 权重。"""
+    base = 0.80 if spot_id == "wunvshan" else (0.75 if spot_id else 0.45)
+    if (
+        visibility is not None
+        and visibility <= 500
+        and rh is not None
+        and rh >= 85
+        and fuzzy_prob is not None
+        and fuzzy_prob >= 45
+    ):
+        # 日出窗口：规则对低能见度补偿更可靠，避免 ML 独大压分
+        return min(base, 0.45)
+    return base
+
+
+def _apply_ml_fog_floor(
+    ml_prob: int,
+    *,
+    fuzzy_prob: int,
+    visibility: float | None,
+    rh: float | None,
+) -> int:
+    """规则强信号 + 谷地雾：ML 不低于规则的一定比例。"""
+    if (
+        fuzzy_prob >= 45
+        and visibility is not None
+        and visibility <= 500
+        and rh is not None
+        and rh >= 85
+    ):
+        return max(ml_prob, int(round(fuzzy_prob * 0.70)))
+    return ml_prob
 
 
 def _explain(
@@ -127,16 +159,35 @@ def merge_ml_cloudsea_score(
     spot_id: str | None = None,
     viewpoint_id: str | None = None,
     plausibility_cap: int | None = None,
+    visibility: float | None = None,
+    rh: float | None = None,
 ) -> PredictionScore:
     """ML 与规则融合：仅在本点位 ML 已启用时混合。"""
-    ml_weight = ml_calibration_weight(spot_id)
     fuzzy_prob = fuzzy.probability
     ml_prob = ml.probability
+    ml_prob = _apply_ml_fog_floor(
+        ml_prob, fuzzy_prob=fuzzy_prob, visibility=visibility, rh=rh
+    )
+    ml_weight = ml_calibration_weight(
+        spot_id, visibility=visibility, rh=rh, fuzzy_prob=fuzzy_prob
+    )
     blended = int(round(ml_weight * ml_prob + (1.0 - ml_weight) * fuzzy_prob))
+    fog_boost = (
+        visibility is not None
+        and visibility <= 500
+        and rh is not None
+        and rh >= 85
+        and fuzzy_prob >= 45
+    )
+    if fog_boost:
+        # 谷地雾型：融合分不低于规则与 ML 的较高者的一定比例
+        blended = max(blended, int(round(max(fuzzy_prob, ml_prob) * 0.85)))
     if plausibility_cap is not None:
         # 点位 ML 已用本地标注校准：融合结果不应被 NWP 干廓线 heuristic 压到低于 ML 估计
         if ml_weight >= 0.75:
             plausibility_cap = max(plausibility_cap, ml_prob)
+        elif fog_boost:
+            plausibility_cap = max(plausibility_cap, blended)
         blended = min(blended, plausibility_cap)
     blended = max(0, min(100, blended))
 

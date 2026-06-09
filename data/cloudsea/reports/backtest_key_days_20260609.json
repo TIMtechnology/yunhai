@@ -1,0 +1,112 @@
+[
+  {
+    "date": "2026-06-06",
+    "label": "full",
+    "label_bucket": "有云海",
+    "cached": {
+      "data_source": "cached_meteo",
+      "peak_prob": 74,
+      "peak_time": "2026-06-06T03:00",
+      "scenario": "较可能日出云海",
+      "sunrise_combined": 67
+    },
+    "advance": {
+      "data_source": "advance_forecast_from_2026-06-05",
+      "peak_prob": 74,
+      "peak_time": "2026-06-06T03:00",
+      "scenario": "较可能日出云海",
+      "rule_at_peak": "63%",
+      "ml_at_peak": "P_ml=77% → P=74%"
+    },
+    "cached_match": true,
+    "advance_match": true
+  },
+  {
+    "date": "2026-06-09",
+    "label": "full",
+    "label_bucket": "有云海",
+    "cached": {
+      "data_source": "live_forecast",
+      "peak_prob": 62,
+      "peak_time": "2026-06-09T05:00",
+      "scenario": "较可能日出云海",
+      "sunrise_combined": 63
+    },
+    "advance": {
+      "data_source": "advance_forecast_from_2026-06-08",
+      "peak_prob": 57,
+      "peak_time": "2026-06-09T05:00",
+      "scenario": "较可能日出云海",
+      "rule_at_peak": "63%",
+      "ml_at_peak": "P_ml=50% → P=57%"
+    },
+    "cached_match": true,
+    "advance_match": true
+  },
+  {
+    "date": "2026-05-29",
+    "label": "full",
+    "label_bucket": "有云海",
+    "cached": {
+      "data_source": "cached_meteo",
+      "peak_prob": 92,
+      "peak_time": "2026-05-29T05:00",
+      "scenario": "较可能日出云海",
+      "sunrise_combined": 75
+    },
+    "advance": {
+      "data_source": "advance_forecast_from_2026-05-28",
+      "peak_prob": 92,
+      "peak_time": "2026-05-29T05:00",
+      "scenario": "较可能日出云海",
+      "rule_at_peak": "58%",
+      "ml_at_peak": "P_ml=100% → P=92%"
+    },
+    "cached_match": true,
+    "advance_match": true
+  },
+  {
+    "date": "2026-05-28",
+    "label": "none",
+    "label_bucket": "无云海",
+    "cached": {
+      "data_source": "cached_meteo",
+      "peak_prob": 17,
+      "peak_time": "2026-05-28T06:00",
+      "scenario": "晴空少云",
+      "sunrise_combined": 51
+    },
+    "advance": {
+      "data_source": "advance_forecast_from_2026-05-27",
+      "peak_prob": 17,
+      "peak_time": "2026-05-28T06:00",
+      "scenario": "晴空少云",
+      "rule_at_peak": "56%",
+      "ml_at_peak": "P_ml=7% → P=17%"
+    },
+    "cached_match": true,
+    "advance_match": true
+  },
+  {
+    "date": "2026-05-20",
+    "label": "full",
+    "label_bucket": "有云海",
+    "cached": {
+      "data_source": "cached_meteo",
+      "peak_prob": 13,
+      "peak_time": "2026-05-20T06:00",
+      "scenario": "多云无日出",
+      "sunrise_combined": 16
+    },
+    "advance": {
+      "data_source": "advance_forecast_from_2026-05-19",
+      "peak_prob": 13,
+      "peak_time": "2026-05-20T06:00",
+      "scenario": "多云无日出",
+      "rule_at_peak": "37%",
+      "ml_at_peak": "P_ml=7% → P=13%"
+    },
+    "cached_match": false,
+    "advance_match": false
+  }
+]

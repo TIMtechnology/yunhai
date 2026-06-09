@@ -1,4 +1,5 @@
-# 服务器部署用（已预加载 yunhai:latest 镜像，无需 build）
+# Git 模板（仅参考）。生产环境请维护服务器 /opt/yunhai/docker-compose.prod.yml，
+# 内含 LLM / 分享等密钥与挂载；禁止 cp 覆盖！发布请用 scripts/deploy-prod.sh
 services:
   redis:
     image: docker.1ms.run/library/redis:7-alpine

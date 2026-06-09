@@ -85,19 +85,12 @@ docker compose -f docker-compose.prod.yml ps
 ./scripts/build-amd64.sh
 # 产出：yunhai-amd64.tar
 
-# 2. 上传镜像 + compose
-$YUNHAI_SCP yunhai-amd64.tar docker-compose.deploy.yml $YUNHAI_HOST:/opt/yunhai/
+# 2. 上传镜像并重启（⚠️ 不要覆盖 docker-compose.prod.yml）
+./scripts/deploy-prod.sh
+# 脚本仅 docker load + recreate yunhai，发布前自动备份 compose.prod.yml
 
-# 3. 服务器加载并重启
-$YUNHAI_SSH $YUNHAI_HOST 'set -e
-cd /opt/yunhai
-cp -f docker-compose.deploy.yml docker-compose.prod.yml   # 保持服务器文件名一致
-docker load -i yunhai-amd64.tar
-docker compose -f docker-compose.prod.yml up -d --force-recreate yunhai
-sleep 2
-curl -s http://127.0.0.1:8088/health
-docker compose -f docker-compose.prod.yml ps
-'
+# ❌ 禁止（会抹掉 LLM / PUBLIC_BASE / SHARE 等生产 env）：
+# cp -f docker-compose.deploy.yml docker-compose.prod.yml
 ```
 
 线上验证：
@@ -155,12 +148,17 @@ $YUNHAI_SSH $YUNHAI_HOST 'curl -s http://127.0.0.1:8088/health'
 - `CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db` — 标注数据持久化
 - `REDIS_URL=redis://redis:6379/0`
 
-修改 compose 后：
+修改 compose 后（**只改服务器上的 prod 文件，不要用 Git 模板覆盖**）：
 
 ```bash
-$YUNHAI_SCP docker-compose.deploy.yml $YUNHAI_HOST:/opt/yunhai/docker-compose.prod.yml
-$YUNHAI_SSH $YUNHAI_HOST 'cd /opt/yunhai && docker compose -f docker-compose.prod.yml up -d'
+$YUNHAI_SSH $YUNHAI_HOST 'cp -a /opt/yunhai/docker-compose.prod.yml /opt/yunhai/docker-compose.prod.yml.bak-$(date +%Y%m%d%H%M%S)'
+# 手工编辑 /opt/yunhai/docker-compose.prod.yml 或通过 patch 追加 env
+$YUNHAI_SSH $YUNHAI_HOST 'cd /opt/yunhai && docker compose -f docker-compose.prod.yml up -d --force-recreate yunhai'
 ```
+
+生产 compose 应包含（示例，密钥勿提交 Git）：
+- `LLM_ADVISORY_*`、`PUBLIC_BASE_URL`、`SHARE_*`
+- bind mount：`/opt/yunhai/data/share-assets`、`share-cache`
 
 ---
 
@@ -177,3 +175,4 @@ $YUNHAI_SSH $YUNHAI_HOST 'cd /opt/yunhai && docker compose -f docker-compose.pro
 | 日期 | 说明 |
 |------|------|
 | 2026-05-29 | 初版：SSH IdentitiesOnly、168.140 vs 168.153、完整发布与热补丁流程 |
+| 2026-06-09 | 发布改用 `scripts/deploy-prod.sh`；禁止 cp 覆盖 `docker-compose.prod.yml` |

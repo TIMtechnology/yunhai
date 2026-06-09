@@ -156,11 +156,17 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  function defaultHeroHourIndex(day: DaySummary | undefined): number {
+    if (!day) return 0
+    return day.sunrise_window_peak_hour_index ?? day.sunrise_hour_index ?? 0
+  }
+
   function selectDay(index: number) {
     selectedDayIndex.value = index
     const day = days.value[index]
-    if (day?.sunrise_hour_index != null) {
-      selectedHourIndex.value = day.sunrise_hour_index
+    const heroIdx = defaultHeroHourIndex(day)
+    if (heroIdx != null) {
+      selectedHourIndex.value = heroIdx
     } else if (dayHourIndices.value.length) {
       selectedHourIndex.value = dayHourIndices.value[0]
     }
@@ -238,7 +244,7 @@ export const useAppStore = defineStore('app', () => {
       prediction.value = await predictViewpoint(spotId, viewpointId)
       selectedDayIndex.value = 0
       const firstDay = prediction.value.days[0]
-      selectedHourIndex.value = firstDay?.sunrise_hour_index ?? 0
+      selectedHourIndex.value = defaultHeroHourIndex(firstDay)
     } catch (e: any) {
       error.value = e?.message || '预测失败'
     } finally {
@@ -268,7 +274,7 @@ export const useAppStore = defineStore('app', () => {
       prediction.value = await predictCustom({ lat, lng, name, elevation, spot_id: spotId })
       trackPredictCustom(lat, lng, name, spotId)
       selectedDayIndex.value = 0
-      selectedHourIndex.value = prediction.value.days[0]?.sunrise_hour_index ?? 0
+      selectedHourIndex.value = defaultHeroHourIndex(prediction.value.days[0])
     } catch (e: any) {
       error.value = e?.message || '预测失败'
     } finally {

@@ -122,12 +122,32 @@ def _classify_cloudsea_archetype(
         cloud_mid <= 15
         and visibility is not None
         and visibility <= 500
-        and rh <= 85
+        and rh <= 90
         and rh >= 60
         and rh_850 is not None
         and rh_850 <= 45
     ):
         return "type_b", "低能见度层云型"
+    # 高湿谷地雾型：模式低云偏少但近地面饱和+低能见度，常见于五女山夏季清晨
+    if (
+        cloud_mid <= 15
+        and cloud_low <= 15
+        and visibility is not None
+        and visibility <= 500
+        and rh >= 78
+        and rh_850 is not None
+        and rh_850 <= 75
+    ):
+        return "type_b", "低能见度层云型（高湿谷地雾）"
+    # 层云/雾复合型：中云增厚但仍近地面饱和+低能见度（过渡性清晨）
+    if (
+        15 <= cloud_mid <= 35
+        and visibility is not None
+        and visibility <= 500
+        and rh >= 82
+        and cloud_low <= 35
+    ):
+        return "type_b", "低能见度层云/雾复合型"
     return "neutral", ""
 
 

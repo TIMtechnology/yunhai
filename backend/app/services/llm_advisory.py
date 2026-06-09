@@ -118,10 +118,12 @@ def _sunrise_window_stats(rows: list[dict]) -> dict[str, Any]:
 
 
 def _ui_display_scores(hours: list[dict], day_summary: dict[str, Any] | None) -> dict[str, Any]:
-    """与主页 ScenarioHero 一致：日出时刻那一小时的云海/日出/综合分。"""
+    """与主页 ScenarioHero 一致：日出窗口云海峰值小时的综合分（非天文日出整点）。"""
     if not day_summary:
         return {}
-    idx = day_summary.get("sunrise_hour_index")
+    idx = day_summary.get("sunrise_window_peak_hour_index")
+    if idx is None:
+        idx = day_summary.get("sunrise_hour_index")
     if idx is None or not isinstance(idx, int) or idx < 0 or idx >= len(hours):
         return {}
     h = hours[idx]

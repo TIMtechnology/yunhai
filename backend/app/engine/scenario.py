@@ -28,6 +28,17 @@ def weather_text(
     return "多云间晴"
 
 
+def _valley_fog_signal(
+    *,
+    visibility: float | None,
+    rh: float,
+    vis_threshold_m: float = 500.0,
+    rh_threshold: float = 80.0,
+) -> bool:
+    """近地面饱和雾/谷地云海信号：禁止误判为晴日日出。"""
+    return visibility is not None and visibility <= vis_threshold_m and rh >= rh_threshold
+
+
 def build_scenario(
     *,
     cloudsea_prob: int,
@@ -164,6 +175,14 @@ def build_scenario(
                     2,
                     int((cloudsea_prob + sunrise_prob) / 2),
                 )
+            if _valley_fog_signal(visibility=visibility, rh=rh):
+                return _scenario(
+                    "sunrise_cloudsea_fair",
+                    "较可能日出云海",
+                    "近地面湿度高、能见度低，可能有谷地雾/云海，不宜按晴日判断。",
+                    2,
+                    int((cloudsea_prob + sunrise_prob) / 2),
+                )
             if cloud_low <= 20 and total_cloud <= 40:
                 return _scenario(
                     "clear_sunrise",
@@ -198,6 +217,14 @@ def build_scenario(
         )
 
     if sunrise_prob >= 65 and (cloudsea_prob < 45 or not has_cloudsea_evidence):
+        if _valley_fog_signal(visibility=visibility, rh=rh):
+            return _scenario(
+                "sunrise_cloudsea_fair",
+                "较可能日出云海",
+                "近地面湿度高、能见度低，可能有谷地雾/云海，不宜按晴日判断。",
+                2,
+                int((cloudsea_prob + sunrise_prob) / 2),
+            )
         if cloud_low <= 25 and total_cloud <= 35:
             return _scenario(
                 "clear_sunrise",

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>云海 ML v6 增强评估 · wunvshan</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+    body { margin: 0; padding: 24px; max-width: 1180px; margin-inline: auto; }
+    h1 { color: #7dd3fc; font-size: 1.4rem; }
+    h2 { color: #94a3b8; font-size: 1.05rem; margin-top: 2rem; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+    .muted { color: #94a3b8; font-size: 0.88rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px; }
+    .card b { font-size: 1.25rem; color: #f8fafc; display: block; }
+    .card span { font-size: 0.72rem; color: #94a3b8; }
+    .card.enh b { color: #86efac; }
+    .explain { background: #172554; border-left: 3px solid #3b82f6; padding: 12px; font-size: 0.86rem; line-height: 1.55; margin: 12px 0; }
+    .params { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; font-size: 0.85rem; }
+    .params dt { color: #7dd3fc; font-weight: 600; margin-top: 8px; }
+    .params dd { margin: 4px 0 0 16px; color: #cbd5e1; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .compare { grid-template-columns: 1fr; } }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-box { background: #1e293b; border-radius: 10px; padding: 10px; min-height: 260px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { border: 1px solid #334155; padding: 6px 8px; }
+    th { background: #1e293b; }
+    tr.ok { background: rgba(34,197,94,0.08); }
+    tr.bad { background: rgba(239,68,68,0.1); }
+    tr.fix { background: rgba(56,189,248,0.1); }
+    tr.regress { background: rgba(251,191,36,0.1); }
+    .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+    .up { color: #86efac; }
+    .down { color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <h1>云海 ML 增强版（v6 tuned）评估报告</h1>
+  <p class="muted">
+    wunvshan · dianjiangtai · 数据源：线上 DB · 生成 2026-06-09T11:01:29+08:00 ·
+    有效样本 58 天（有云海 17 / 无 41）· 全特征 43 维
+  </p>
+
+  <div class="explain">
+    <strong>相对上一版（baseline）升级了什么？</strong><br/>
+    ① <strong>C 网格</strong> LOOCV 选 L2 强度（本次 <code>C=0.05</code>）；② <strong>全特征</strong>；③ <strong>等渗校准</strong>；④ <strong>阈值 0.17</strong> 按 F1 优化（非固定 50%）。数据：<strong>线上 DB · 58 天</strong> 重算 LOOCV。
+  </div>
+
+  <h2>升级参数一览（v6）</h2>
+  <div class="params">
+    <dl>
+      <dt>模型版本</dt><dd><code>cloudsea_ml_v6_tuned</code></dd>
+      <dt>正则化 C（选中）</dt><dd><code>0.05</code>（网格 [0.05, 0.1, 0.3, 1.0]，按各 C 的 LOOCV-F1 选优）</dd>
+      <dt>分类阈值</dt><dd><code>0.17</code>（约 17% 概率，优化目标：F1 (LOOCV)）</dd>
+      <dt>类别权重</dt><dd>balanced（缓解有云海样本少）</dd>
+      <dt>概率校准</dt><dd>IsotonicRegression (LOOCV 概率拟合)</dd>
+      <dt>特征筛选</dt><dd>全特征</dd>
+      <dt>保留特征（43）</dt><dd><ul style="margin:4px 0;padding-left:20px"><li><code>cloud_mid_mean</code></li><li><code>cloud_mid_max</code></li><li><code>cloud_low_mean</code></li><li><code>cloud_high_mean</code></li><li><code>cloud_high_max</code></li><li><code>vis_min</code></li><li><code>vis_mean</code></li><li><code>rh_mean</code></li><li><code>rh_max</code></li><li><code>rh850_mean</code></li><li><code>rh700_mean</code></li><li><code>rh700_min</code></li><li><code>wind_mean</code></li><li><code>wind_max</code></li><li><code>precip48</code></li><li><code>month</code></li><li><code>inversion_mean</code></li><li><code>inversion_max</code></li><li><code>hour_count_type_a</code></li><li><code>hour_count_type_b</code></li><li><code>hour_count_fog</code></li><li><code>effective_low_mean</code></li><li><code>hour_count_dry_low_vis</code></li><li><code>hour_count_dry_low_vis_boost</code></li><li><code>hour_count_wet_low_vis</code></li><li><code>day_dry_low_vis_flag</code></li><li><code>hour_count_fog_boost</code></li><li><code>elev_view_m</code></li><li><code>elev_max_1km_m</code></li><li><code>elev_max_5km_m</code></li><li><code>relief_5km_m</code></li><li><code>is_peak_overlook</code></li><li><code>cloud_base_minus_peak_mean</code></li><li><code>hours_above_cloud</code></li><li><code>hours_valley_fill</code></li><li><code>observable_fraction_mean</code></li><li><code>observable_fraction_max</code></li><li><code>observable_depth_mean</code></li><li><code>sunrise_sector_relief_m</code></li><li><code>horizon_blocked</code></li><li><code>vis_limited_range_km_mean</code></li><li><code>hours_observable_gt_03</code></li><li><code>cloud_base_minus_valley_mean</code></li></ul></dd>
+      <dt>线上已部署 pkl</dt><dd>版本 <code>cloudsea_ml_v6_tuned</code> · 落库 LOOCV 77.8% · 路径 <code style="font-size:0.75rem">/Volumes/work/2026/idea-yunhai/data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl</code></dd>
+    </dl>
+    <table style="margin-top:12px;max-width:320px">
+      <tr><th>C</th><th>LOOCV F1（阈值调优后）</th></tr>
+      <tr><td>0.05</td><td>68.4%</td></tr><tr><td>0.1</td><td>68.4%</td></tr><tr><td>0.3</td><td>64.9%</td></tr><tr><td>1.0</td><td>63.2%</td></tr>
+    </table>
+  </div>
+
+  <h2>指标对比（LOOCV）</h2>
+  <div class="compare">
+    <div>
+      <h3 class="muted">Baseline（C=0.3 · 阈值 50% · 全特征）</h3>
+      <div class="grid">
+        <div class="card"><b>77.6%</b><span>准确率</span></div>
+        <div class="card"><b>62.9%</b><span>F1</span></div>
+        <div class="card"><b>61.1%</b><span>精确率</span></div>
+        <div class="card"><b>64.7%</b><span>召回率</span></div>
+        <div class="card"><b>79.3%</b><span>AUC</span></div>
+        <div class="card"><b>0.171</b><span>Brier</span></div>
+      </div>
+      <p class="muted">错判 13 天 · TN/FP/FN/TP = 34/7/6/11</p>
+    </div>
+    <div>
+      <h3 class="muted">Enhanced v6（C=0.05 · 阈值 0.17）</h3>
+      <div class="grid">
+        <div class="card enh"><b>79.3%</b><span>准确率 <span class="up">(+1.7pp)</span></span></div>
+        <div class="card enh"><b>68.4%</b><span>F1 <span class="up">(+5.6pp)</span></span></div>
+        <div class="card enh"><b>61.9%</b><span>精确率</span></div>
+        <div class="card enh"><b>76.5%</b><span>召回率</span></div>
+        <div class="card enh"><b>83.6%</b><span>AUC</span></div>
+        <div class="card enh"><b>0.130</b><span>Brier <span class="up">(-0.041)</span></span></div>
+      </div>
+      <p class="muted">错判 12 天 · 修复 3 天 · 回归 2 天</p>
+    </div>
+  </div>
+
+  <h2>按月留一月验证（增强配置，辅助）</h2>
+  <p class="muted">汇总准确率 31.0% — 月份样本不均时仅作参考，不作唯一部署依据。</p>
+  <table><tr><th>月份</th><th>测试天数</th><th>准确率</th></tr><tr><td>2023-05</td><td>1</td><td>100.0%</td></tr><tr><td>2024-10</td><td>2</td><td>100.0%</td></tr><tr><td>2025-05</td><td>1</td><td>100.0%</td></tr><tr><td>2025-06</td><td>1</td><td>100.0%</td></tr><tr><td>2025-08</td><td>2</td><td>100.0%</td></tr><tr><td>2025-10</td><td>10</td><td>20.0%</td></tr><tr><td>2026-04</td><td>1</td><td>0.0%</td></tr><tr><td>2026-05</td><td>31</td><td>19.4%</td></tr><tr><td>2026-06</td><td>9</td><td>33.3%</td></tr></table>
+
+  <h2>图表（增强版 LOOCV 概率）</h2>
+  <div class="charts">
+    <div class="chart-box"><canvas id="rocChart"></canvas></div>
+    <div class="chart-box"><canvas id="calChart"></canvas></div>
+    <div class="chart-box"><canvas id="histChart"></canvas></div>
+    <div class="chart-box"><canvas id="cmChart"></canvas></div>
+  </div>
+
+  <h2>逐日对比</h2>
+  <table id="dailyTable">
+    <thead><tr><th>日期</th><th>标注</th><th>真实</th><th>P baseline</th><th>P v6</th><th>base</th><th>v6</th><th>变化</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+  const DATA = {"report_type": "v6_comparison", "generated_at": "2026-06-09T11:01:29+08:00", "spot_id": "wunvshan", "viewpoint_id": "dianjiangtai", "db_path": "data/cloudsea/cloudsea.prod.db", "feature_count": 43, "deployed": {"path": "/Volumes/work/2026/idea-yunhai/data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl", "version": "cloudsea_ml_v6_tuned", "n_days": 54, "trained_at": "2026-06-09T02:40:28.472911", "saved_loocv": 0.7777777777777778, "saved_brier": 0.13170498084291188, "tuning_c": 0.05, "decision_threshold": 0.15, "selected_feature_names": ["cloud_mid_mean", "cloud_mid_max", "cloud_low_mean", "cloud_high_mean", "cloud_high_max", "vis_min", "vis_mean", "rh_mean", "rh_max", "rh850_mean", "rh700_mean", "rh700_min", "wind_mean", "wind_max", "precip48", "month", "inversion_mean", "inversion_max", "hour_count_type_a", "hour_count_type_b", "hour_count_fog", "effective_low_mean", "hour_count_dry_low_vis", "hour_count_dry_low_vis_boost", "hour_count_wet_low_vis", "day_dry_low_vis_flag", "hour_count_fog_boost", "elev_view_m", "elev_max_1km_m", "elev_max_5km_m", "relief_5km_m", "is_peak_overlook", "cloud_base_minus_peak_mean", "hours_above_cloud", "hours_valley_fill", "observable_fraction_mean", "observable_fraction_max", "observable_depth_mean", "sunrise_sector_relief_m", "horizon_blocked", "vis_limited_range_km_mean", "hours_observable_gt_03", "cloud_base_minus_valley_mean"]}, "baseline": {"version": "baseline", "params": {"algorithm": "LogisticRegression L2", "C": 0.3, "class_weight": "balanced", "threshold": 0.5, "feature_count": 43, "calibration": "无", "feature_selection": "全特征"}, "metrics": {"label": "baseline LOOCV", "threshold": 0.5, "n": 58, "positive": 17, "negative": 41, "accuracy": 0.7758620689655172, "precision": 0.6111111111111112, "recall": 0.6470588235294118, "f1": 0.6285714285714286, "specificity": 0.8292682926829268, "brier": 0.1705452884288834, "confusion": {"tn": 34, "fp": 7, "fn": 6, "tp": 11}, "roc_auc": 0.793400286944046, "roc": {"fpr": [0.0, 0.0, 0.0, 0.024390243902439025, 0.024390243902439025, 0.14634146341463414, 0.14634146341463414, 0.17073170731707318, 0.17073170731707318, 0.1951219512195122, 0.1951219512195122, 0.24390243902439024, 0.24390243902439024, 0.4634146341463415, 0.4634146341463415, 0.4878048780487805, 0.4878048780487805, 0.5609756097560976, 0.5609756097560976, 0.975609756097561, 0.975609756097561, 1.0], "tpr": [0.0, 0.058823529411764705, 0.23529411764705882, 0.23529411764705882, 0.47058823529411764, 0.47058823529411764, 0.5294117647058824, 0.5294117647058824, 0.6470588235294118, 0.6470588235294118, 0.7058823529411765, 0.7058823529411765, 0.7647058823529411, 0.7647058823529411, 0.8235294117647058, 0.8235294117647058, 0.8823529411764706, 0.8823529411764706, 0.9411764705882353, 0.9411764705882353, 1.0, 1.0], "thresholds": [Infinity, 0.9963093269116948, 0.9064886837676671, 0.9031923009322584, 0.7854526960971248, 0.665839434840026, 0.6112970378811856, 0.5563497026689008, 0.505647130545379, 0.49916023043882446, 0.49599784780120054, 0.4569301067731942, 0.4491517572344683, 0.3011760521991594, 0.276018019498894, 0.2579419910036936, 0.2371582425005764, 0.14871910590152757, 0.1477227707554662, 0.015918457762586654, 0.00294093675721313, 0.0023292538487755987]}}, "calibration": {"centers": [0.05, 0.15000000000000002, 0.25, 0.35000000000000003, 0.45, 0.55, 0.6500000000000001, 0.75, 0.8500000000000001, 0.95], "pred_mean": [0.03742289898892056, 0.13397797428225267, 0.2422948205813272, 0.3479078186723474, 0.4552890934573394, 0.5226356451649092, 0.6576387412936446, 0.7572696249664153, 0.8470707150956861, 0.9346242985070916], "actual_rate": [0.08333333333333333, 0.1111111111111111, 0.4, 0.0, 0.25, 0.6666666666666666, 0.2, 0.5, 1.0, 0.8], "counts": [12, 9, 5, 6, 8, 3, 5, 2, 3, 5]}, "histogram": {"edges": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], "positive": [1, 1, 2, 0, 2, 2, 1, 1, 3, 4], "negative": [11, 8, 3, 6, 6, 1, 4, 1, 0, 1]}, "in_sample_acc": 0.896551724137931}, "enhanced": {"version": "cloudsea_ml_v6_tuned", "params": {"algorithm": "LogisticRegression L2", "C": 0.05, "C_grid": [0.05, 0.1, 0.3, 1.0], "C_grid_f1": {"0.05": 0.684, "0.1": 0.684, "0.3": 0.649, "1.0": 0.632}, "class_weight": "balanced", "threshold": 0.17, "threshold_objective": "F1 (LOOCV)", "feature_count_full": 43, "feature_count_selected": 43, "selected_features": ["cloud_mid_mean", "cloud_mid_max", "cloud_low_mean", "cloud_high_mean", "cloud_high_max", "vis_min", "vis_mean", "rh_mean", "rh_max", "rh850_mean", "rh700_mean", "rh700_min", "wind_mean", "wind_max", "precip48", "month", "inversion_mean", "inversion_max", "hour_count_type_a", "hour_count_type_b", "hour_count_fog", "effective_low_mean", "hour_count_dry_low_vis", "hour_count_dry_low_vis_boost", "hour_count_wet_low_vis", "day_dry_low_vis_flag", "hour_count_fog_boost", "elev_view_m", "elev_max_1km_m", "elev_max_5km_m", "relief_5km_m", "is_peak_overlook", "cloud_base_minus_peak_mean", "hours_above_cloud", "hours_valley_fill", "observable_fraction_mean", "observable_fraction_max", "observable_depth_mean", "sunrise_sector_relief_m", "horizon_blocked", "vis_limited_range_km_mean", "hours_observable_gt_03", "cloud_base_minus_valley_mean"], "calibration": "IsotonicRegression (LOOCV 概率拟合)", "feature_selection": "全特征", "feature_strategy": "全特征", "feature_note": "默认全特征 + C网格 + 等渗校准 + F1阈值（L1筛特征在部分环境可达更高LOOCV但不稳定）"}, "metrics": {"label": "enhanced LOOCV", "threshold": 0.17, "n": 58, "positive": 17, "negative": 41, "accuracy": 0.7931034482758621, "precision": 0.6190476190476191, "recall": 0.7647058823529411, "f1": 0.6842105263157895, "specificity": 0.8048780487804879, "brier": 0.12995579133510168, "confusion": {"tn": 33, "fp": 8, "fn": 4, "tp": 13}, "roc_auc": 0.836441893830703, "roc": {"fpr": [0.0, 0.0, 0.024390243902439025, 0.1951219512195122, 0.43902439024390244, 1.0], "tpr": [0.0, 0.17647058823529413, 0.4117647058823529, 0.7647058823529411, 0.8823529411764706, 1.0], "thresholds": [Infinity, 1.0, 0.8, 0.46153846153846156, 0.16666666666666666, 0.08]}}, "metrics_at_05": {"label": "enhanced @0.5", "threshold": 0.5, "n": 58, "positive": 17, "negative": 41, "accuracy": 0.8103448275862069, "precision": 0.875, "recall": 0.4117647058823529, "f1": 0.56, "specificity": 0.975609756097561, "brier": 0.12995579133510168, "confusion": {"tn": 40, "fp": 1, "fn": 10, "tp": 7}, "roc_auc": 0.836441893830703, "roc": {"fpr": [0.0, 0.0, 0.024390243902439025, 0.1951219512195122, 0.43902439024390244, 1.0], "tpr": [0.0, 0.17647058823529413, 0.4117647058823529, 0.7647058823529411, 0.8823529411764706, 1.0], "thresholds": [Infinity, 1.0, 0.8, 0.46153846153846156, 0.16666666666666666, 0.08]}}, "calibration": {"centers": [0.05, 0.15000000000000002, 0.45, 0.8500000000000001, 0.95], "pred_mean": [0.08, 0.16666666666666666, 0.4615384615384616, 0.8, 1.0], "actual_rate": [0.08, 0.16666666666666666, 0.46153846153846156, 0.8, 1.0], "counts": [25, 12, 13, 5, 3]}, "histogram": {"edges": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], "positive": [2, 2, 0, 0, 6, 0, 0, 0, 4, 3], "negative": [23, 10, 0, 0, 7, 0, 0, 0, 1, 0]}, "monthly_cv": {"overall_accuracy": 0.3103448275862069, "months": [{"month": "2023-05", "n": 1, "accuracy": 1.0, "dates": ["2023-05-23"]}, {"month": "2024-10", "n": 2, "accuracy": 1.0, "dates": ["2024-10-05", "2024-10-13"]}, {"month": "2025-05", "n": 1, "accuracy": 1.0, "dates": ["2025-05-24"]}, {"month": "2025-06", "n": 1, "accuracy": 1.0, "dates": ["2025-06-05"]}, {"month": "2025-08", "n": 2, "accuracy": 1.0, "dates": ["2025-08-11", "2025-08-14"]}, {"month": "2025-10", "n": 10, "accuracy": 0.2, "dates": ["2025-10-01", "2025-10-02", "2025-10-03", "2025-10-04", "2025-10-05", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-13", "2025-10-14"]}, {"month": "2026-04", "n": 1, "accuracy": 0.0, "dates": ["2026-04-20"]}, {"month": "2026-05", "n": 31, "accuracy": 0.1935483870967742, "dates": ["2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08", "2026-05-09", "2026-05-10", "2026-05-11", "2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-16", "2026-05-17", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22", "2026-05-23", "2026-05-24", "2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-05-30", "2026-05-31"]}, {"month": "2026-06", "n": 9, "accuracy": 0.3333333333333333, "dates": ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09"]}], "n_months": 9}}, "comparison": {"accuracy_delta_pp": 1.7, "f1_delta_pp": 5.6, "brier_delta": -0.041, "errors_baseline": 13, "errors_enhanced": 12, "fixed_days": 3, "regress_days": 2}, "daily": [{"date": "2023-05-23", "status": "full", "actual": 1, "p_baseline": 86.4, "p_enhanced": 80.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2024-10-05", "status": "full", "actual": 1, "p_baseline": 91.4, "p_enhanced": 100.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2024-10-13", "status": "full", "actual": 1, "p_baseline": 50.6, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-05-24", "status": "full", "actual": 1, "p_baseline": 27.6, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2025-06-05", "status": "partial", "actual": 1, "p_baseline": 95.3, "p_enhanced": 100.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-08-11", "status": "full", "actual": 1, "p_baseline": 86.7, "p_enhanced": 80.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-08-14", "status": "full", "actual": 1, "p_baseline": 90.6, "p_enhanced": 80.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-10-01", "status": "none", "actual": 0, "p_baseline": 45.7, "p_enhanced": 46.2, "pred_baseline": 0, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": false, "delta": "regress"}, {"date": "2025-10-02", "status": "none", "actual": 0, "p_baseline": 46.0, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-10-03", "status": "full", "actual": 1, "p_baseline": 44.9, "p_enhanced": 46.2, "pred_baseline": 0, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": true, "delta": "fix"}, {"date": "2025-10-04", "status": "none", "actual": 0, "p_baseline": 66.6, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2025-10-05", "status": "none", "actual": 0, "p_baseline": 72.9, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2025-10-06", "status": "none", "actual": 0, "p_baseline": 2.6, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-10-07", "status": "none", "actual": 0, "p_baseline": 8.2, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2025-10-08", "status": "none", "actual": 0, "p_baseline": 66.8, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2025-10-13", "status": "none", "actual": 0, "p_baseline": 39.4, "p_enhanced": 46.2, "pred_baseline": 0, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": false, "delta": "regress"}, {"date": "2025-10-14", "status": "full", "actual": 1, "p_baseline": 61.1, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-04-20", "status": "full", "actual": 1, "p_baseline": 0.3, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2026-05-01", "status": "none", "actual": 0, "p_baseline": 14.9, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-02", "status": "none", "actual": 0, "p_baseline": 90.3, "p_enhanced": 80.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2026-05-03", "status": "none", "actual": 0, "p_baseline": 41.1, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-04", "status": "full", "actual": 1, "p_baseline": 81.0, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-05", "status": "none", "actual": 0, "p_baseline": 66.7, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2026-05-06", "status": "none", "actual": 0, "p_baseline": 5.6, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-07", "status": "none", "actual": 0, "p_baseline": 11.9, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-08", "status": "none", "actual": 0, "p_baseline": 67.6, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2026-05-09", "status": "full", "actual": 1, "p_baseline": 49.6, "p_enhanced": 46.2, "pred_baseline": 0, "pred_enhanced": 1, "ok_baseline": false, "ok_enhanced": true, "delta": "fix"}, {"date": "2026-05-10", "status": "none", "actual": 0, "p_baseline": 35.8, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-11", "status": "none", "actual": 0, "p_baseline": 21.0, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-12", "status": "none", "actual": 0, "p_baseline": 49.9, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-13", "status": "none", "actual": 0, "p_baseline": 1.9, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-14", "status": "none", "actual": 0, "p_baseline": 14.5, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-15", "status": "none", "actual": 0, "p_baseline": 23.0, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-16", "status": "none", "actual": 0, "p_baseline": 30.1, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-17", "status": "none", "actual": 0, "p_baseline": 33.0, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-18", "status": "none", "actual": 0, "p_baseline": 25.8, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-19", "status": "none", "actual": 0, "p_baseline": 8.3, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-20", "status": "full", "actual": 1, "p_baseline": 23.7, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": false, "ok_enhanced": false, "delta": ""}, {"date": "2026-05-21", "status": "none", "actual": 0, "p_baseline": 10.8, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-22", "status": "full", "actual": 1, "p_baseline": 50.6, "p_enhanced": 46.2, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-23", "status": "none", "actual": 0, "p_baseline": 1.6, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-24", "status": "none", "actual": 0, "p_baseline": 32.0, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-25", "status": "none", "actual": 0, "p_baseline": 14.1, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-26", "status": "none", "actual": 0, "p_baseline": 44.6, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-27", "status": "none", "actual": 0, "p_baseline": 0.2, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-28", "status": "none", "actual": 0, "p_baseline": 55.6, "p_enhanced": 16.7, "pred_baseline": 1, "pred_enhanced": 0, "ok_baseline": false, "ok_enhanced": true, "delta": "fix"}, {"date": "2026-05-29", "status": "full", "actual": 1, "p_baseline": 99.6, "p_enhanced": 100.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-30", "status": "none", "actual": 0, "p_baseline": 8.7, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-05-31", "status": "none", "actual": 0, "p_baseline": 2.6, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-01", "status": "none", "actual": 0, "p_baseline": 2.5, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-02", "status": "none", "actual": 0, "p_baseline": 13.5, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-03", "status": "none", "actual": 0, "p_baseline": 14.1, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-04", "status": "none", "actual": 0, "p_baseline": 12.0, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-05", "status": "none", "actual": 0, "p_baseline": 38.4, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-06", "status": "full", "actual": 1, "p_baseline": 78.5, "p_enhanced": 80.0, "pred_baseline": 1, "pred_enhanced": 1, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-07", "status": "none", "actual": 0, "p_baseline": 2.4, "p_enhanced": 8.0, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-08", "status": "none", "actual": 0, "p_baseline": 42.4, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": true, "ok_enhanced": true, "delta": ""}, {"date": "2026-06-09", "status": "full", "actual": 1, "p_baseline": 14.8, "p_enhanced": 16.7, "pred_baseline": 0, "pred_enhanced": 0, "ok_baseline": false, "ok_enhanced": false, "delta": ""}]};
+  const eb = DATA.enhanced.metrics;
+  const cal = DATA.enhanced.calibration;
+  const h = DATA.enhanced.histogram;
+
+  new Chart(document.getElementById('rocChart'), {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'v6 LOOCV ROC AUC=' + ((eb.roc_auc||0)*100).toFixed(1) + '%',
+        data: eb.roc.tpr.map((t,i) => ({x: eb.roc.fpr[i]*100, y: t*100})),
+        borderColor: '#4ade80', fill: true, backgroundColor: 'rgba(74,222,128,0.15)', pointRadius: 0, tension: 0.2,
+      }, {
+        label: 'baseline',
+        data: DATA.baseline.metrics.roc.tpr.map((t,i) => ({x: DATA.baseline.metrics.roc.fpr[i]*100, y: t*100})),
+        borderColor: '#64748b', borderDash: [4,3], pointRadius: 0, tension: 0.2,
+      }],
+    },
+    options: {
+      parsing: false,
+      scales: {
+        x: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'FPR %' } },
+        y: { min: 0, max: 100, title: { display: true, text: 'TPR %' } },
+      },
+      plugins: { legend: { labels: { color: '#e2e8f0' } } },
+    },
+  });
+
+  new Chart(document.getElementById('calChart'), {
+    type: 'bar',
+    data: {
+      labels: cal.centers.map(c => (c*100).toFixed(0)+'%'),
+      datasets: [
+        { label: '预测均值', data: cal.pred_mean.map(x => x*100), backgroundColor: 'rgba(56,189,248,0.6)' },
+        { label: '实际有云海%', data: cal.actual_rate.map(x => x*100), backgroundColor: 'rgba(74,222,128,0.6)' },
+      ],
+    },
+    options: { scales: { y: { max: 100 } }, plugins: { title: { display: true, text: '校准（v6）' } } },
+  });
+
+  const labels = h.edges.slice(0,-1).map((e,i) => e+'-'+h.edges[i+1]);
+  new Chart(document.getElementById('histChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: '有云海', data: h.positive, backgroundColor: 'rgba(74,222,128,0.7)' },
+        { label: '无云海', data: h.negative, backgroundColor: 'rgba(248,113,113,0.7)' },
+      ],
+    },
+    options: { scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { title: { display: true, text: 'v6 概率分布' } } },
+  });
+
+  const cm = eb.confusion;
+  new Chart(document.getElementById('cmChart'), {
+    type: 'bar',
+    data: {
+      labels: ['TN','FP','FN','TP'],
+      datasets: [{ data: [cm.tn, cm.fp, cm.fn, cm.tp], backgroundColor: ['#475569','#f87171','#fb923c','#4ade80'] }],
+    },
+    options: { plugins: { title: { display: true, text: 'v6 混淆矩阵' }, legend: { display: false } } },
+  });
+
+  const tbody = document.querySelector('#dailyTable tbody');
+  DATA.daily.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = r.ok_enhanced ? (r.delta === 'fix' ? 'fix' : 'ok') : (r.delta === 'regress' ? 'regress' : 'bad');
+    const ch = r.delta === 'fix' ? '修复' : (r.delta === 'regress' ? '回归' : '');
+    tr.innerHTML = `<td>${r.date}</td><td>${r.status}</td><td>${r.actual ? '有' : '无'}</td>
+      <td>${r.p_baseline}%</td><td>${r.p_enhanced}%</td>
+      <td>${r.pred_baseline ? '有' : '无'}</td><td>${r.pred_enhanced ? '有' : '无'}</td><td>${ch}</td>`;
+    tbody.appendChild(tr);
+  });
+  </script>
+</body>
+</html>

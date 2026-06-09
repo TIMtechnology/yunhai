@@ -99,6 +99,9 @@ class DaySummary(BaseModel):
     weekday: str
     sunrise_time: Optional[str] = None
     sunrise_hour_index: Optional[int] = None
+    """天文日出时刻最近的小时索引（用于「跳到日出」）。"""
+    sunrise_window_peak_hour_index: Optional[int] = None
+    """日出窗口（03–07）云海概率最高的小时索引（主页卡片默认展示）。"""
     peak_cloudsea_prob: int = 0
     peak_cloudsea_time: Optional[str] = None
     full_day_peak_cloudsea_prob: int = 0

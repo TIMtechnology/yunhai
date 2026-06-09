@@ -113,6 +113,8 @@ export interface DaySummary {
   weekday: string
   sunrise_time?: string
   sunrise_hour_index?: number
+  /** 日出窗口云海峰值小时（主页卡片默认） */
+  sunrise_window_peak_hour_index?: number
   peak_cloudsea_prob: number
   peak_cloudsea_time?: string
   full_day_peak_cloudsea_prob?: number

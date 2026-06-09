@@ -293,6 +293,7 @@ def _build_day_summaries(
                 recommend.append(f"{t.strftime('%H:%M')} {item.scenario.label}")
 
         sunrise_idx, sunrise_item = sunrise_entry if sunrise_entry else (None, None)
+        sw_peak_idx, sw_peak_item = sunrise_window_peak
         sunrise_time = (
             sunrise_at.astimezone(TZ).strftime("%H:%M")
             if sunrise_at
@@ -304,15 +305,17 @@ def _build_day_summaries(
                 weekday=weekday,
                 sunrise_time=sunrise_time,
                 sunrise_hour_index=sunrise_idx,
+                sunrise_window_peak_hour_index=sw_peak_idx,
                 # Product-facing peak is the sunrise-window peak; full-day peak is preserved separately.
-                peak_cloudsea_prob=sunrise_window_peak[1].cloudsea.probability,
-                peak_cloudsea_time=parse_shanghai_time(sunrise_window_peak[1].time).strftime("%H:%M"),
+                peak_cloudsea_prob=sw_peak_item.cloudsea.probability,
+                peak_cloudsea_time=parse_shanghai_time(sw_peak_item.time).strftime("%H:%M"),
                 full_day_peak_cloudsea_prob=full_day_peak[1].cloudsea.probability,
                 full_day_peak_cloudsea_time=parse_shanghai_time(full_day_peak[1].time).strftime("%H:%M"),
-                sunrise_window_peak_cloudsea_prob=sunrise_window_peak[1].cloudsea.probability,
-                sunrise_window_peak_cloudsea_time=parse_shanghai_time(sunrise_window_peak[1].time).strftime("%H:%M"),
-                sunrise_scenario_label=sunrise_item.scenario.label if sunrise_item else None,
-                sunrise_combined_score=sunrise_item.scenario.combined_score if sunrise_item else 0,
+                sunrise_window_peak_cloudsea_prob=sw_peak_item.cloudsea.probability,
+                sunrise_window_peak_cloudsea_time=parse_shanghai_time(sw_peak_item.time).strftime("%H:%M"),
+                # 主页场景标签与峰值小时一致，避免天文日出整点（如 04:00）低于窗口峰值（如 05:00）
+                sunrise_scenario_label=sw_peak_item.scenario.label,
+                sunrise_combined_score=sw_peak_item.scenario.combined_score,
                 recommend_periods=recommend[:4],
             )
         )
@@ -573,6 +576,8 @@ def build_predictions_from_hourly(
                     spot_id=req.spot_id,
                     viewpoint_id=req.viewpoint_id,
                     plausibility_cap=plausibility_cap,
+                    visibility=vis,
+                    rh=rh,
                 )
 
         if not (use_ml and ml_day_cache.get(day_key) is not None):
