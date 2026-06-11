@@ -97,9 +97,14 @@ def ml_calibration_weight(
     visibility: float | None = None,
     rh: float | None = None,
     fuzzy_prob: int | None = None,
+    water_fog_signal: float | None = None,
 ) -> float:
-    """点位 ML 已启用时，按景区设定融合权重；谷地雾信号时降低 ML 权重。"""
-    base = 0.80 if spot_id == "wunvshan" else (0.75 if spot_id else 0.45)
+    """点位 ML 已启用时，按景区设定融合权重；谷地雾/水体信号时降低 ML 权重。"""
+    base = 0.65 if spot_id == "wunvshan" else (0.60 if spot_id else 0.40)
+    weight = base
+    if water_fog_signal is not None and water_fog_signal >= 0.30:
+        # 近库水体晨雾：规则 Type B 更可靠，避免 ML 独大
+        weight = min(weight, 0.50)
     if (
         visibility is not None
         and visibility <= 500
@@ -108,9 +113,9 @@ def ml_calibration_weight(
         and fuzzy_prob is not None
         and fuzzy_prob >= 45
     ):
-        # 日出窗口：规则对低能见度补偿更可靠，避免 ML 独大压分
-        return min(base, 0.45)
-    return base
+        # 日出窗口低能见度：规则补偿更可靠
+        weight = min(weight, 0.40)
+    return weight
 
 
 def _apply_ml_fog_floor(
@@ -119,15 +124,19 @@ def _apply_ml_fog_floor(
     fuzzy_prob: int,
     visibility: float | None,
     rh: float | None,
+    water_fog_signal: float | None = None,
 ) -> int:
-    """规则强信号 + 谷地雾：ML 不低于规则的一定比例。"""
-    if (
-        fuzzy_prob >= 45
-        and visibility is not None
-        and visibility <= 500
-        and rh is not None
-        and rh >= 85
-    ):
+    """规则强信号 + 谷地雾/近库水体雾：ML 不低于规则的一定比例。"""
+    if fuzzy_prob < 45 or visibility is None or rh is None:
+        return ml_prob
+    water_fog = (
+        water_fog_signal is not None
+        and water_fog_signal >= 0.30
+        and visibility <= 600
+        and rh >= 72
+    )
+    valley_fog = visibility <= 500 and rh >= 85
+    if water_fog or valley_fog:
         return max(ml_prob, int(round(fuzzy_prob * 0.70)))
     return ml_prob
 
@@ -161,17 +170,35 @@ def merge_ml_cloudsea_score(
     plausibility_cap: int | None = None,
     visibility: float | None = None,
     rh: float | None = None,
+    water_fog_signal: float | None = None,
 ) -> PredictionScore:
     """ML 与规则融合：仅在本点位 ML 已启用时混合。"""
     fuzzy_prob = fuzzy.probability
     ml_prob = ml.probability
     ml_prob = _apply_ml_fog_floor(
-        ml_prob, fuzzy_prob=fuzzy_prob, visibility=visibility, rh=rh
+        ml_prob,
+        fuzzy_prob=fuzzy_prob,
+        visibility=visibility,
+        rh=rh,
+        water_fog_signal=water_fog_signal,
     )
     ml_weight = ml_calibration_weight(
-        spot_id, visibility=visibility, rh=rh, fuzzy_prob=fuzzy_prob
+        spot_id,
+        visibility=visibility,
+        rh=rh,
+        fuzzy_prob=fuzzy_prob,
+        water_fog_signal=water_fog_signal,
     )
     blended = int(round(ml_weight * ml_prob + (1.0 - ml_weight) * fuzzy_prob))
+    water_fog_boost = (
+        water_fog_signal is not None
+        and water_fog_signal >= 0.30
+        and visibility is not None
+        and visibility <= 600
+        and rh is not None
+        and rh >= 72
+        and fuzzy_prob >= 45
+    )
     fog_boost = (
         visibility is not None
         and visibility <= 500
@@ -179,15 +206,16 @@ def merge_ml_cloudsea_score(
         and rh >= 85
         and fuzzy_prob >= 45
     )
-    if fog_boost:
-        # 谷地雾型：融合分不低于规则与 ML 的较高者的一定比例
+    valley_fog_boost = fog_boost or water_fog_boost
+    if valley_fog_boost:
+        # 谷地雾/近库水体雾：融合分不低于规则与 ML 的较高者的一定比例
         blended = max(blended, int(round(max(fuzzy_prob, ml_prob) * 0.85)))
     if plausibility_cap is not None:
         # 点位 ML 已用本地标注校准：融合结果不应被 NWP 干廓线 heuristic 压到低于 ML 估计
-        if ml_weight >= 0.75:
+        if ml_weight >= 0.60:
             plausibility_cap = max(plausibility_cap, ml_prob)
-        elif fog_boost:
-            plausibility_cap = max(plausibility_cap, blended)
+        elif valley_fog_boost:
+            plausibility_cap = max(plausibility_cap, blended, fuzzy_prob)
         blended = min(blended, plausibility_cap)
     blended = max(0, min(100, blended))
 
@@ -252,6 +280,7 @@ def build_observational_factors(
     wind: float,
     precip_recent: float,
     elevation: float,
+    water_fog_signal: float = 0.0,
 ) -> dict[str, FactorDetail]:
     """当前时刻底层气象观测（不参与加权，仅供专业展示）。"""
     from app.engine.cloudsea_scorer import _classify_cloudsea_archetype
@@ -265,6 +294,7 @@ def build_observational_factors(
         precip_recent=precip_recent,
         t_850=t_850,
         t_925=t_925,
+        water_fog_signal=water_fog_signal,
     )
     inversion_value = "—"
     if t_850 is not None and t_925 is not None:

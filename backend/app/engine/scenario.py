@@ -34,9 +34,14 @@ def _valley_fog_signal(
     rh: float,
     vis_threshold_m: float = 500.0,
     rh_threshold: float = 80.0,
+    water_fog_signal: float | None = None,
 ) -> bool:
     """近地面饱和雾/谷地云海信号：禁止误判为晴日日出。"""
-    return visibility is not None and visibility <= vis_threshold_m and rh >= rh_threshold
+    if visibility is None:
+        return False
+    if water_fog_signal is not None and water_fog_signal >= 0.30 and visibility <= 600 and rh >= 72:
+        return True
+    return visibility <= vis_threshold_m and rh >= rh_threshold
 
 
 def build_scenario(
@@ -54,6 +59,7 @@ def build_scenario(
     viewing_mode: str = "valley_fill",
     terrain: dict | None = None,
     observable: dict | None = None,
+    water_fog_signal: float | None = None,
 ) -> dict:
     """联合云海+日出+天气给出观赏场景；云海标签需低云或能见度补偿证据。"""
     from app.engine.cloudsea_scorer import cloudsea_visual_evidence
@@ -175,7 +181,9 @@ def build_scenario(
                     2,
                     int((cloudsea_prob + sunrise_prob) / 2),
                 )
-            if _valley_fog_signal(visibility=visibility, rh=rh):
+            if _valley_fog_signal(
+                visibility=visibility, rh=rh, water_fog_signal=water_fog_signal
+            ):
                 return _scenario(
                     "sunrise_cloudsea_fair",
                     "较可能日出云海",
@@ -217,7 +225,9 @@ def build_scenario(
         )
 
     if sunrise_prob >= 65 and (cloudsea_prob < 45 or not has_cloudsea_evidence):
-        if _valley_fog_signal(visibility=visibility, rh=rh):
+        if _valley_fog_signal(
+            visibility=visibility, rh=rh, water_fog_signal=water_fog_signal
+        ):
             return _scenario(
                 "sunrise_cloudsea_fair",
                 "较可能日出云海",

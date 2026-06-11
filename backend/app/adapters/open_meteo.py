@@ -45,13 +45,7 @@ PROFILE_HOURLY_VARS = [
 ]
 
 
-async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
-    today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
-    cache_key = f"forecast:v6:{lat:.4f}:{lng:.4f}:{days}:{today}"
-    cached = cache_get(cache_key)
-    if cached:
-        return cached
-
+async def _fetch_forecast_primary(lat: float, lng: float, days: int) -> dict:
     params = {
         "latitude": lat,
         "longitude": lng,
@@ -63,7 +57,25 @@ async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.get(FORECAST_URL, params=params)
         resp.raise_for_status()
-        data = resp.json()
+        return resp.json()
+
+
+async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
+    today = datetime.now(SHANGHAI_TZ).strftime("%Y-%m-%d")
+    cache_key = f"forecast:v6:{lat:.4f}:{lng:.4f}:{days}:{today}"
+    cached = cache_get(cache_key)
+    if cached:
+        return cached
+
+    try:
+        data = await _fetch_forecast_primary(lat, lng, days)
+    except (httpx.ConnectError, httpx.RemoteProtocolError, httpx.ReadError):
+        # 主站 TLS/连通异常时回退 historical-forecast（生产环境曾出现 api 握手失败）
+        from app.adapters.open_meteo_historical import fetch_historical_forecast
+
+        start = datetime.now(SHANGHAI_TZ).date()
+        end = start + timedelta(days=max(days - 1, 0))
+        data = await fetch_historical_forecast(lat, lng, start, end)
 
     cache_set(cache_key, data)
     return data
@@ -152,14 +164,24 @@ async def fetch_elevations_batch(lats: list[float], lngs: list[float]) -> list[f
             missing.append(p)
 
     if missing:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            for start in range(0, len(missing), ELEVATION_BATCH_CHUNK):
-                chunk = missing[start : start + ELEVATION_BATCH_CHUNK]
-                values = await _fetch_elevation_chunk(client, chunk)
-                for p, elev in zip(chunk, values):
-                    val = float(elev)
-                    cached_map[p] = val
-                    cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400 * 7)
+        try:
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                for start in range(0, len(missing), ELEVATION_BATCH_CHUNK):
+                    chunk = missing[start : start + ELEVATION_BATCH_CHUNK]
+                    values = await _fetch_elevation_chunk(client, chunk)
+                    for p, elev in zip(chunk, values):
+                        val = float(elev)
+                        cached_map[p] = val
+                        cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400 * 7)
+        except (httpx.ConnectError, httpx.RemoteProtocolError, httpx.ReadError):
+            from app.adapters.open_meteo_historical import fetch_historical_forecast
+
+            start = datetime.now(SHANGHAI_TZ).date()
+            for p in missing:
+                data = await fetch_historical_forecast(p[0], p[1], start, start)
+                val = float(data.get("elevation") or 0.0)
+                cached_map[p] = val
+                cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400 * 7)
 
     return [cached_map[p] for p in pairs]
 

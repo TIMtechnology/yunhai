@@ -511,6 +511,15 @@ def build_predictions_from_hourly(
             if prev_prob is None or cloudsea.probability >= prev_prob:
                 terrain_ctx["peak_hour_observable"] = obs_field
                 terrain_ctx["peak_hour_cloudsea_prob"] = cloudsea.probability
+        wf_sig = water_fog_signal_hour(
+            terrain_ctx.get("local_water") if terrain_ctx else None,
+            elevation=elevation,
+            rh=rh,
+            temp=temp,
+            dewpoint=dew,
+            wind=wind,
+            cloud_high=high,
+        )
         obs = build_observational_factors(
             cloud_low=low,
             cloud_mid=mid,
@@ -524,15 +533,7 @@ def build_predictions_from_hourly(
             wind=wind,
             precip_recent=recent,
             elevation=elevation,
-        )
-        wf_sig = water_fog_signal_hour(
-            terrain_ctx.get("local_water") if terrain_ctx else None,
-            elevation=elevation,
-            rh=rh,
-            temp=temp,
-            dewpoint=dew,
-            wind=wind,
-            cloud_high=high,
+            water_fog_signal=wf_sig,
         )
         archetype, _ = _classify_cloudsea_archetype(
             cloud_low=low,
@@ -589,6 +590,7 @@ def build_predictions_from_hourly(
                     plausibility_cap=plausibility_cap,
                     visibility=vis,
                     rh=rh,
+                    water_fog_signal=wf_sig,
                 )
 
         if not (use_ml and ml_day_cache.get(day_key) is not None):
@@ -628,6 +630,7 @@ def build_predictions_from_hourly(
             viewing_mode=viewing_mode,
             terrain=terrain_ctx or None,
             observable=obs_field,
+            water_fog_signal=wf_sig,
         )
 
         results.append(

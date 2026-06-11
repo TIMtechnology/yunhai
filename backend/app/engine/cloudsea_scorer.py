@@ -153,6 +153,8 @@ def _classify_cloudsea_archetype(
     # 经验上 ~11km 网格的静态水体信号无法把真云海日与晴空强风日分开
     # （二者 water_fog_signal 接近），故必须叠加「模式报低能见度」这一硬门，
     # 仅补救 RH 略低于常规阈值（72–78）而险些漏判的近库低能见度日（如 6/11 04:00）。
+    # 注意：近库辐射雾/平流雾常伴随 700–850hPa 干廓线（ΔT 明显为负），
+    # 不能用上层逆温门排除，否则会把 6/9–6/11 等真云海日压成 neutral + 低 cap。
     if (
         water_fog_signal >= 0.30
         and visibility is not None
@@ -160,7 +162,6 @@ def _classify_cloudsea_archetype(
         and rh >= 72
         and cloud_mid <= 35
         and cloud_low <= 45
-        and not _strong_negative_inversion(t_850, t_925)
     ):
         return "type_b", "水体蒸发型谷地雾（近库+弱风+低能见度）"
     return "neutral", ""
