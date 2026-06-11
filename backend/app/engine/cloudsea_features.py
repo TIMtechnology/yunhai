@@ -6,6 +6,7 @@ from app.adapters.dem import estimate_cloud_top_m
 from app.adapters.open_meteo import estimate_cloud_base
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, _infer_effective_low_cloud
 from app.engine.observable_field import compute_observable_field
+from app.engine.water_context import water_fog_signal_hour
 
 FEATURE_NAMES = [
     "cloud_low",
@@ -108,9 +109,20 @@ OBSERVABLE_FEATURE_NAMES = [
     "cloud_base_minus_valley_mean",
 ]
 
+# 局地水体晨雾潜势（逐日量）。注意：在「按点位模型」中，静态水体强度对单点位恒定，
+# 该派生量与已有气象特征高度共线，经验上会增加小样本过拟合并降低 LOOCV，
+# 故默认不进按点位特征集（仅保留供未来跨点位全局模型启用）。
+WATER_FEATURE_NAMES = [
+    "water_fog_potential_mean",
+    "water_fog_potential_max",
+    "hour_count_water_fog",
+]
+
 DAY_FEATURE_NAMES_V2 = list(DAY_FEATURE_NAMES)
 DAY_FEATURE_NAMES_V3 = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES
 DAY_FEATURE_NAMES = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES + OBSERVABLE_FEATURE_NAMES
+
+WATER_FOG_HOUR_THRESHOLD = 0.45
 
 _REQUIRED_METEO_KEYS = ("rh_700", "cloud_high", "inversion")
 
@@ -291,6 +303,37 @@ def _terrain_day_features(
     }
 
 
+def _water_day_features(
+    hour_rows: list[dict],
+    *,
+    elevation: float,
+    terrain: dict | None,
+) -> dict[str, float]:
+    defaults = {n: 0.0 for n in WATER_FEATURE_NAMES}
+    local_water = (terrain or {}).get("local_water")
+    if not local_water or not hour_rows:
+        return defaults
+    signals: list[float] = []
+    for row in hour_rows:
+        sig = water_fog_signal_hour(
+            local_water,
+            elevation=elevation,
+            rh=row.get("rh"),
+            temp=row.get("temp"),
+            dewpoint=row.get("dewpoint"),
+            wind=row.get("wind"),
+            cloud_high=row.get("cloud_high"),
+        )
+        signals.append(sig)
+    if not signals:
+        return defaults
+    return {
+        "water_fog_potential_mean": float(np.mean(signals)),
+        "water_fog_potential_max": float(np.max(signals)),
+        "hour_count_water_fog": float(sum(1 for s in signals if s >= WATER_FOG_HOUR_THRESHOLD)),
+    }
+
+
 def _observable_day_features(
     hour_rows: list[dict],
     *,
@@ -426,6 +469,7 @@ def aggregate_day_features(
         )
         base["hour_count_fog_boost"] = float(fog_count * FOG_BOOST_FACTOR)
     base.update(_terrain_day_features(hour_rows, elevation=elevation, terrain=terrain))
+    base.update(_water_day_features(hour_rows, elevation=elevation, terrain=terrain))
     if use_observable_field:
         viewing_mode = str((terrain or {}).get("viewing_mode") or "valley_fill")
         base.update(

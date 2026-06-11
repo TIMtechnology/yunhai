@@ -17,6 +17,8 @@ class Viewpoint(BaseModel):
     tags: List[str] = Field(default_factory=list)
     note: str = ""
     viewing_mode: Optional[str] = None
+    local_water: Optional[dict] = None
+    """该观景点专属的局地水体上下文（覆盖 spot 级 local_water）。"""
 
 
 class ScenicSpot(BaseModel):
@@ -31,6 +33,8 @@ class ScenicSpot(BaseModel):
     cloud_region: Optional[CloudRegion] = None
     source: str = "curated"
     community_location_id: Optional[str] = None
+    local_water: Optional[dict] = None
+    """局地大型水体（水库/湖泊）静态上下文，用于水体蒸发型谷地雾/填谷云海判据。"""
 
 
 class SpotSearchResult(BaseModel):

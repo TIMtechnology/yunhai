@@ -475,7 +475,30 @@ async def get_terrain_context(
         viewing_mode=str(result["viewing_mode"]),
         cloud_layer=cloud_layer,
     )
+
+    local_water = _resolve_local_water(spot_id, viewpoint_id)
+    if local_water:
+        result["local_water"] = local_water
+
     return result
+
+
+def _resolve_local_water(spot_id: str | None, viewpoint_id: str | None) -> dict | None:
+    """从策展点位配置读取局地水体上下文（观景点级覆盖 spot 级）。"""
+    if not spot_id:
+        return None
+    try:
+        from app.services.spot_loader import get_spot
+    except Exception:
+        return None
+    spot = get_spot(spot_id)
+    if not spot:
+        return None
+    if viewpoint_id:
+        for vp in spot.viewpoints:
+            if vp.id == viewpoint_id and getattr(vp, "local_water", None):
+                return vp.local_water
+    return getattr(spot, "local_water", None)
 
 
 def get_terrain_context_sync(

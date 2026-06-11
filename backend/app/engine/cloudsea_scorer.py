@@ -57,6 +57,7 @@ def _classify_cloudsea_archetype(
     t_925: float | None = None,
     viewing_mode: str = "valley_fill",
     observable: dict | None = None,
+    water_fog_signal: float = 0.0,
 ) -> tuple[str, str]:
     """五女山金标准日归纳 + 峰顶俯瞰 Type C。"""
     if (
@@ -148,6 +149,20 @@ def _classify_cloudsea_archetype(
         and cloud_low <= 35
     ):
         return "type_b", "低能见度层云/雾复合型"
+    # 水体蒸发型谷地雾：山脚大型水库 + 弱风高湿 + 模式确报低能见度。
+    # 经验上 ~11km 网格的静态水体信号无法把真云海日与晴空强风日分开
+    # （二者 water_fog_signal 接近），故必须叠加「模式报低能见度」这一硬门，
+    # 仅补救 RH 略低于常规阈值（72–78）而险些漏判的近库低能见度日（如 6/11 04:00）。
+    if (
+        water_fog_signal >= 0.30
+        and visibility is not None
+        and visibility <= 600
+        and rh >= 72
+        and cloud_mid <= 35
+        and cloud_low <= 45
+        and not _strong_negative_inversion(t_850, t_925)
+    ):
+        return "type_b", "水体蒸发型谷地雾（近库+弱风+低能见度）"
     return "neutral", ""
 
 
@@ -449,7 +464,20 @@ def score_cloudsea(
     sector_meteo: list[dict] | None = None,
     summit_cloud_low: float | None = None,
     summit_rh: float | None = None,
+    water_fog_signal: float | None = None,
 ) -> PredictionScore:
+    if water_fog_signal is None:
+        from app.engine.water_context import water_fog_signal_hour
+
+        water_fog_signal = water_fog_signal_hour(
+            (terrain or {}).get("local_water"),
+            elevation=elevation,
+            rh=rh,
+            temp=temp,
+            dewpoint=dewpoint,
+            wind=wind,
+            cloud_high=cloud_high,
+        )
     cloud_base_pre = estimate_cloud_base(temp, dewpoint)
     cloud_top_pre = estimate_cloud_top_m(cloud_base_pre, cloud_low, cloud_mid)
     elev_max_5km = float((terrain or {}).get("elev_max_5km_m") or elevation)
@@ -483,6 +511,7 @@ def score_cloudsea(
         t_925=t_925,
         viewing_mode=viewing_mode,
         observable=obs_pre,
+        water_fog_signal=water_fog_signal,
     )
     effective_low, vis_proxy_note = _infer_effective_low_cloud(
         cloud_low=cloud_low,

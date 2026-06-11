@@ -35,6 +35,7 @@ from app.engine.cloudsea_ml import (
     should_use_spot_ml,
 )
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, cloudsea_plausibility_cap, score_cloudsea
+from app.engine.water_context import water_fog_signal_hour
 from app.engine.satellite_analyzer import analyze_ir_image
 from app.engine.scenario import build_scenario, weather_text
 from app.engine.sunrise_scorer import score_sunrise_window
@@ -524,6 +525,15 @@ def build_predictions_from_hourly(
             precip_recent=recent,
             elevation=elevation,
         )
+        wf_sig = water_fog_signal_hour(
+            terrain_ctx.get("local_water") if terrain_ctx else None,
+            elevation=elevation,
+            rh=rh,
+            temp=temp,
+            dewpoint=dew,
+            wind=wind,
+            cloud_high=high,
+        )
         archetype, _ = _classify_cloudsea_archetype(
             cloud_low=low,
             cloud_mid=mid,
@@ -535,6 +545,7 @@ def build_predictions_from_hourly(
             t_925=t_925,
             viewing_mode=viewing_mode,
             observable=obs_field,
+            water_fog_signal=wf_sig,
         )
         plausibility_cap = cloudsea_plausibility_cap(
             cloud_low=low,

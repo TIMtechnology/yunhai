@@ -19,6 +19,16 @@
     "span_lng": 2.0,
     "span_lat": 1.4
   },
+  "local_water": {
+    "name": "桓龙湖（桓仁水库 / 浑江中游）",
+    "surface_elev_m": 300,
+    "surface_elev_range_m": [290, 309],
+    "nearest_distance_km": 1.5,
+    "area_total_km2": 87.55,
+    "area_within_10km_km2": 60,
+    "shoreline_km": 81,
+    "source": "公开资料估算：维基『桓仁水库』正常蓄水位300m；遥感水面87.55km²(2016)；天天百科岸线81km。点将台位于湖东岸山脚，落差约500m，待人工校正。"
+  },
   "viewpoints": [
     {
       "id": "dianjiangtai",
