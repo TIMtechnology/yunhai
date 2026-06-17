@@ -4,53 +4,71 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>日出云海怎么看：摄影出行前的气象判断指南</title>
-  <meta name="description" content="日出云海摄影出行前如何判断：查看日出窗口、云海概率、日出概率、低云和中云、能见度、风速阵风、Meteogram 气象详图和分享图。" />
+  <meta name="description" content="日出云海出行指南：日出窗口、双概率、场景标签、Meteogram 与分享图用法。" />
   <meta name="keywords" content="日出云海,日出云海预测,云海摄影,日出拍摄天气,云海概率,观云海攻略" />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/sunrise-cloudsea.html" />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="日出云海怎么看：摄影出行前的气象判断指南" />
-  <meta property="og:description" content="用日出窗口、云层、能见度、风速和云海概率判断是否值得出发拍摄日出云海。" />
   <meta property="og:url" content="https://yunhai.timkj.com/docs/sunrise-cloudsea.html" />
   <meta property="og:image" content="https://yunhai.timkj.com/docs/images/share-og-landscape.png" />
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {"@type":"Question","name":"日出云海重点看哪个时间段？","acceptedAnswer":{"@type":"Answer","text":"重点看当地日出前后约 03:00-07:00 的日出窗口，尤其是日出前 1-2 小时的湿度、低云、能见度和风速。"}},
-      {"@type":"Question","name":"日出概率高是否等于云海概率高？","acceptedAnswer":{"@type":"Answer","text":"不等于。日出概率主要反映太阳可见性和云层遮挡，云海概率还需要判断谷地湿度、低云、能见度、风场和地形条件。"}}
-    ]
-  }
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"日出云海重点看哪个时间段？","acceptedAnswer":{"@type":"Answer","text":"重点看当地 03:00-07:00 日出窗口，尤其是日出前 1-2 小时的湿度、低云、能见度和风速。"}},
+    {"@type":"Question","name":"日出概率高是否等于云海概率高？","acceptedAnswer":{"@type":"Answer","text":"不等于。日出概率反映太阳可见性；云海还需谷地湿度、低云/能见度、风场与地形。"}}
+  ]}
   </script>
   <style>
     body{margin:0;background:#f8fafc;color:#334155;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;line-height:1.75}
-    nav{background:white;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:16px;flex-wrap:wrap;position:sticky;top:0}
-    nav a,a{color:#0284c7;text-decoration:none}main{max-width:920px;margin:auto;padding:32px 20px}.card{background:white;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
-    h1,h2,h3{color:#0f172a}.step{background:#fff7ed;border-left:4px solid #fb923c;border-radius:0 12px 12px 0;padding:14px 18px;margin:12px 0}.cta{display:inline-block;background:#0284c7;color:white;padding:12px 18px;border-radius:999px;font-weight:700}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:12px 16px;flex-wrap:wrap;position:sticky;top:0;z-index:10;font-size:14px}
+    nav a{color:#475569;text-decoration:none}nav a:hover,nav a.active{color:#0369a1;font-weight:600}
+    main{max-width:920px;margin:auto;padding:32px 20px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
+    h1,h2{color:#0f172a}.step{background:#fff7ed;border-left:4px solid #fb923c;border-radius:0 12px 12px 0;padding:14px 18px;margin:12px 0}
+    .cta{display:inline-block;background:#0284c7;color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;text-decoration:none}
+    table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}th,td{border:1px solid #e2e8f0;padding:10px;text-align:left}th{background:#f8fafc}
+    a{color:#0284c7}
   </style>
 </head>
 <body>
   <nav>
-    <a href="index.html">使用指南</a><a href="cloudsea-forecast.html">云海预测方法</a><a href="sunrise-cloudsea.html">日出云海</a><a href="how-to-read-meteogram.html">Meteogram</a><a href="cloudsea-conditions.html">形成条件</a><a href="/">打开预测工具</a>
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="cloudsea-forecast.html">云海预测方法</a>
+    <a href="sunrise-cloudsea.html" class="active">日出云海</a>
+    <a href="how-to-read-meteogram.html">Meteogram</a>
+    <a href="cloudsea-conditions.html">形成条件</a>
+    <a href="/" style="margin-left:auto">← 返回应用</a>
   </nav>
   <main>
     <section class="card">
       <h1>日出云海怎么看：摄影出行前的气象判断指南</h1>
-      <p>日出云海需要同时满足“太阳能露出”和“山谷有云雾层”。所以出行前不能只看晴天图标，还要看日出窗口的云海概率、日出概率、分层云量、能见度、湿度和风场。</p>
+      <p>日出云海需要同时满足「太阳能露出」和「山谷有云雾层」。不能只看晴天图标——要看<strong>日出窗口</strong>的云海概率、日出概率、综合场景标签、分层云量、能见度与风场。</p>
       <p><a class="cta" href="/">打开日出云海预测工具</a></p>
     </section>
     <section class="card">
-      <h2>出发前的 4 步判断</h2>
-      <div class="step"><strong>1. 看日出窗口：</strong>优先看 03:00-07:00，而不是全天最高云海概率。</div>
-      <div class="step"><strong>2. 看双概率：</strong>云海概率决定是否有云海，日出概率决定太阳是否容易被看到。</div>
-      <div class="step"><strong>3. 看 Meteogram：</strong>低云、中云、湿度、降水、风速和阵风能解释概率背后的气象原因。</div>
-      <div class="step"><strong>4. 看模型对照：</strong>如果规则和 ML 分歧大，要谨慎，优先结合底层天气数据判断。</div>
+      <h2>出发前的 5 步判断</h2>
+      <div class="step"><strong>1. 锁定日出窗口：</strong>优先看 03:00–07:00，日汇总里的「日出场景」以该窗口峰值为准，不是全天最高云量时刻。</div>
+      <div class="step"><strong>2. 看双概率 + 场景标签：</strong>「较可能日出云海」值得早起；「晴日日出」表示日出尚可但云海证据不足。</div>
+      <div class="step"><strong>3. 看 Meteogram：</strong>低云、湿度、降水、风速解释概率背后的气象原因。</div>
+      <div class="step"><strong>4. 看规则 vs ML：</strong>因子面板中若规则很高而融合分偏低，可能是 plausibility 或 ML 权重在起作用，结合能见度判断。</div>
+      <div class="step"><strong>5. 分享讨论：</strong>生成竖版长图与同行核对，避免只看单一数字。</div>
     </section>
     <section class="card">
-      <h2>适合用本站查询的场景</h2>
-      <p>五女山、东灵山、黄山、大黑山等山地观景点，都可以通过本站查看未来 5 天逐小时云海和日出概率。系统还支持生成竖版分享图，便于和同行者讨论是否出发。</p>
-      <p><a href="/spots/wunvshan.html">五女山日出云海</a> · <a href="/spots/donglingshan.html">东灵山日出云海</a> · <a href="/spots/huangshan.html">黄山云海预测</a></p>
+      <h2>常见场景标签</h2>
+      <table>
+        <tr><th>标签</th><th>建议</th></tr>
+        <tr><td>日出云海</td><td>云海与日出条件均佳，优先前往</td></tr>
+        <tr><td>较可能日出云海</td><td>值得早起碰运气；含近库雾、谷地低能见度补偿</td></tr>
+        <tr><td>晴日日出</td><td>可看日出，观赏级云海概率偏低</td></tr>
+        <tr><td>有云海·日出难</td><td>可能有云海，但日出易被遮挡</td></tr>
+      </table>
+    </section>
+    <section class="card">
+      <h2>推荐查询点位</h2>
+      <p><a href="/spots/wunvshan.html">五女山日出云海</a> · <a href="/spots/donglingshan.html">东灵山日出云海</a> · <a href="/spots/huangshan.html">黄山云海预测</a> · <a href="/spots/daheishan.html">大黑山日出云海</a></p>
     </section>
   </main>
 </body>

@@ -1,0 +1,67 @@
+{
+  "id": "keketuohai",
+  "name": "可可托海",
+  "aliases": [
+    "可可托海",
+    "额尔齐斯大峡谷",
+    "神钟山"
+  ],
+  "region": "新疆阿勒泰地区富蕴县",
+  "peak_elevation": 3100.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 10,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "shenzhongshan",
+      "name": "神钟山",
+      "lat": 47.168,
+      "lng": 89.868,
+      "elevation": 1350.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区标志",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "shuanghua",
+      "name": "双花台",
+      "lat": 47.175,
+      "lng": 89.875,
+      "elevation": 1400.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "峡谷观雾",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

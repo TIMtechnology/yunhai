@@ -1,0 +1,55 @@
+{
+  "id": "qianfoshan",
+  "name": "大邑千佛山",
+  "aliases": [
+    "千佛山",
+    "大邑千佛山",
+    "千佛山景区"
+  ],
+  "region": "四川省成都市大邑县",
+  "peak_elevation": 3060.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      9,
+      10
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 72
+  },
+  "viewpoints": [
+    {
+      "id": "jinding",
+      "name": "千佛山金顶",
+      "lat": 30.978,
+      "lng": 103.278,
+      "elevation": 3060.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区最高点",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

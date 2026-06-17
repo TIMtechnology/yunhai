@@ -1,0 +1,67 @@
+{
+  "id": "kongtongshan",
+  "name": "崆峒山",
+  "aliases": [
+    "崆峒山",
+    "中华道教第一山",
+    "西来第一山"
+  ],
+  "region": "甘肃省平凉市崆峒区",
+  "peak_elevation": 2176.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      9,
+      10
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 75
+  },
+  "viewpoints": [
+    {
+      "id": "xiangshan",
+      "name": "香山",
+      "lat": 35.668,
+      "lng": 106.542,
+      "elevation": 2176.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "崆峒主峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "zhongtai",
+      "name": "中台",
+      "lat": 35.662,
+      "lng": 106.538,
+      "elevation": 1900.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "道教中心观云海",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

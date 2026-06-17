@@ -1,0 +1,69 @@
+{
+  "id": "jiaodingshan",
+  "name": "轿顶山",
+  "aliases": [
+    "轿顶山",
+    "汉源轿顶山",
+    "360°观景平台"
+  ],
+  "region": "四川省雅安市汉源县",
+  "peak_elevation": 3550.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "fengding",
+      "name": "轿顶（主峰）",
+      "lat": 29.352,
+      "lng": 102.648,
+      "elevation": 3550.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "360°观贡嘎群峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "guanjingtai",
+      "name": "主观景台",
+      "lat": 29.348,
+      "lng": 102.645,
+      "elevation": 3500.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "露营与日出机位",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "id": "tiantaishan",
+  "name": "天台山",
+  "aliases": [
+    "佛宗道源",
+    "华顶山",
+    "华顶归云",
+    "国清寺",
+    "天台山"
+  ],
+  "region": "浙江省台州市天台县",
+  "peak_elevation": 1098.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 75
+  },
+  "viewpoints": [
+    {
+      "id": "huading_baijingtai",
+      "name": "华顶拜经台",
+      "lat": 29.1586,
+      "lng": 121.028,
+      "elevation": 1098.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "天台山主峰，观「华顶日出」",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "huading",
+      "name": "华顶山",
+      "lat": 29.17884,
+      "lng": 121.04221,
+      "elevation": 1138.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "天台主峰；维基29°10′44″N 121°02′32″E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "shiliang",
+      "name": "石梁飞瀑",
+      "lat": 29.165,
+      "lng": 121.055,
+      "elevation": 680.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "瀑布与山谷雾",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

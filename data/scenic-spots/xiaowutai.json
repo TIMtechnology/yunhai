@@ -1,0 +1,53 @@
+{
+  "id": "xiaowutai",
+  "name": "小五台山",
+  "aliases": [
+    "小五台",
+    "东台",
+    "河北小五台山",
+    "河北屋脊"
+  ],
+  "region": "河北省张家口市蔚县/涿鹿县",
+  "peak_elevation": 2882.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 14,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "dongtai",
+      "name": "东台",
+      "lat": 39.8742,
+      "lng": 114.5917,
+      "elevation": 2882.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "五台之首，河北第一高峰；核心区需预约",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

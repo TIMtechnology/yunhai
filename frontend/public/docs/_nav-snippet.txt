@@ -1,0 +1,13 @@
+<!-- 文档站统一导航（复制到各页，当前页链接加 class="active font-semibold"） -->
+<nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-x-4 gap-y-2 text-sm" style="background:#fff;border-bottom:1px solid #e2e8f0">
+  <a href="index.html">使用指南</a>
+  <a href="data-sources.html">数据来源</a>
+  <a href="prediction-model.html">预测模型</a>
+  <a href="architecture.html">架构</a>
+  <a href="ui-design.html">界面设计</a>
+  <a href="cloudsea-forecast.html">云海预测方法</a>
+  <a href="sunrise-cloudsea.html">日出云海</a>
+  <a href="how-to-read-meteogram.html">Meteogram</a>
+  <a href="cloudsea-conditions.html">形成条件</a>
+  <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+</nav>

@@ -4,45 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meteogram 怎么看：用气象详图判断云海与日出概率</title>
-  <meta name="description" content="Meteogram 气象详图怎么看：解释温度、湿度、降水、分层云量、风速、阵风和风向如何影响云海预测与日出概率。" />
-  <meta name="keywords" content="Meteogram怎么看,气象详图,云海预测,日出概率,分层云量,风速阵风,Open-Meteo" />
+  <meta name="description" content="Meteogram 气象详图：温度、湿度降水、分层云量、风速阵风如何辅助云海与日出判断。" />
+  <meta name="keywords" content="Meteogram怎么看,气象详图,云海预测,日出概率,分层云量,Open-Meteo" />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/how-to-read-meteogram.html" />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Meteogram 怎么看：用气象详图判断云海与日出概率" />
-  <meta property="og:description" content="理解温度、湿度、降水、分层云量和风场在日出云海预测中的含义。" />
-  <meta property="og:url" content="https://yunhai.timkj.com/docs/how-to-read-meteogram.html" />
   <meta property="og:image" content="https://yunhai.timkj.com/docs/images/meteogram-panel.png" />
   <style>
     body{margin:0;background:#f8fafc;color:#334155;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;line-height:1.75}
-    nav{background:white;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:16px;flex-wrap:wrap;position:sticky;top:0}
-    nav a,a{color:#0284c7;text-decoration:none}main{max-width:920px;margin:auto;padding:32px 20px}.card{background:white;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
-    h1,h2,h3{color:#0f172a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.pill{background:#eff6ff;border-radius:14px;padding:14px}.shot{max-width:360px;width:100%;border-radius:16px;border:1px solid #cbd5e1}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:12px 16px;flex-wrap:wrap;position:sticky;top:0;z-index:10;font-size:14px}
+    nav a{color:#475569;text-decoration:none}nav a:hover,nav a.active{color:#0369a1;font-weight:600}
+    main{max-width:920px;margin:auto;padding:32px 20px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
+    h1,h2{color:#0f172a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.pill{background:#eff6ff;border-radius:14px;padding:14px}
+    .shot{max-width:360px;width:100%;border-radius:16px;border:1px solid #cbd5e1}a{color:#0284c7}
   </style>
 </head>
 <body>
   <nav>
-    <a href="index.html">使用指南</a><a href="cloudsea-forecast.html">云海预测方法</a><a href="sunrise-cloudsea.html">日出云海</a><a href="how-to-read-meteogram.html">Meteogram</a><a href="cloudsea-conditions.html">形成条件</a><a href="/">打开预测工具</a>
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="cloudsea-forecast.html">云海预测方法</a>
+    <a href="sunrise-cloudsea.html">日出云海</a>
+    <a href="how-to-read-meteogram.html" class="active">Meteogram</a>
+    <a href="cloudsea-conditions.html">形成条件</a>
+    <a href="/" style="margin-left:auto">← 返回应用</a>
   </nav>
   <main>
     <section class="card">
       <h1>Meteogram 怎么看：用气象详图判断云海与日出概率</h1>
-      <p>Meteogram 是把逐小时天气压缩成一张气象详图。本站的 Meteogram 用于解释云海概率和日出概率：它展示温度变化、湿度和降水、分层云量、风速阵风以及风向。</p>
-      <img class="shot" src="/docs/images/meteogram-panel.png" alt="云海预测 Meteogram 气象详图示例" />
+      <p>Meteogram 把逐小时天气压缩成一张详图。本站 Meteogram 与右侧云海/日出概率、底部时间轴<strong>同一套 Open-Meteo 数据</strong>，用于解释「为什么这一小时是这个概率」。</p>
+      <img class="shot" src="/docs/images/meteogram-panel.png" alt="Meteogram 气象详图示例" />
     </section>
     <section class="card">
       <h2>四个面板分别看什么</h2>
       <div class="grid">
-        <div class="pill"><strong>温度</strong><br />夜间降温和日出前冷却有利于近地层水汽凝结。</div>
-        <div class="pill"><strong>湿度 / 降水</strong><br />湿度高说明水汽条件较好，前期降水可能提供水汽补给。</div>
-        <div class="pill"><strong>分层云量</strong><br />低云更接近云海主体，中高云更多影响日出遮挡。</div>
-        <div class="pill"><strong>风速 / 阵风 / 风向</strong><br />弱风利于云雾维持，阵风大时云层容易被破坏。</div>
+        <div class="pill"><strong>温度</strong><br />夜间降温与日出前冷却有利于近地层水汽凝结。</div>
+        <div class="pill"><strong>湿度 / 降水</strong><br />高湿是云海前提；48h 内降水后转晴有时利于次日云海。</div>
+        <div class="pill"><strong>分层云量</strong><br />低云对应模式网格层云；若低云≈0 但能见度很低，规则会推断谷地雾。</div>
+        <div class="pill"><strong>风速 / 阵风 / 风向</strong><br />弱风利于云雾维持；风向按「风吹向」展示。</div>
       </div>
     </section>
     <section class="card">
-      <h2>为什么要配合 ML 和规则引擎</h2>
-      <p>Meteogram 展示的是气象事实，规则引擎把事实转成可解释评分，ML 模型再根据历史标注修正点位偏差。三者结合，比单看天气图标更适合判断日出云海。</p>
-      <p>继续阅读：<a href="cloudsea-forecast.html">云海预测方法</a>、<a href="cloudsea-conditions.html">云海形成条件</a>。</p>
+      <h2>与规则、ML 的配合</h2>
+      <p>Meteogram 展示<strong>气象事实</strong>；规则引擎做型态识别与能见度补偿；ML 在 03:00–07:00 按标注校准点位偏差。分享竖版长图会嵌入 Meteogram 与日出窗口逐时表，便于转发讨论。</p>
+      <p><a href="cloudsea-forecast.html">云海预测方法</a> · <a href="cloudsea-conditions.html">云海形成条件</a> · <a href="prediction-model.html">预测模型</a></p>
     </section>
   </main>
 </body>

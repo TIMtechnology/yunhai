@@ -1,0 +1,66 @@
+{
+  "id": "guangwushan",
+  "name": "光雾山",
+  "aliases": [
+    "光雾山",
+    "米仓山",
+    "光雾山诺水河"
+  ],
+  "region": "四川省巴中市南江县",
+  "peak_elevation": 2507.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "sunrise_months": [
+      10,
+      11,
+      3,
+      4
+    ],
+    "sunrise_best": "autumn_spring"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 85
+  },
+  "viewpoints": [
+    {
+      "id": "xianglushan",
+      "name": "香炉山",
+      "lat": 32.682,
+      "lng": 106.785,
+      "elevation": 2310.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "光雾山核心，云海+红叶",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "heaven_road",
+      "name": "云天梯/天然画廊",
+      "lat": 32.675,
+      "lng": 106.778,
+      "elevation": 1850.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "山谷雾海",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

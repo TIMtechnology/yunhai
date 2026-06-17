@@ -1,0 +1,65 @@
+{
+  "id": "qilianshan",
+  "name": "祁连山（卓尔山）",
+  "aliases": [
+    "祁连山",
+    "卓尔山",
+    "牛心山",
+    "阿咪东索"
+  ],
+  "region": "青海省海北州祁连县",
+  "peak_elevation": 4667.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "zhuoershan",
+      "name": "卓尔山观景台",
+      "lat": 38.962,
+      "lng": 100.082,
+      "elevation": 3100.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "对望牛心山（阿咪东索4667m）",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "niuxinshan",
+      "name": "牛心山",
+      "lat": 38.948,
+      "lng": 100.095,
+      "elevation": 4667.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "祁连县标志雪山",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 2.5,
+    "span_lat": 2.0
+  }
+}

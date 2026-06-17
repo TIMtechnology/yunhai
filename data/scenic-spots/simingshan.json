@@ -1,0 +1,69 @@
+{
+  "id": "simingshan",
+  "name": "四明山",
+  "aliases": [
+    "四明山",
+    "金钟山",
+    "仰天湖",
+    "浙东红色旅游带"
+  ],
+  "region": "浙江省宁波市余姚市/奉化区",
+  "peak_elevation": 1011.6,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "jinzhongshan",
+      "name": "金钟山（四明主峰）",
+      "lat": 29.768,
+      "lng": 121.198,
+      "elevation": 1012.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "四明山最高峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "yangtianhu",
+      "name": "仰天湖",
+      "lat": 29.752,
+      "lng": 121.082,
+      "elevation": 780.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "高山湿地晨雾",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

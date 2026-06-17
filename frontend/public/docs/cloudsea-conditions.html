@@ -4,51 +4,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>云海形成条件：湿度、逆温、低云和风速如何影响云海</title>
-  <meta name="description" content="云海形成条件科普：湿度、逆温层、低云高度、能见度、风速、地形高差和日出窗口如何共同影响云海出现概率。" />
-  <meta name="keywords" content="云海形成条件,云海天气条件,逆温层,低云高度,湿度,风速,能见度,日出云海" />
+  <meta name="description" content="云海形成条件：湿度、逆温、低云、能见度、近库水体与日出窗口如何共同影响概率。" />
+  <meta name="keywords" content="云海形成条件,逆温层,低云,湿度,风速,能见度,日出云海" />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/cloudsea-conditions.html" />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="云海形成条件：湿度、逆温、低云和风速如何影响云海" />
-  <meta property="og:description" content="解释云海形成的关键气象条件，以及如何用云海预测工具判断出行窗口。" />
-  <meta property="og:url" content="https://yunhai.timkj.com/docs/cloudsea-conditions.html" />
   <meta property="og:image" content="https://yunhai.timkj.com/docs/images/share-og-landscape.png" />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": "云海形成条件：湿度、逆温、低云和风速如何影响云海",
-    "inLanguage": "zh-CN",
-    "mainEntityOfPage": "https://yunhai.timkj.com/docs/cloudsea-conditions.html"
-  }
-  </script>
   <style>
     body{margin:0;background:#f8fafc;color:#334155;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;line-height:1.75}
-    nav{background:white;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:16px;flex-wrap:wrap;position:sticky;top:0}
-    nav a,a{color:#0284c7;text-decoration:none}main{max-width:920px;margin:auto;padding:32px 20px}.card{background:white;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
-    h1,h2,h3{color:#0f172a}.condition{border-left:4px solid #38bdf8;background:#eff6ff;border-radius:0 12px 12px 0;padding:14px 18px;margin:12px 0}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:12px 16px;flex-wrap:wrap;position:sticky;top:0;z-index:10;font-size:14px}
+    nav a{color:#475569;text-decoration:none}nav a:hover,nav a.active{color:#0369a1;font-weight:600}
+    main{max-width:920px;margin:auto;padding:32px 20px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
+    h1,h2{color:#0f172a}.condition{border-left:4px solid #38bdf8;background:#eff6ff;border-radius:0 12px 12px 0;padding:14px 18px;margin:12px 0}
+    a{color:#0284c7}
   </style>
 </head>
 <body>
   <nav>
-    <a href="index.html">使用指南</a><a href="cloudsea-forecast.html">云海预测方法</a><a href="sunrise-cloudsea.html">日出云海</a><a href="how-to-read-meteogram.html">Meteogram</a><a href="cloudsea-conditions.html">形成条件</a><a href="/">打开预测工具</a>
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="cloudsea-forecast.html">云海预测方法</a>
+    <a href="sunrise-cloudsea.html">日出云海</a>
+    <a href="how-to-read-meteogram.html">Meteogram</a>
+    <a href="cloudsea-conditions.html" class="active">形成条件</a>
+    <a href="/" style="margin-left:auto">← 返回应用</a>
   </nav>
   <main>
     <section class="card">
       <h1>云海形成条件：湿度、逆温、低云和风速如何影响云海</h1>
-      <p>云海通常出现在山谷湿度充足、低层空气稳定、风速不强且观景点高于云雾层的清晨。日出前后是最重要的判断窗口，因此本站把 03:00-07:00 作为云海与日出联合预测的核心时段。</p>
+      <p>观赏级云海通常出现在：山谷湿度充足、观景点高于云雾层、风速不强，且日出前后为最佳判断窗口。本站以 <strong>03:00–07:00</strong> 作为云海与日出联合预测的核心时段。</p>
     </section>
     <section class="card">
       <h2>关键条件</h2>
-      <div class="condition"><strong>湿度充足：</strong>谷地空气接近饱和时，水汽更容易凝结成雾或低云。</div>
-      <div class="condition"><strong>逆温或稳定层：</strong>稳定层像盖子一样限制垂直发展，使云雾在山谷水平铺展。</div>
-      <div class="condition"><strong>低云高度合适：</strong>云顶低于观景点、云底覆盖谷地时，更容易看到“云海”而不是被雾包围。</div>
-      <div class="condition"><strong>弱风但不完全无扰动：</strong>风太大不利于维持云雾，微风有时可带来流动感。</div>
-      <div class="condition"><strong>日出遮挡较少：</strong>中高云过多会遮挡太阳，即使云海存在也可能看不到日出。</div>
+      <div class="condition"><strong>湿度充足：</strong>近地层 RH 高时易形成雾或低云；模式报 RH 72–85% 仍可能有云海（尤其配合低能见度）。</div>
+      <div class="condition"><strong>逆温或稳定层：</strong>有利于云雾在山谷水平铺展；但<strong>近库辐射雾</strong>日上层可偏干，不一定需要强逆温。</div>
+      <div class="condition"><strong>低云 / 能见度：</strong>模式低云偏低时，<strong>能见度 300–600 m</strong> 常是谷地雾/层云的直接证据。</div>
+      <div class="condition"><strong>近库大型水体：</strong>山脚水库蒸发 + 谷地冷却可形成填谷型雾（五女山桓龙湖等）；本站通过规则 Type B 识别，不依赖 ML。</div>
+      <div class="condition"><strong>弱风：</strong>微风利于维持；强风破坏稳定结构。</div>
+      <div class="condition"><strong>日出遮挡：</strong>中高云过多会挡太阳；需同时看日出概率与云海概率。</div>
     </section>
     <section class="card">
-      <h2>如何用本站验证这些条件</h2>
-      <p>在预测页查看 Meteogram 的温度、湿度/降水、云量层和风速面板，再结合规则引擎、ML 模型和分享图中的日出窗口逐时表，判断是否值得前往。</p>
+      <h2>如何用本站验证</h2>
+      <p>在预测页展开 Meteogram，查看日出窗口的湿度、云量与风；阅读因子面板中的「云海型态」与 ML/规则对照；使用分享图与 <a href="sunrise-cloudsea.html">日出云海指南</a> 综合决策。</p>
       <p><a href="how-to-read-meteogram.html">Meteogram 怎么看</a> · <a href="cloudsea-forecast.html">云海预测方法</a> · <a href="/">打开实时预测</a></p>
     </section>
   </main>

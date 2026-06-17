@@ -1,0 +1,66 @@
+{
+  "id": "changbaishan",
+  "name": "长白山",
+  "aliases": [
+    "长白山天池",
+    "白头山天池",
+    "吉林长白山"
+  ],
+  "region": "吉林省延边州安图县/白山市抚松县",
+  "peak_elevation": 2691.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 70
+  },
+  "viewpoints": [
+    {
+      "id": "tianwenfeng",
+      "name": "天文峰（北坡主峰观景台）",
+      "lat": 42.0119,
+      "lng": 128.0708,
+      "elevation": 2670.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "北坡倒站车终点，俯瞰天池；天池水面约2189m",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "xipo_guanjingtai",
+      "name": "西坡天池观景台",
+      "lat": 41.9978,
+      "lng": 128.0562,
+      "elevation": 2500.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "西坡1442级台阶顶端，正面观天池",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

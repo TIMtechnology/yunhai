@@ -1,0 +1,67 @@
+{
+  "id": "nalati",
+  "name": "那拉提",
+  "aliases": [
+    "那拉提",
+    "那拉提草原",
+    "空中草原"
+  ],
+  "region": "新疆伊犁州新源县",
+  "peak_elevation": 2200.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 72
+  },
+  "viewpoints": [
+    {
+      "id": "kongzhong_caoyuan",
+      "name": "空中草原",
+      "lat": 43.268,
+      "lng": 84.018,
+      "elevation": 2200.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "核心观景点",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "hegu_caoyuan",
+      "name": "河谷草原",
+      "lat": 43.252,
+      "lng": 84.035,
+      "elevation": 1800.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "河谷晨雾",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "id": "qianshan",
+  "name": "鞍山千山",
+  "aliases": [
+    "千山",
+    "千朵莲花山",
+    "鞍山千山风景区"
+  ],
+  "region": "辽宁省鞍山市铁东区",
+  "peak_elevation": 708.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 72
+  },
+  "viewpoints": [
+    {
+      "id": "wufoding",
+      "name": "五佛顶",
+      "lat": 40.0978,
+      "lng": 123.1012,
+      "elevation": 554.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "千山第二高峰，观云海主点位",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "xianrentai",
+      "name": "仙人台",
+      "lat": 40.1025,
+      "lng": 123.1088,
+      "elevation": 708.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "千山最高峰，北线硬核徒步终点",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

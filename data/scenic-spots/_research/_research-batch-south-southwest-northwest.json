@@ -1,0 +1,1852 @@
+[
+  {
+    "id": "wugongshan",
+    "name": "武功山",
+    "aliases": ["萍乡武功山", "白鹤峰", "江南第一高峰", "发云界"],
+    "region": "江西省萍乡市芦溪县/吉安市安福县",
+    "peak_elevation": 1918.3,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 7, 8, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 75
+    },
+    "cloud_region": { "span_lng": 1.8, "span_lat": 1.2 },
+    "fame_note": "十万亩高山草甸+「江南三大名山」之一，雾日超庐山，金顶日出云海为户外摄影顶流目的地。",
+    "viewpoints": [
+      {
+        "id": "jinding",
+        "name": "金顶（白鹤峰）",
+        "lat": 27.45528,
+        "lng": 114.17333,
+        "elevation": 1918,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "维基27°27′19″N 114°10′24″E；江西境内第一高峰"
+      },
+      {
+        "id": "fayunjie",
+        "name": "发云界",
+        "lat": 27.492,
+        "lng": 114.128,
+        "elevation": 1628,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "武功山徒步经典段，草甸云海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "sanqingshan",
+    "name": "三清山",
+    "aliases": ["三清山", "玉京峰", "天下第一奇山"],
+    "region": "江西省上饶市玉山县/德兴市",
+    "peak_elevation": 1816.9,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [3, 4, 5, 9, 10, 11, 12],
+      "sunrise_months": [3, 4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "世界自然遗产，花岗岩峰林+云海「巨蟒出山」「东方女神」同框，与黄山并称江南云海名山。",
+    "viewpoints": [
+      {
+        "id": "yujingfeng",
+        "name": "玉京峰",
+        "lat": 28.91583,
+        "lng": 118.06444,
+        "elevation": 1817,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "三清主峰；维基28°54′57″N 118°03′52″E"
+      },
+      {
+        "id": "yangguangyan",
+        "name": "阳光海岸栈道",
+        "lat": 28.908,
+        "lng": 118.072,
+        "elevation": 1580,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "高空栈道观云海，日出侧向视角"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "huangling",
+    "name": "婺源篁岭",
+    "aliases": ["篁岭", "篁岭晒秋", "篁岭景区"],
+    "region": "江西省上饶市婺源县江湾镇",
+    "peak_elevation": 680,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [3, 4, 10, 11, 12],
+      "sunrise_months": [3, 4, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 82
+    },
+    "cloud_region": { "span_lng": 0.6, "span_lat": 0.5 },
+    "fame_note": "「挂在山崖上的古村」，晨雾与晒秋同框是网红摄影符号，山谷云海填充徽派村落下方。",
+    "viewpoints": [
+      {
+        "id": "shaiqiu_guanjing",
+        "name": "晒秋观景台",
+        "lat": 29.294,
+        "lng": 117.862,
+        "elevation": 630,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "天街东侧，俯瞰村落与晨雾"
+      },
+      {
+        "id": "yihao_guanjingtai",
+        "name": "一号观景台",
+        "lat": 29.292,
+        "lng": 117.865,
+        "elevation": 660,
+        "coord_confidence": "low",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "360°梯田与山谷雾海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "wangxiangu",
+    "name": "望仙谷",
+    "aliases": ["望仙谷", "望仙谷景区", "上饶望仙谷"],
+    "region": "江西省上饶市广信区望仙乡",
+    "peak_elevation": 580,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [3, 4, 5, 9, 10, 11],
+      "sunrise_months": [4, 5, 9, 10],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 85
+    },
+    "cloud_region": { "span_lng": 0.5, "span_lat": 0.4 },
+    "fame_note": "峡谷悬崖民宿群，晨雾与灯光夜景出圈；典型谷底雾海填充峡谷。",
+    "viewpoints": [
+      {
+        "id": "xiansu_guanjing",
+        "name": "悬崖民宿观景带",
+        "lat": 28.417,
+        "lng": 117.978,
+        "elevation": 520,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区核心峡谷东侧高台"
+      },
+      {
+        "id": "baizhang_pubu",
+        "name": "百丈瀑上方平台",
+        "lat": 28.415,
+        "lng": 117.975,
+        "elevation": 480,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "瀑布与峡谷雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "qiyunshan",
+    "name": "齐云山",
+    "aliases": ["齐云山", "白岳", "江南小武当", "月华天街"],
+    "region": "安徽省黄山市休宁县",
+    "peak_elevation": 585.4,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 80
+    },
+    "cloud_region": { "span_lng": 0.8, "span_lat": 0.6 },
+    "fame_note": "中国四大道教名山之一，月华天街丹霞崖壁与谷底云海是经典摄影题材。",
+    "viewpoints": [
+      {
+        "id": "yuehuatianjie",
+        "name": "月华天街",
+        "lat": 29.808,
+        "lng": 118.04,
+        "elevation": 540,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "崖壁道观与山谷雾海"
+      },
+      {
+        "id": "feiyunding",
+        "name": "飞云亭/齐云山顶",
+        "lat": 29.812,
+        "lng": 118.035,
+        "elevation": 585,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "主峰俯瞰休宁盆地"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "tianzhushan",
+    "name": "天柱山",
+    "aliases": ["天柱山", "皖山", "古南岳", "天柱峰"],
+    "region": "安徽省安庆市潜山市",
+    "peak_elevation": 1489.8,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 7, 8, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 72
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "世界地质公园，「天柱一柱擎天」+云海佛光；天池峰远眺天柱峰是经典构图。",
+    "viewpoints": [
+      {
+        "id": "tianchifeng",
+        "name": "天池峰",
+        "lat": 30.738,
+        "lng": 116.448,
+        "elevation": 1420,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "远眺天柱峰、观日出云海主点位"
+      },
+      {
+        "id": "tianzhufeng",
+        "name": "天柱峰",
+        "lat": 30.74167,
+        "lng": 116.45028,
+        "elevation": 1489,
+        "coord_confidence": "high",
+        "tags": ["cloudsea"],
+        "note": "主峰不可攀登；维基30°44′30″N 116°27′01″E"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "jiuhuashan",
+    "name": "九华山",
+    "aliases": ["九华山", "九子山", "东南第一山", "地藏菩萨道场"],
+    "region": "安徽省池州市青阳县",
+    "peak_elevation": 1342,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 10,
+      "rh_threshold": 75
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "中国四大佛教名山，天台峰日出+山间云海是朝圣与摄影双热点。",
+    "viewpoints": [
+      {
+        "id": "tiantai",
+        "name": "天台峰（天台寺）",
+        "lat": 30.48222,
+        "lng": 117.80444,
+        "elevation": 1306,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "经典日出点；景区坐标30°28′56″N 117°48′16″E"
+      },
+      {
+        "id": "shiwangfeng",
+        "name": "十王峰",
+        "lat": 30.478,
+        "lng": 117.804,
+        "elevation": 1342,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "九华山第一高峰"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "tiantaishan",
+    "name": "天台山",
+    "aliases": ["天台山", "华顶山", "国清寺", "佛宗道源"],
+    "region": "浙江省台州市天台县",
+    "peak_elevation": 1138,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 7, 8, 9, 10],
+      "sunrise_months": [4, 5, 6, 9, 10],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 10,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "「华顶归云」为天台八景之首，华顶山云海与国清寺晨钟同框是浙东经典。",
+    "viewpoints": [
+      {
+        "id": "huading",
+        "name": "华顶山",
+        "lat": 29.178843,
+        "lng": 121.042213,
+        "elevation": 1138,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "天台主峰；维基29°10′44″N 121°02′32″E"
+      },
+      {
+        "id": "shiliang",
+        "name": "石梁飞瀑",
+        "lat": 29.165,
+        "lng": 121.055,
+        "elevation": 680,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "瀑布与山谷雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "simingshan",
+    "name": "四明山",
+    "aliases": ["四明山", "金钟山", "仰天湖", "浙东红色旅游带"],
+    "region": "浙江省宁波市余姚市/奉化区",
+    "peak_elevation": 1011.6,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 10,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "浙东名山，仰天湖高山湿地与金钟山云海在摄影社群有稳定出片率。",
+    "viewpoints": [
+      {
+        "id": "jinzhongshan",
+        "name": "金钟山（四明主峰）",
+        "lat": 29.768,
+        "lng": 121.198,
+        "elevation": 1012,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "四明山最高峰"
+      },
+      {
+        "id": "yangtianhu",
+        "name": "仰天湖",
+        "lat": 29.752,
+        "lng": 121.082,
+        "elevation": 780,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "高山湿地晨雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "yandangshan",
+    "name": "雁荡山",
+    "aliases": ["雁荡山", "百岗尖", "东南第一山", "雁荡三绝"],
+    "region": "浙江省温州市乐清市",
+    "peak_elevation": 1108,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 75
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "世界地质公园，灵峰灵岩云海与火山岩峰林结合，日出摄影以灵峰方向见长。",
+    "viewpoints": [
+      {
+        "id": "baigangjian",
+        "name": "百岗尖",
+        "lat": 28.37,
+        "lng": 121.06,
+        "elevation": 1108,
+        "coord_confidence": "high",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "雁荡主峰；维基28°22′N 121°04′E"
+      },
+      {
+        "id": "lingfeng",
+        "name": "灵峰",
+        "lat": 28.385,
+        "lng": 121.095,
+        "elevation": 320,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "经典日出机位，夜观灵峰"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "wuyishan",
+    "name": "武夷山",
+    "aliases": ["武夷山", "天游峰", "九曲溪", "丹山碧水"],
+    "region": "福建省南平市武夷山市",
+    "peak_elevation": 717.7,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 80
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "世界双遗产，「不登天游，等于白游」——天游峰俯瞰九曲溪云气是华南丹霞云海代表。",
+    "viewpoints": [
+      {
+        "id": "tianyoufeng",
+        "name": "天游峰",
+        "lat": 27.658,
+        "lng": 117.948,
+        "elevation": 410,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "俯瞰九曲溪与丹霞峰林"
+      },
+      {
+        "id": "sanyangfeng",
+        "name": "三仰峰",
+        "lat": 27.665,
+        "lng": 117.955,
+        "elevation": 718,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea"],
+        "note": "景区最高峰717.7m"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "taimushan",
+    "name": "太姥山",
+    "aliases": ["太姥山", "海上仙都", "太姥娘娘"],
+    "region": "福建省宁德市福鼎市",
+    "peak_elevation": 917.3,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11, 12],
+      "sunrise_months": [4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 0.8, "span_lat": 0.6 },
+    "fame_note": "「山海大观」花岗岩峰林，晴雾天东海云带与奇石同框，日出云海在闽东热度高。",
+    "viewpoints": [
+      {
+        "id": "fengding",
+        "name": "覆鼎峰（峰顶）",
+        "lat": 27.105,
+        "lng": 120.135,
+        "elevation": 917,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "太姥主峰"
+      },
+      {
+        "id": "guanriyan",
+        "name": "观日岩",
+        "lat": 27.102,
+        "lng": 120.128,
+        "elevation": 860,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区经典日出点"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "gushan",
+    "name": "福州鼓山",
+    "aliases": ["鼓山", "涌泉寺", "福州鼓山"],
+    "region": "福建省福州市晋安区",
+    "peak_elevation": 919.1,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 10,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 0.8, "span_lat": 0.6 },
+    "fame_note": "福州城中山，大顶峰俯瞰闽江平原平流雾与福州城日出是本地经典机位。",
+    "viewpoints": [
+      {
+        "id": "dadingfeng",
+        "name": "大顶峰",
+        "lat": 26.05666,
+        "lng": 119.390538,
+        "elevation": 919,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "鼓山最高峰；国保坐标26°03′24″N 119°23′26″E"
+      },
+      {
+        "id": "yongquansi",
+        "name": "涌泉寺观景台",
+        "lat": 26.052,
+        "lng": 119.388,
+        "elevation": 450,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea"],
+        "note": "山腰观福州城雾海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "yunding",
+    "name": "永泰云顶",
+    "aliases": ["云顶", "永泰云顶", "中国云顶", "青云山云顶"],
+    "region": "福建省福州市永泰县",
+    "peak_elevation": 1070,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [3, 4, 5, 10, 11, 12],
+      "sunrise_months": [3, 4, 10, 11],
+      "sunrise_best": "spring"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 10,
+      "rh_threshold": 80
+    },
+    "cloud_region": { "span_lng": 0.8, "span_lat": 0.6 },
+    "fame_note": "高山杜鹃+梯田花海与云顶天池云海，春季「云顶日出」是福建网红题材。",
+    "viewpoints": [
+      {
+        "id": "yunding_tianchi",
+        "name": "云顶天池",
+        "lat": 25.885,
+        "lng": 118.728,
+        "elevation": 1000,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区核心高山湖泊"
+      },
+      {
+        "id": "caochang",
+        "name": "高山草甸",
+        "lat": 25.882,
+        "lng": 118.732,
+        "elevation": 1050,
+        "coord_confidence": "low",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "草甸云海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "fanjingshan",
+    "name": "梵净山",
+    "aliases": ["梵净山", "红云金顶", "蘑菇石", "弥勒道场"],
+    "region": "贵州省铜仁市江口县/印江县",
+    "peak_elevation": 2572,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 7, 8, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 82
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "世界自然遗产，云瀑禅雾+红云金顶「鸿运金顶」；蘑菇石与云海同框是贵州顶流。",
+    "viewpoints": [
+      {
+        "id": "hongyunjinding",
+        "name": "红云金顶",
+        "lat": 27.886,
+        "lng": 108.672,
+        "elevation": 2336,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "新金顶，晨间红云瑞气"
+      },
+      {
+        "id": "mogushi",
+        "name": "蘑菇石",
+        "lat": 27.884,
+        "lng": 108.668,
+        "elevation": 2310,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "标志性景观；山体中心27°53′N 108°40′E"
+      },
+      {
+        "id": "laojinding",
+        "name": "老金顶（月镜山）",
+        "lat": 27.888,
+        "lng": 108.665,
+        "elevation": 2493,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea"],
+        "note": "梵净第二高峰"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "jiucaiping",
+    "name": "韭菜坪",
+    "aliases": ["韭菜坪", "贵州屋脊", "阿西里西韭菜坪"],
+    "region": "贵州省毕节市赫章县/六盘水市钟山区",
+    "peak_elevation": 2900.6,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9, 10],
+      "sunrise_months": [6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 70
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "贵州最高峰，高山草甸+云海+韭菜花海，夏季「云上草原」日出是黔西北代表。",
+    "viewpoints": [
+      {
+        "id": "zhupeak",
+        "name": "大韭菜坪主峰",
+        "lat": 26.872,
+        "lng": 104.618,
+        "elevation": 2901,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "贵州海拔最高点"
+      },
+      {
+        "id": "fengche",
+        "name": "风车观景台",
+        "lat": 26.868,
+        "lng": 104.625,
+        "elevation": 2750,
+        "coord_confidence": "low",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "风电场与云海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "niubeishan",
+    "name": "牛背山",
+    "aliases": ["牛背山", "360°观景平台", "亚洲最大观景平台", "云瀑之乡"],
+    "region": "四川省雅安市荥经县/甘孜州泸定县",
+    "peak_elevation": 3666,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 7, 8, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "中国摄影朝圣地，360°俯瞰贡嘎、峨眉等蜀中名山，云瀑日出与星轨齐名。",
+    "viewpoints": [
+      {
+        "id": "guangmingding",
+        "name": "光明顶（3666观景台）",
+        "lat": 29.775,
+        "lng": 102.374,
+        "elevation": 3666,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区核心观景平台；peakwiki主峰29.77518°N 102.37380°E"
+      },
+      {
+        "id": "jieyuanfang",
+        "name": "街心花园",
+        "lat": 29.768,
+        "lng": 102.368,
+        "elevation": 3550,
+        "coord_confidence": "low",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "住宿区周边观贡嘎与云海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "jiaodingshan",
+    "name": "轿顶山",
+    "aliases": ["轿顶山", "汉源轿顶山", "360°观景平台"],
+    "region": "四川省雅安市汉源县",
+    "peak_elevation": 3550,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "与牛背山齐名的贡嘎观山平台，大渡河峡谷云海+贡嘎日照金山是经典组合。",
+    "viewpoints": [
+      {
+        "id": "fengding",
+        "name": "轿顶（主峰）",
+        "lat": 29.352,
+        "lng": 102.648,
+        "elevation": 3550,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "360°观贡嘎群峰"
+      },
+      {
+        "id": "guanjingtai",
+        "name": "主观景台",
+        "lat": 29.348,
+        "lng": 102.645,
+        "elevation": 3500,
+        "coord_confidence": "low",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "露营与日出机位"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "huajian",
+    "name": "华尖",
+    "aliases": ["华尖", "华尖山", "黑石城"],
+    "region": "四川省甘孜州泸定县/雅安市荥经县",
+    "peak_elevation": 3540,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "贡嘎东坡小众机位，与黑石城、冷噶措同属贡嘎摄影带，云海贡嘎同框出片率高。",
+    "viewpoints": [
+      {
+        "id": "fengding",
+        "name": "华尖山顶",
+        "lat": 29.582,
+        "lng": 102.368,
+        "elevation": 3540,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "贡嘎东坡观山点"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "qianfoshan",
+    "name": "大邑千佛山",
+    "aliases": ["千佛山", "大邑千佛山", "千佛山景区"],
+    "region": "四川省成都市大邑县",
+    "peak_elevation": 3060,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [5, 6, 7, 8, 9, 10],
+      "sunrise_months": [5, 6, 7, 9, 10],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 72
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "成都近郊避暑与云海目的地，夏季成都平原热雾抬升时山顶易见云海。",
+    "viewpoints": [
+      {
+        "id": "jinding",
+        "name": "千佛山金顶",
+        "lat": 30.978,
+        "lng": 103.278,
+        "elevation": 3060,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区最高点"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "wawushan",
+    "name": "瓦屋山",
+    "aliases": ["瓦屋山", "瓦屋山金顶", "桌山", "蜀中千岛湖"],
+    "region": "四川省眉山市洪雅县",
+    "peak_elevation": 3720,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 7, 8, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 75
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "亚洲最大桌山，金顶平台云海如「云上桌面」；用户所提「金顶」指此（峨眉山金顶已排除）。",
+    "viewpoints": [
+      {
+        "id": "jinding",
+        "name": "瓦屋山金顶",
+        "lat": 29.638,
+        "lng": 102.962,
+        "elevation": 3720,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "桌山顶面观云海"
+      },
+      {
+        "id": "lanxifeng",
+        "name": "兰溪绝壁",
+        "lat": 29.632,
+        "lng": 102.955,
+        "elevation": 3500,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "桌山边缘云瀑"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "yulongxueshan",
+    "name": "玉龙雪山",
+    "aliases": ["玉龙雪山", "扇子陡", "冰川公园", "北半球最南雪山"],
+    "region": "云南省丽江市玉龙纳西族自治县",
+    "peak_elevation": 5596,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [11, 12, 1, 2, 3, 4],
+      "sunrise_months": [11, 12, 1, 2, 3, 4],
+      "sunrise_best": "winter_spring"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 18,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "丽江标志，干季日照金山+丽江坝子云海；冰川公园4680平台观日出是经典路线。",
+    "viewpoints": [
+      {
+        "id": "bingchuan_gongyuan",
+        "name": "冰川公园（4680平台）",
+        "lat": 27.118,
+        "lng": 100.178,
+        "elevation": 4680,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "索道可达最高观景点"
+      },
+      {
+        "id": "ganhaizi",
+        "name": "甘海子",
+        "lat": 27.128,
+        "lng": 100.215,
+        "elevation": 3100,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "远眺扇子陡日照金山"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "meilixueshan",
+    "name": "梅里雪山",
+    "aliases": ["梅里雪山", "卡瓦格博", "太子十三峰", "飞来寺"],
+    "region": "云南省迪庆州德钦县",
+    "peak_elevation": 6740,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [10, 11, 12, 1, 2, 3, 4],
+      "sunrise_months": [10, 11, 12, 1, 2, 3, 4],
+      "sunrise_best": "winter_spring"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 60
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "藏区八大神山之首，飞来寺日照金山+澜沧江峡谷云海是顶级摄影题材。",
+    "viewpoints": [
+      {
+        "id": "feilaisi",
+        "name": "飞来寺观景台",
+        "lat": 28.451,
+        "lng": 98.918,
+        "elevation": 3400,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "经典日照金山机位"
+      },
+      {
+        "id": "wunongding",
+        "name": "雾浓顶观景台",
+        "lat": 28.438,
+        "lng": 98.905,
+        "elevation": 3600,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "更高视角看卡瓦格博"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "habaxueshan",
+    "name": "哈巴雪山",
+    "aliases": ["哈巴雪山", "哈巴黑海", "5396"],
+    "region": "云南省迪庆州香格里拉市/丽江市玉龙县",
+    "peak_elevation": 5396,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [10, 11, 12, 1, 2, 3, 4],
+      "sunrise_months": [10, 11, 12, 1, 2, 3, 4],
+      "sunrise_best": "winter_spring"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 18,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "与玉龙雪山隔虎跳峡相望，黑海营地与山顶观哈巴云海、日照金山。",
+    "viewpoints": [
+      {
+        "id": "heihai",
+        "name": "黑海",
+        "lat": 27.358,
+        "lng": 100.128,
+        "elevation": 4100,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "高山湖泊晨雾"
+      },
+      {
+        "id": "fengding",
+        "name": "哈巴主峰",
+        "lat": 27.322,
+        "lng": 100.118,
+        "elevation": 5396,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "登顶观云海（需技术攀登）"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "daochengyading",
+    "name": "稻城亚丁",
+    "aliases": ["亚丁", "稻城亚丁", "三怙主", "最后的香格里拉"],
+    "region": "四川省甘孜州稻城县",
+    "peak_elevation": 6032,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "三神山（仙乃日6032、央迈勇5958、夏诺多吉5958）+洛绒牛场晨雾，秋季「蓝色星球最后一片净土」。",
+    "viewpoints": [
+      {
+        "id": "luorongniuchang",
+        "name": "洛绒牛场",
+        "lat": 28.398,
+        "lng": 100.338,
+        "elevation": 4180,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "三神山经典前景"
+      },
+      {
+        "id": "chonggu_si",
+        "name": "冲古寺",
+        "lat": 28.412,
+        "lng": 100.352,
+        "elevation": 3880,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区门户观仙乃日"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "siguniangshan",
+    "name": "四姑娘山",
+    "aliases": ["四姑娘山", "幺妹峰", "斯古拉", "东方的阿尔卑斯"],
+    "region": "四川省阿坝州小金县",
+    "peak_elevation": 6247.8,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [5, 6, 7, 8, 9, 10],
+      "sunrise_months": [5, 6, 7, 9, 10],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "猫鼻梁观景台远眺四姑娘山日照金山+云海是川西门户经典机位。",
+    "viewpoints": [
+      {
+        "id": "maobiliang",
+        "name": "猫鼻梁观景台",
+        "lat": 31.058,
+        "lng": 102.885,
+        "elevation": 3500,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "公路观四姑娘山全景"
+      },
+      {
+        "id": "yaomeifeng",
+        "name": "幺妹峰",
+        "lat": 31.106357,
+        "lng": 102.901989,
+        "elevation": 6248,
+        "coord_confidence": "high",
+        "tags": ["cloudsea"],
+        "note": "主峰；维基31°06′23″N 102°54′07″E"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "gongga",
+    "name": "贡嘎山",
+    "aliases": ["贡嘎", "贡嘎雪山", "蜀山之王", "Minya Konka"],
+    "region": "四川省甘孜州康定市/泸定县",
+    "peak_elevation": 7508.9,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 18,
+      "rh_threshold": 60
+    },
+    "cloud_region": { "span_lng": 2.0, "span_lat": 1.5 },
+    "fame_note": "蜀山之王，子梅垭口/冷噶措/里索海等观贡嘎云海日照金山是川西摄影皇冠。",
+    "viewpoints": [
+      {
+        "id": "zimeiyakou",
+        "name": "子梅垭口",
+        "lat": 29.583,
+        "lng": 101.789,
+        "elevation": 4550,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "正面观贡嘎主峰"
+      },
+      {
+        "id": "lenggacuo",
+        "name": "冷噶措",
+        "lat": 29.568,
+        "lng": 101.812,
+        "elevation": 4500,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "贡嘎倒影+云海"
+      },
+      {
+        "id": "zhufeng",
+        "name": "贡嘎主峰",
+        "lat": 29.5953,
+        "lng": 101.8797,
+        "elevation": 7509,
+        "coord_confidence": "high",
+        "tags": ["cloudsea"],
+        "note": "29°35′43″N 101°52′47″E"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "guangwushan",
+    "name": "光雾山",
+    "aliases": ["光雾山", "米仓山", "光雾山诺水河"],
+    "region": "四川省巴中市南江县",
+    "peak_elevation": 2507,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [10, 11, 12, 1, 2, 3],
+      "sunrise_months": [10, 11, 3, 4],
+      "sunrise_best": "autumn_spring"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 85
+    },
+    "cloud_region": { "span_lng": 1.2, "span_lat": 1.0 },
+    "fame_note": "「中国最美秋色」之一，香炉山/cloud sea与红叶同框；冬季雾凇云海亦出名。",
+    "viewpoints": [
+      {
+        "id": "xianglushan",
+        "name": "香炉山",
+        "lat": 32.682,
+        "lng": 106.785,
+        "elevation": 2310,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "光雾山核心，云海+红叶"
+      },
+      {
+        "id": "heaven_road",
+        "name": "云天梯/天然画廊",
+        "lat": 32.675,
+        "lng": 106.778,
+        "elevation": 1850,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "山谷雾海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "jinfooshan",
+    "name": "南川金佛山",
+    "aliases": ["金佛山", "南川金佛山", "金佛山顶", "世界自然遗产"],
+    "region": "重庆市南川区",
+    "peak_elevation": 2251,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11, 12, 1, 2],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "世界自然遗产，金佛顶观巴蜀云海与冬季雾凇；与用户所提「南川金佛山」「金佛山」为同一景区。",
+    "viewpoints": [
+      {
+        "id": "jinfoding",
+        "name": "金佛顶",
+        "lat": 29.048,
+        "lng": 107.128,
+        "elevation": 2251,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区主峰"
+      },
+      {
+        "id": "lanchuan",
+        "name": "兰草坝/药池坝",
+        "lat": 29.042,
+        "lng": 107.135,
+        "elevation": 2100,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "高山草甸云海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "xiannvshan",
+    "name": "武隆仙女山",
+    "aliases": ["仙女山", "武隆仙女山", "东方瑞士"],
+    "region": "重庆市武隆区",
+    "peak_elevation": 2033,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [11, 12, 1, 2, 3, 4],
+      "sunrise_months": [11, 12, 1, 2, 3, 4],
+      "sunrise_best": "winter_spring"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "高山草原冬季雾凇与云海，乌江峡谷抬升雾形成「云上草原」景观。",
+    "viewpoints": [
+      {
+        "id": "caoyuan",
+        "name": "仙女山大草原",
+        "lat": 29.402,
+        "lng": 107.752,
+        "elevation": 1900,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "核心草原观云海"
+      },
+      {
+        "id": "tree_hotel",
+        "name": "树顶漫步/观光台",
+        "lat": 29.398,
+        "lng": 107.748,
+        "elevation": 1850,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "林冠层观雾海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "helanshan",
+    "name": "贺兰山",
+    "aliases": ["贺兰山", "苏峪口", "贺兰山国家森林公园"],
+    "region": "宁夏银川市贺兰县/内蒙古阿拉善盟",
+    "peak_elevation": 3556,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9],
+      "sunrise_months": [6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 2.0, "span_lat": 1.5 },
+    "fame_note": "银川平原西侧屏障，苏峪口看银川平原晨雾与贺兰山脊云带；西北干旱区少见云海场景。",
+    "viewpoints": [
+      {
+        "id": "suyukou",
+        "name": "苏峪口",
+        "lat": 38.942,
+        "lng": 106.182,
+        "elevation": 1800,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "贺兰山主景区入口"
+      },
+      {
+        "id": "aobaogou",
+        "name": "敖包沟/贺兰山主峰方向",
+        "lat": 38.968,
+        "lng": 106.145,
+        "elevation": 3200,
+        "coord_confidence": "low",
+        "tags": ["cloudsea"],
+        "note": "高海拔云带"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "liupanshan",
+    "name": "六盘山",
+    "aliases": ["六盘山", "陇山", "长征六盘山", "米缸山"],
+    "region": "宁夏固原市泾源县/甘肃省平凉市",
+    "peak_elevation": 2942,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9, 10],
+      "sunrise_months": [6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 72
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "「六盘山上高峰，红旗漫卷西风」；夏季云杉林与 ridge 云海是陇东代表。",
+    "viewpoints": [
+      {
+        "id": "migangshan",
+        "name": "米缸山（主峰）",
+        "lat": 35.522,
+        "lng": 106.278,
+        "elevation": 2942,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "六盘山最高峰"
+      },
+      {
+        "id": "liangdian",
+        "name": "六盘山红军长征纪念馆观景台",
+        "lat": 35.658,
+        "lng": 106.312,
+        "elevation": 2380,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "经典旅游观景点"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "kongtongshan",
+    "name": "崆峒山",
+    "aliases": ["崆峒山", "中华道教第一山", "西来第一山"],
+    "region": "甘肃省平凉市崆峒区",
+    "peak_elevation": 2176,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [5, 6, 7, 8, 9, 10],
+      "sunrise_months": [5, 6, 7, 9, 10],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 10,
+      "rh_threshold": 75
+    },
+    "cloud_region": { "span_lng": 0.8, "span_lat": 0.6 },
+    "fame_note": "道教圣地，香山顶俯瞰平凉河谷晨雾；陇东名山云海题材稳定。",
+    "viewpoints": [
+      {
+        "id": "xiangshan",
+        "name": "香山",
+        "lat": 35.668,
+        "lng": 106.542,
+        "elevation": 2176,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "崆峒主峰"
+      },
+      {
+        "id": "zhongtai",
+        "name": "中台",
+        "lat": 35.662,
+        "lng": 106.538,
+        "elevation": 1900,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea"],
+        "note": "道教中心观云海"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "maijishan",
+    "name": "麦积山",
+    "aliases": ["麦积山", "麦积烟雨", "东方雕塑陈列馆"],
+    "region": "甘肃省天水市麦积区",
+    "peak_elevation": 1742,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_months": [4, 5, 6, 9, 10, 11],
+      "sunrise_best": "spring_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 82
+    },
+    "cloud_region": { "span_lng": 0.8, "span_lat": 0.6 },
+    "fame_note": "「麦积烟雨」为秦州八景之首，石窟与山谷雾海是西北人文+自然云海代表。",
+    "viewpoints": [
+      {
+        "id": "shiku",
+        "name": "麦积山石窟",
+        "lat": 34.352,
+        "lng": 106.008,
+        "elevation": 1480,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "34°21′07″N 106°00′30″E 附近"
+      },
+      {
+        "id": "ruixiangfeng",
+        "name": "瑞应峰",
+        "lat": 34.355,
+        "lng": 106.012,
+        "elevation": 1742,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea"],
+        "note": "麦积主峰"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "qilianshan",
+    "name": "祁连山（卓尔山）",
+    "aliases": ["祁连山", "卓尔山", "牛心山", "阿咪东索"],
+    "region": "青海省海北州祁连县",
+    "peak_elevation": 4667,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9],
+      "sunrise_months": [6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 2.5, "span_lat": 2.0 },
+    "fame_note": "「东方小瑞士」，卓尔山晨雾+牛心山日照金山是祁连草原摄影顶流。",
+    "viewpoints": [
+      {
+        "id": "zhuoershan",
+        "name": "卓尔山观景台",
+        "lat": 38.962,
+        "lng": 100.082,
+        "elevation": 3100,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "对望牛心山（阿咪东索4667m）"
+      },
+      {
+        "id": "niuxinshan",
+        "name": "牛心山",
+        "lat": 38.948,
+        "lng": 100.095,
+        "elevation": 4667,
+        "coord_confidence": "medium",
+        "tags": ["cloudsea"],
+        "note": "祁连县标志雪山"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "tianshantianchi",
+    "name": "天山天池",
+    "aliases": ["天山天池", "博格达天池", "瑶池"],
+    "region": "新疆昌吉州阜康市",
+    "peak_elevation": 5445,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9],
+      "sunrise_months": [6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 65
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "博格达峰（5445m）倒映天池，夏季雪峰与湖上晨雾/cloud band是新疆经典。",
+    "viewpoints": [
+      {
+        "id": "dongxiao",
+        "name": "东小天池/马牙山",
+        "lat": 43.885,
+        "lng": 88.135,
+        "elevation": 3056,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "索道观博格达峰"
+      },
+      {
+        "id": "tianchi_hub",
+        "name": "天池北岸",
+        "lat": 43.882,
+        "lng": 88.128,
+        "elevation": 1900,
+        "coord_confidence": "high",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "湖面海拔约1900m；43°53′N 88°08′E"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "sailimuhu",
+    "name": "赛里木湖",
+    "aliases": ["赛里木湖", "大西洋最后一滴眼泪", "赛湖"],
+    "region": "新疆博尔塔拉州博乐市",
+    "peak_elevation": 2073,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [5, 6, 7, 8, 9],
+      "sunrise_months": [5, 6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.5,
+      "max_wind": 15,
+      "rh_threshold": 70
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.0 },
+    "local_water": {
+      "name": "赛里木湖",
+      "surface_elev_m": 2073,
+      "nearest_distance_km": 0,
+      "source": "高山湖泊，湖面即观景点"
+    },
+    "fame_note": "新疆海拔最高、面积最大的高山湖泊，日出金光+湖面低云是北疆环线必拍。",
+    "viewpoints": [
+      {
+        "id": "dianjiangtai",
+        "name": "点将台",
+        "lat": 44.598,
+        "lng": 81.152,
+        "elevation": 2075,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "经典日出机位"
+      },
+      {
+        "id": "songlin",
+        "name": "松树头",
+        "lat": 44.612,
+        "lng": 81.138,
+        "elevation": 2100,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "俯瞰赛湖全景"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "kanasi",
+    "name": "喀纳斯",
+    "aliases": ["喀纳斯", "喀纳斯湖", "神的后花园", "月亮湾"],
+    "region": "新疆阿勒泰地区布尔津县",
+    "peak_elevation": 4374,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9, 10],
+      "sunrise_months": [6, 7, 8, 9, 10],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 10,
+      "rh_threshold": 80
+    },
+    "cloud_region": { "span_lng": 2.0, "span_lat": 1.5 },
+    "local_water": {
+      "name": "喀纳斯湖",
+      "surface_elev_m": 1374,
+      "nearest_distance_km": 0,
+      "source": "冰蚀湖，晨雾著名"
+    },
+    "fame_note": "喀纳斯湖晨雾+月亮湾是北疆最著名「云海/雾海」题材之一。",
+    "viewpoints": [
+      {
+        "id": "guanyutai",
+        "name": "观鱼台",
+        "lat": 48.712,
+        "lng": 87.038,
+        "elevation": 2030,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "俯瞰喀纳斯湖"
+      },
+      {
+        "id": "yueliangwan",
+        "name": "月亮湾",
+        "lat": 48.698,
+        "lng": 87.052,
+        "elevation": 1370,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "河谷晨雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "hemu",
+    "name": "禾木",
+    "aliases": ["禾木村", "禾木晨雾", "神的自留地"],
+    "region": "新疆阿勒泰地区布尔津县禾木乡",
+    "peak_elevation": 1124,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9, 10],
+      "sunrise_months": [6, 7, 8, 9, 10],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 85
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "禾木晨雾/炊烟与图瓦村落是全疆最著名日出题材，摄影热度极高。",
+    "viewpoints": [
+      {
+        "id": "hemu_guanjing",
+        "name": "禾木观景台（哈登平台）",
+        "lat": 48.562,
+        "lng": 87.418,
+        "elevation": 1120,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "俯瞰禾木村晨雾"
+      },
+      {
+        "id": "hemu_bridge",
+        "name": "禾木桥",
+        "lat": 48.558,
+        "lng": 87.422,
+        "elevation": 1080,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "河谷低角度晨雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "baihaba",
+    "name": "白哈巴",
+    "aliases": ["白哈巴", "白哈巴村", "西北第一村"],
+    "region": "新疆阿勒泰地区哈巴河县",
+    "peak_elevation": 1120,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9, 10],
+      "sunrise_months": [6, 7, 8, 9, 10],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 8,
+      "rh_threshold": 85
+    },
+    "cloud_region": { "span_lng": 1.0, "span_lat": 0.8 },
+    "fame_note": "与禾木齐名的图瓦村落晨雾，中哈边境「西北第一村」日出题材。",
+    "viewpoints": [
+      {
+        "id": "guanjingtai",
+        "name": "白哈巴观景台",
+        "lat": 48.472,
+        "lng": 86.828,
+        "elevation": 1100,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "俯瞰村落与晨雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "keketuohai",
+    "name": "可可托海",
+    "aliases": ["可可托海", "额尔齐斯大峡谷", "神钟山"],
+    "region": "新疆阿勒泰地区富蕴县",
+    "peak_elevation": 3100,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [6, 7, 8, 9, 10],
+      "sunrise_months": [6, 7, 8, 9, 10],
+      "sunrise_best": "summer_autumn"
+    },
+    "rules": {
+      "viewing_mode": "valley_fill",
+      "min_wind": 0.3,
+      "max_wind": 10,
+      "rh_threshold": 78
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "额尔齐斯大峡谷神钟山+河谷晨雾，秋季白桦与云带同框。",
+    "viewpoints": [
+      {
+        "id": "shenzhongshan",
+        "name": "神钟山",
+        "lat": 47.168,
+        "lng": 89.868,
+        "elevation": 1350,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "景区标志"
+      },
+      {
+        "id": "shuanghua",
+        "name": "双花台",
+        "lat": 47.175,
+        "lng": 89.875,
+        "elevation": 1400,
+        "coord_confidence": "low",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "峡谷观雾"
+      }
+    ],
+    "source": "research"
+  },
+  {
+    "id": "nalati",
+    "name": "那拉提",
+    "aliases": ["那拉提", "那拉提草原", "空中草原"],
+    "region": "新疆伊犁州新源县",
+    "peak_elevation": 2200,
+    "coord_sys": "WGS84",
+    "seasonality": {
+      "cloudsea_months": [5, 6, 7, 8, 9],
+      "sunrise_months": [5, 6, 7, 8, 9],
+      "sunrise_best": "summer"
+    },
+    "rules": {
+      "viewing_mode": "peak_overlook",
+      "min_wind": 0.5,
+      "max_wind": 12,
+      "rh_threshold": 72
+    },
+    "cloud_region": { "span_lng": 1.5, "span_lat": 1.2 },
+    "fame_note": "「空中草原」夏季云带低垂草原，日出与天山雪峰/cloud band组合是伊犁代表。",
+    "viewpoints": [
+      {
+        "id": "kongzhong_caoyuan",
+        "name": "空中草原",
+        "lat": 43.268,
+        "lng": 84.018,
+        "elevation": 2200,
+        "coord_confidence": "medium",
+        "tags": ["sunrise", "cloudsea"],
+        "note": "核心观景点"
+      },
+      {
+        "id": "hegu_caoyuan",
+        "name": "河谷草原",
+        "lat": 43.252,
+        "lng": 84.035,
+        "elevation": 1800,
+        "coord_confidence": "low",
+        "tags": ["cloudsea", "sunrise"],
+        "note": "河谷晨雾"
+      }
+    ],
+    "source": "research"
+  }
+]

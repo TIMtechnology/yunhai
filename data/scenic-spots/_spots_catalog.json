@@ -1,0 +1,1570 @@
+{
+  "updated": "2026-06-11",
+  "total_spots": 70,
+  "total_viewpoints": 150,
+  "coord_sys": "WGS84 (天地图/CGCS2000 兼容)",
+  "spots": [
+    {
+      "id": "baihaba",
+      "name": "白哈巴",
+      "region": "新疆阿勒泰地区哈巴河县",
+      "peak_elevation": 1120.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "白哈巴观景台",
+      "lat": 48.472,
+      "lng": 86.828,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "baihuashan",
+      "name": "北京百花山",
+      "region": "北京市门头沟区",
+      "peak_elevation": 1991.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "百花山主峰",
+      "lat": 39.856,
+      "lng": 115.613,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "changbaishan",
+      "name": "长白山",
+      "region": "吉林省延边州安图县/白山市抚松县",
+      "peak_elevation": 2691.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "天文峰（北坡主峰观景台）",
+      "lat": 42.0119,
+      "lng": 128.0708,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "cs_0c28f6f2",
+      "name": "黄丫口",
+      "region": "社区精选",
+      "peak_elevation": 751.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "黄丫口",
+      "lat": 40.478146,
+      "lng": 122.98325,
+      "cloudsea_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "tags": [
+        "cloudsea",
+        "community",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "cs_9e063149",
+      "name": "东灵山",
+      "region": "社区精选",
+      "peak_elevation": 2274.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "东灵山",
+      "lat": 40.0161,
+      "lng": 115.50136,
+      "cloudsea_months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "tags": [
+        "cloudsea",
+        "community",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "daheishan",
+      "name": "大连大黑山",
+      "region": "辽宁省大连市金州区",
+      "peak_elevation": 663.1,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "主峰",
+      "lat": 39.09811,
+      "lng": 121.78396,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "daochengyading",
+      "name": "稻城亚丁",
+      "region": "四川省甘孜州稻城县",
+      "peak_elevation": 6032.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "洛绒牛场",
+      "lat": 28.398,
+      "lng": 100.338,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "donglingshan",
+      "name": "东灵山",
+      "region": "北京市门头沟区",
+      "peak_elevation": 2303.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "峰顶",
+      "lat": 40.0161,
+      "lng": 115.50136,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "emeishan",
+      "name": "峨眉山",
+      "region": "四川省乐山市",
+      "peak_elevation": 3079.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "金顶",
+      "lat": 29.51972,
+      "lng": 103.33722,
+      "cloudsea_months": [
+        9,
+        10,
+        11,
+        12,
+        1,
+        2
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "fanjingshan",
+      "name": "梵净山",
+      "region": "贵州省铜仁市江口县/印江县",
+      "peak_elevation": 2572.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "红云金顶",
+      "lat": 27.886,
+      "lng": 108.672,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "fenghuangshan",
+      "name": "丹东凤凰山",
+      "region": "辽宁省丹东市凤城市",
+      "peak_elevation": 836.4,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "老牛背",
+      "lat": 40.4265,
+      "lng": 124.0538,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "gongga",
+      "name": "贡嘎山",
+      "region": "四川省甘孜州康定市/泸定县",
+      "peak_elevation": 7508.9,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "子梅垭口",
+      "lat": 29.583,
+      "lng": 101.789,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "guangwushan",
+      "name": "光雾山",
+      "region": "四川省巴中市南江县",
+      "peak_elevation": 2507.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "香炉山",
+      "lat": 32.682,
+      "lng": 106.785,
+      "cloudsea_months": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "gushan",
+      "name": "福州鼓山",
+      "region": "福建省福州市晋安区",
+      "peak_elevation": 919.1,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "大顶峰",
+      "lat": 26.05666,
+      "lng": 119.39054,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "habaxueshan",
+      "name": "哈巴雪山",
+      "region": "云南省迪庆州香格里拉市/丽江市玉龙县",
+      "peak_elevation": 5396.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "黑海",
+      "lat": 27.358,
+      "lng": 100.128,
+      "cloudsea_months": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3,
+        4
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "haituoshan",
+      "name": "海坨山",
+      "region": "北京市延庆区/河北省赤城县",
+      "peak_elevation": 2241.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "大海坨",
+      "lat": 40.57494,
+      "lng": 115.81856,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "helanshan",
+      "name": "贺兰山",
+      "region": "宁夏银川市贺兰县/内蒙古阿拉善盟",
+      "peak_elevation": 3556.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "苏峪口",
+      "lat": 38.942,
+      "lng": 106.182,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "hemu",
+      "name": "禾木",
+      "region": "新疆阿勒泰地区布尔津县禾木乡",
+      "peak_elevation": 1124.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "禾木观景台（哈登平台）",
+      "lat": 48.562,
+      "lng": 87.418,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "huajian",
+      "name": "华尖",
+      "region": "四川省甘孜州泸定县/雅安市荥经县",
+      "peak_elevation": 3540.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "华尖山顶",
+      "lat": 29.582,
+      "lng": 102.368,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "huangling",
+      "name": "婺源篁岭",
+      "region": "江西省上饶市婺源县江湾镇",
+      "peak_elevation": 580.0,
+      "viewpoint_count": 4,
+      "primary_viewpoint": "晒秋观景台",
+      "lat": 29.324,
+      "lng": 117.857,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "huangshan",
+      "name": "黄山",
+      "region": "安徽省黄山市",
+      "peak_elevation": 1864.0,
+      "viewpoint_count": 5,
+      "primary_viewpoint": "光明顶",
+      "lat": 30.13472,
+      "lng": 118.16861,
+      "cloudsea_months": [
+        11,
+        12,
+        1,
+        2,
+        3,
+        4
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "huangyakou",
+      "name": "营口黄丫口",
+      "region": "辽宁省营口市盖州市",
+      "peak_elevation": 751.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "黄丫口主峰",
+      "lat": 40.47815,
+      "lng": 122.98325,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "huashan",
+      "name": "华山",
+      "region": "陕西省渭南市华阴市",
+      "peak_elevation": 2154.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "东峰",
+      "lat": 34.48722,
+      "lng": 110.0925,
+      "cloudsea_months": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "jiaodingshan",
+      "name": "轿顶山",
+      "region": "四川省雅安市汉源县",
+      "peak_elevation": 3550.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "轿顶（主峰）",
+      "lat": 29.352,
+      "lng": 102.648,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "jinfooshan",
+      "name": "南川金佛山",
+      "region": "重庆市南川区",
+      "peak_elevation": 2251.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "金佛顶",
+      "lat": 29.048,
+      "lng": 107.128,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12,
+        1,
+        2
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "jiucaiping",
+      "name": "韭菜坪",
+      "region": "贵州省毕节市赫章县/六盘水市钟山区",
+      "peak_elevation": 2900.6,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "大韭菜坪主峰",
+      "lat": 26.872,
+      "lng": 104.618,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "jiuhuashan",
+      "name": "九华山",
+      "region": "安徽省池州市青阳县",
+      "peak_elevation": 1342.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "天台峰捧日亭",
+      "lat": 30.481,
+      "lng": 117.802,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "kanasi",
+      "name": "喀纳斯",
+      "region": "新疆阿勒泰地区布尔津县",
+      "peak_elevation": 4374.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "观鱼台",
+      "lat": 48.712,
+      "lng": 87.038,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "keketuohai",
+      "name": "可可托海",
+      "region": "新疆阿勒泰地区富蕴县",
+      "peak_elevation": 3100.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "神钟山",
+      "lat": 47.168,
+      "lng": 89.868,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "kongtongshan",
+      "name": "崆峒山",
+      "region": "甘肃省平凉市崆峒区",
+      "peak_elevation": 2176.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "香山",
+      "lat": 35.668,
+      "lng": 106.542,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "laojunshan",
+      "name": "洛阳老君山",
+      "region": "河南省洛阳市栾川县",
+      "peak_elevation": 2217.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "金顶道观群",
+      "lat": 33.73667,
+      "lng": 111.65278,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "laoshan",
+      "name": "青岛崂山",
+      "region": "山东省青岛市崂山区",
+      "peak_elevation": 1132.7,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "巨峰（崂顶）",
+      "lat": 36.175,
+      "lng": 120.62639,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "liupanshan",
+      "name": "六盘山",
+      "region": "宁夏固原市泾源县/甘肃省平凉市",
+      "peak_elevation": 2942.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "米缸山（主峰）",
+      "lat": 35.522,
+      "lng": 106.278,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "lushan",
+      "name": "庐山",
+      "region": "江西省九江市",
+      "peak_elevation": 1474.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "含鄱口",
+      "lat": 29.55611,
+      "lng": 115.99194,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "maijishan",
+      "name": "麦积山",
+      "region": "甘肃省天水市麦积区",
+      "peak_elevation": 1742.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "麦积山石窟",
+      "lat": 34.352,
+      "lng": 106.008,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "meilixueshan",
+      "name": "梅里雪山",
+      "region": "云南省迪庆州德钦县",
+      "peak_elevation": 6740.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "飞来寺观景台",
+      "lat": 28.451,
+      "lng": 98.918,
+      "cloudsea_months": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3,
+        4
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "mengshan",
+      "name": "沂蒙山蒙山",
+      "region": "山东省临沂市平邑县",
+      "peak_elevation": 1156.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "龟蒙顶",
+      "lat": 35.2506,
+      "lng": 117.946,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "miaofengshan",
+      "name": "妙峰山",
+      "region": "北京市门头沟区妙峰山镇",
+      "peak_elevation": 1291.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "惠济祠（金顶）",
+      "lat": 39.9757,
+      "lng": 116.0502,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "moganshan",
+      "name": "莫干山",
+      "region": "浙江省湖州市德清县",
+      "peak_elevation": 718.9,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "塔山",
+      "lat": 30.6,
+      "lng": 119.867,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "nalati",
+      "name": "那拉提",
+      "region": "新疆伊犁州新源县",
+      "peak_elevation": 2200.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "空中草原",
+      "lat": 43.268,
+      "lng": 84.018,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "niubeishan",
+      "name": "牛背山",
+      "region": "四川省雅安市荥经县/甘孜州泸定县",
+      "peak_elevation": 3666.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "光明顶（3666观景台）",
+      "lat": 29.775,
+      "lng": 102.374,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "qianfoshan",
+      "name": "大邑千佛山",
+      "region": "四川省成都市大邑县",
+      "peak_elevation": 3060.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "千佛山金顶",
+      "lat": 30.978,
+      "lng": 103.278,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "qianshan",
+      "name": "鞍山千山",
+      "region": "辽宁省鞍山市铁东区",
+      "peak_elevation": 708.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "五佛顶",
+      "lat": 40.0978,
+      "lng": 123.1012,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "qilianshan",
+      "name": "祁连山（卓尔山）",
+      "region": "青海省海北州祁连县",
+      "peak_elevation": 4667.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "卓尔山观景台",
+      "lat": 38.962,
+      "lng": 100.082,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "qiyunshan",
+      "name": "齐云山",
+      "region": "安徽省黄山市休宁县",
+      "peak_elevation": 585.4,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "月华天街",
+      "lat": 29.808,
+      "lng": 118.04,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "sailimuhu",
+      "name": "赛里木湖",
+      "region": "新疆博尔塔拉州博乐市",
+      "peak_elevation": 2073.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "点将台",
+      "lat": 44.598,
+      "lng": 81.152,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "sanqingshan",
+      "name": "三清山",
+      "region": "江西省上饶市玉山县/德兴市",
+      "peak_elevation": 1819.9,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "玉京峰",
+      "lat": 28.919,
+      "lng": 118.065,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "siguniangshan",
+      "name": "四姑娘山",
+      "region": "四川省阿坝州小金县",
+      "peak_elevation": 6247.8,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "猫鼻梁观景台",
+      "lat": 31.058,
+      "lng": 102.885,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "simingshan",
+      "name": "四明山",
+      "region": "浙江省宁波市余姚市/奉化区",
+      "peak_elevation": 1011.6,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "金钟山（四明主峰）",
+      "lat": 29.768,
+      "lng": 121.198,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "taimushan",
+      "name": "太姥山",
+      "region": "福建省宁德市福鼎市",
+      "peak_elevation": 917.3,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "覆鼎峰（峰顶）",
+      "lat": 27.105,
+      "lng": 120.135,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11,
+        12
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "taishan",
+      "name": "泰山",
+      "region": "山东省泰安市",
+      "peak_elevation": 1532.0,
+      "viewpoint_count": 4,
+      "primary_viewpoint": "日观峰",
+      "lat": 36.25472,
+      "lng": 117.10083,
+      "cloudsea_months": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "tianshantianchi",
+      "name": "天山天池",
+      "region": "新疆昌吉州阜康市",
+      "peak_elevation": 5445.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "东小天池/马牙山",
+      "lat": 43.885,
+      "lng": 88.135,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "tiantaishan",
+      "name": "天台山",
+      "region": "浙江省台州市天台县",
+      "peak_elevation": 1098.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "华顶拜经台",
+      "lat": 29.1586,
+      "lng": 121.028,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "tianzhushan",
+      "name": "天柱山",
+      "region": "安徽省安庆市潜山市",
+      "peak_elevation": 1489.8,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "天池峰",
+      "lat": 30.738,
+      "lng": 116.448,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wangxiangu",
+      "name": "望仙谷",
+      "region": "江西省上饶市广信区望仙乡",
+      "peak_elevation": 580.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "悬崖民宿观景带",
+      "lat": 28.417,
+      "lng": 117.978,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wawushan",
+      "name": "瓦屋山",
+      "region": "四川省眉山市洪雅县",
+      "peak_elevation": 3720.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "瓦屋山金顶",
+      "lat": 29.638,
+      "lng": 102.962,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wugongshan",
+      "name": "武功山",
+      "region": "江西省萍乡市芦溪县/吉安市安福县",
+      "peak_elevation": 1918.3,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "金顶（白鹤峰）",
+      "lat": 27.45528,
+      "lng": 114.17333,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wulingshan",
+      "name": "河北雾灵山",
+      "region": "河北省承德市兴隆县",
+      "peak_elevation": 2118.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "歪桃峰（主峰）",
+      "lat": 40.6214,
+      "lng": 117.4364,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wunvshan",
+      "name": "本溪五女山",
+      "region": "辽宁省本溪市桓仁县",
+      "peak_elevation": 824.0,
+      "viewpoint_count": 4,
+      "primary_viewpoint": "点将台",
+      "lat": 41.31976,
+      "lng": 125.40773,
+      "cloudsea_months": [
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wusongdao",
+      "name": "吉林雾凇岛",
+      "region": "吉林省吉林市龙潭区乌拉街满族镇",
+      "peak_elevation": 180.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "曾通屯江岸",
+      "lat": 44.0542,
+      "lng": 126.6517,
+      "cloudsea_months": [
+        11,
+        12,
+        1,
+        2,
+        3
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wutaishan",
+      "name": "五台山",
+      "region": "山西省忻州市",
+      "peak_elevation": 3061.0,
+      "viewpoint_count": 5,
+      "primary_viewpoint": "东台顶",
+      "lat": 39.04056,
+      "lng": 113.57222,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "wuyishan",
+      "name": "武夷山",
+      "region": "福建省南平市武夷山市",
+      "peak_elevation": 717.7,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "天游峰",
+      "lat": 27.658,
+      "lng": 117.948,
+      "cloudsea_months": [
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "xiannvshan",
+      "name": "武隆仙女山",
+      "region": "重庆市武隆区",
+      "peak_elevation": 2033.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "仙女山大草原",
+      "lat": 29.402,
+      "lng": 107.752,
+      "cloudsea_months": [
+        11,
+        12,
+        1,
+        2,
+        3,
+        4
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "xiaowutai",
+      "name": "小五台山",
+      "region": "河北省张家口市蔚县/涿鹿县",
+      "peak_elevation": 2882.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "东台",
+      "lat": 39.8742,
+      "lng": 114.5917,
+      "cloudsea_months": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "yandangshan",
+      "name": "雁荡山",
+      "region": "浙江省温州市乐清市",
+      "peak_elevation": 1150.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "百岗尖",
+      "lat": 28.37,
+      "lng": 121.06,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        11
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "yangcaoshan",
+      "name": "雪乡羊草山",
+      "region": "黑龙江省牡丹江市海林市雪乡景区",
+      "peak_elevation": 1350.0,
+      "viewpoint_count": 1,
+      "primary_viewpoint": "骆驼峰顶",
+      "lat": 44.392,
+      "lng": 128.148,
+      "cloudsea_months": [
+        12,
+        1,
+        2
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "yulongxueshan",
+      "name": "玉龙雪山",
+      "region": "云南省丽江市玉龙纳西族自治县",
+      "peak_elevation": 5596.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "冰川公园（4680平台）",
+      "lat": 27.118,
+      "lng": 100.178,
+      "cloudsea_months": [
+        11,
+        12,
+        1,
+        2,
+        3,
+        4
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "yunding",
+      "name": "永泰云顶",
+      "region": "福建省福州市永泰县",
+      "peak_elevation": 1070.0,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "云顶天池",
+      "lat": 25.885,
+      "lng": 118.728,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        10,
+        11,
+        12
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "yunmengshan",
+      "name": "北京云蒙山",
+      "region": "北京市密云区/怀柔区",
+      "peak_elevation": 1414.7,
+      "viewpoint_count": 2,
+      "primary_viewpoint": "云蒙山主峰",
+      "lat": 40.562,
+      "lng": 116.708,
+      "cloudsea_months": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    },
+    {
+      "id": "zhangjiajie",
+      "name": "张家界",
+      "region": "湖南省张家界市",
+      "peak_elevation": 1262.0,
+      "viewpoint_count": 3,
+      "primary_viewpoint": "天子山",
+      "lat": 29.40833,
+      "lng": 110.44167,
+      "cloudsea_months": [
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        12
+      ],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ]
+    }
+  ]
+}

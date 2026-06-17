@@ -1,0 +1,67 @@
+{
+  "id": "gushan",
+  "name": "福州鼓山",
+  "aliases": [
+    "鼓山",
+    "涌泉寺",
+    "福州鼓山"
+  ],
+  "region": "福建省福州市晋安区",
+  "peak_elevation": 919.1,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "dadingfeng",
+      "name": "大顶峰",
+      "lat": 26.05666,
+      "lng": 119.39054,
+      "elevation": 919.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "鼓山最高峰；国保坐标26°03′24″N 119°23′26″E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "yongquansi",
+      "name": "涌泉寺观景台",
+      "lat": 26.052,
+      "lng": 119.388,
+      "elevation": 450.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "山腰观福州城雾海",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

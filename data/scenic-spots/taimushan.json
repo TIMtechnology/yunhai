@@ -1,0 +1,69 @@
+{
+  "id": "taimushan",
+  "name": "太姥山",
+  "aliases": [
+    "太姥山",
+    "海上仙都",
+    "太姥娘娘"
+  ],
+  "region": "福建省宁德市福鼎市",
+  "peak_elevation": 917.3,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "fengding",
+      "name": "覆鼎峰（峰顶）",
+      "lat": 27.105,
+      "lng": 120.135,
+      "elevation": 917.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "太姥主峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "guanriyan",
+      "name": "观日岩",
+      "lat": 27.102,
+      "lng": 120.128,
+      "elevation": 860.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区经典日出点",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

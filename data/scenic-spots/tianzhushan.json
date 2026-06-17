@@ -1,0 +1,71 @@
+{
+  "id": "tianzhushan",
+  "name": "天柱山",
+  "aliases": [
+    "古南岳",
+    "天柱山",
+    "天柱峰",
+    "皖山"
+  ],
+  "region": "安徽省安庆市潜山市",
+  "peak_elevation": 1489.8,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 72
+  },
+  "viewpoints": [
+    {
+      "id": "tianchifeng",
+      "name": "天池峰",
+      "lat": 30.738,
+      "lng": 116.448,
+      "elevation": 1420.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "远眺天柱峰、观日出云海主点位",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "tianzhufeng",
+      "name": "天柱峰",
+      "lat": 30.74167,
+      "lng": 116.45028,
+      "elevation": 1489.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "主峰不可攀登；维基坐标30°44′30″N 116°27′01″E",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

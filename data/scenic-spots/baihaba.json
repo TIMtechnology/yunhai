@@ -1,0 +1,54 @@
+{
+  "id": "baihaba",
+  "name": "白哈巴",
+  "aliases": [
+    "白哈巴",
+    "白哈巴村",
+    "西北第一村"
+  ],
+  "region": "新疆阿勒泰地区哈巴河县",
+  "peak_elevation": 1120.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 85
+  },
+  "viewpoints": [
+    {
+      "id": "guanjingtai",
+      "name": "白哈巴观景台",
+      "lat": 48.472,
+      "lng": 86.828,
+      "elevation": 1100.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "俯瞰村落与晨雾",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

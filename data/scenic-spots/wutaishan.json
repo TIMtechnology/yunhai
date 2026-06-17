@@ -39,6 +39,24 @@
       "elevation": 1700,
       "tags": ["cloudsea"],
       "note": "台怀镇核心，常见云雾（WGS84）"
+    },
+    {
+      "id": "zhongtai",
+      "name": "中台顶",
+      "lat": 39.03972,
+      "lng": 113.55694,
+      "elevation": 2894,
+      "tags": ["cloudsea"],
+      "note": "五台中心，翠岩峰（WGS84）"
+    },
+    {
+      "id": "xiantong",
+      "name": "西台顶",
+      "lat": 39.03889,
+      "lng": 113.50278,
+      "elevation": 2773,
+      "tags": ["cloudsea", "sunrise"],
+      "note": "挂月峰，西向日落/云海（WGS84）"
     }
   ]
 }

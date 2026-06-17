@@ -1,0 +1,67 @@
+{
+  "id": "liupanshan",
+  "name": "六盘山",
+  "aliases": [
+    "六盘山",
+    "陇山",
+    "长征六盘山",
+    "米缸山"
+  ],
+  "region": "宁夏固原市泾源县/甘肃省平凉市",
+  "peak_elevation": 2942.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 72
+  },
+  "viewpoints": [
+    {
+      "id": "migangshan",
+      "name": "米缸山（主峰）",
+      "lat": 35.522,
+      "lng": 106.278,
+      "elevation": 2942.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "六盘山最高峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "liangdian",
+      "name": "六盘山红军长征纪念馆观景台",
+      "lat": 35.658,
+      "lng": 106.312,
+      "elevation": 2380.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "经典旅游观景点",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

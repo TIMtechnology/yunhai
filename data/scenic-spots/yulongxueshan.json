@@ -1,0 +1,70 @@
+{
+  "id": "yulongxueshan",
+  "name": "玉龙雪山",
+  "aliases": [
+    "玉龙雪山",
+    "扇子陡",
+    "冰川公园",
+    "北半球最南雪山"
+  ],
+  "region": "云南省丽江市玉龙纳西族自治县",
+  "peak_elevation": 5596.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sunrise_months": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sunrise_best": "winter_spring"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 18,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "bingchuan_gongyuan",
+      "name": "冰川公园（4680平台）",
+      "lat": 27.118,
+      "lng": 100.178,
+      "elevation": 4680.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "索道可达最高观景点",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "ganhaizi",
+      "name": "甘海子",
+      "lat": 27.128,
+      "lng": 100.215,
+      "elevation": 3100.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "远眺扇子陡日照金山",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

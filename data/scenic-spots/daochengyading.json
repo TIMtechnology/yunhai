@@ -1,0 +1,70 @@
+{
+  "id": "daochengyading",
+  "name": "稻城亚丁",
+  "aliases": [
+    "亚丁",
+    "稻城亚丁",
+    "三怙主",
+    "最后的香格里拉"
+  ],
+  "region": "四川省甘孜州稻城县",
+  "peak_elevation": 6032.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "luorongniuchang",
+      "name": "洛绒牛场",
+      "lat": 28.398,
+      "lng": 100.338,
+      "elevation": 4180.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "三神山经典前景",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "chonggu_si",
+      "name": "冲古寺",
+      "lat": 28.412,
+      "lng": 100.352,
+      "elevation": 3880.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区门户观仙乃日",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

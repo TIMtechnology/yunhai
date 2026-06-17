@@ -1,0 +1,68 @@
+{
+  "id": "maijishan",
+  "name": "麦积山",
+  "aliases": [
+    "麦积山",
+    "麦积烟雨",
+    "东方雕塑陈列馆"
+  ],
+  "region": "甘肃省天水市麦积区",
+  "peak_elevation": 1742.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 82
+  },
+  "viewpoints": [
+    {
+      "id": "shiku",
+      "name": "麦积山石窟",
+      "lat": 34.352,
+      "lng": 106.008,
+      "elevation": 1480.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "34°21′07″N 106°00′30″E 附近",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "ruixiangfeng",
+      "name": "瑞应峰",
+      "lat": 34.355,
+      "lng": 106.012,
+      "elevation": 1742.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "麦积主峰",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "id": "fenghuangshan",
+  "name": "丹东凤凰山",
+  "aliases": [
+    "凤凰山",
+    "辽宁凤凰山",
+    "凤城凤凰山",
+    "国门名山"
+  ],
+  "region": "辽宁省丹东市凤城市",
+  "peak_elevation": 836.4,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 70
+  },
+  "viewpoints": [
+    {
+      "id": "laoniubei",
+      "name": "老牛背",
+      "lat": 40.4265,
+      "lng": 124.0538,
+      "elevation": 800.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "凤凰第一险，窄脊两侧悬崖，云海常见",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "zanyunfeng",
+      "name": "攒云峰",
+      "lat": 40.4312,
+      "lng": 124.0615,
+      "elevation": 836.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "凤凰山最高峰",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "id": "wuyishan",
+  "name": "武夷山",
+  "aliases": [
+    "武夷山",
+    "天游峰",
+    "九曲溪",
+    "丹山碧水"
+  ],
+  "region": "福建省南平市武夷山市",
+  "peak_elevation": 717.7,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 80
+  },
+  "viewpoints": [
+    {
+      "id": "tianyoufeng",
+      "name": "天游峰",
+      "lat": 27.658,
+      "lng": 117.948,
+      "elevation": 410.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "俯瞰九曲溪与丹霞峰林",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "sanyangfeng",
+      "name": "三仰峰",
+      "lat": 27.665,
+      "lng": 117.955,
+      "elevation": 718.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "景区最高峰717.7m",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

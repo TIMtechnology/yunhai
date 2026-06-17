@@ -1,0 +1,64 @@
+{
+  "id": "helanshan",
+  "name": "贺兰山",
+  "aliases": [
+    "贺兰山",
+    "苏峪口",
+    "贺兰山国家森林公园"
+  ],
+  "region": "宁夏银川市贺兰县/内蒙古阿拉善盟",
+  "peak_elevation": 3556.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "suyukou",
+      "name": "苏峪口",
+      "lat": 38.942,
+      "lng": 106.182,
+      "elevation": 1800.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "贺兰山主景区入口",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "aobaogou",
+      "name": "敖包沟/贺兰山主峰方向",
+      "lat": 38.968,
+      "lng": 106.145,
+      "elevation": 3200.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "高海拔云带",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 2.0,
+    "span_lat": 1.5
+  }
+}

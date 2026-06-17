@@ -1,0 +1,72 @@
+{
+  "id": "wusongdao",
+  "name": "吉林雾凇岛",
+  "aliases": [
+    "雾凇岛",
+    "韩屯雾凇岛",
+    "曾通雾凇岛",
+    "乌拉街雾凇"
+  ],
+  "region": "吉林省吉林市龙潭区乌拉街满族镇",
+  "peak_elevation": 180.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "sunrise_months": [
+      12,
+      1,
+      2
+    ],
+    "sunrise_best": "winter"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 6,
+    "rh_threshold": 85
+  },
+  "viewpoints": [
+    {
+      "id": "zengtong_an",
+      "name": "曾通屯江岸",
+      "lat": 44.0542,
+      "lng": 126.6517,
+      "elevation": 170.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "「赏雾凇，到曾通」；垂柳雾凇与江面晨雾",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "hantun_deng",
+      "name": "韩屯登岛口",
+      "lat": 44.0615,
+      "lng": 126.6683,
+      "elevation": 165.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "交通便捷，雾凇观赏带主入口",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  },
+  "local_water": {
+    "name": "松花江",
+    "surface_elev_m": 170,
+    "nearest_distance_km": 0.1,
+    "source": "雾凇形成依赖江面蒸发与低温，非典型高山云海"
+  }
+}

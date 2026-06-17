@@ -1,0 +1,86 @@
+{
+  "id": "sanqingshan",
+  "name": "三清山",
+  "aliases": [
+    "三清山",
+    "天下第一奇山",
+    "玉京峰"
+  ],
+  "region": "江西省上饶市玉山县/德兴市",
+  "peak_elevation": 1819.9,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 75
+  },
+  "viewpoints": [
+    {
+      "id": "yujingfeng",
+      "name": "玉京峰",
+      "lat": 28.919,
+      "lng": 118.065,
+      "elevation": 1819.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "三清最高峰；山域中心28°54′57″N 118°03′52″E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "yutai",
+      "name": "玉台",
+      "lat": 28.908,
+      "lng": 118.078,
+      "elevation": 1600.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "东线经典日出机位，可拍东方女神+云海",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "yangguangyan",
+      "name": "阳光海岸栈道",
+      "lat": 28.908,
+      "lng": 118.072,
+      "elevation": 1580.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "高空栈道观云海，日出侧向视角",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

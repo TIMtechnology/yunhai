@@ -1,0 +1,68 @@
+{
+  "id": "xiannvshan",
+  "name": "武隆仙女山",
+  "aliases": [
+    "仙女山",
+    "武隆仙女山",
+    "东方瑞士"
+  ],
+  "region": "重庆市武隆区",
+  "peak_elevation": 2033.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sunrise_months": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sunrise_best": "winter_spring"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "caoyuan",
+      "name": "仙女山大草原",
+      "lat": 29.402,
+      "lng": 107.752,
+      "elevation": 1900.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "核心草原观云海",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "tree_hotel",
+      "name": "树顶漫步/观光台",
+      "lat": 29.398,
+      "lng": 107.748,
+      "elevation": 1850.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "林冠层观雾海",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

@@ -42,6 +42,24 @@
       "elevation": 1690,
       "tags": ["sunrise"],
       "note": "西海方向日出视角（WGS84）"
+    },
+    {
+      "id": "qingliangtai",
+      "name": "清凉台",
+      "lat": 30.13778,
+      "lng": 118.16222,
+      "elevation": 1670,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "北海景区经典日出云海机位（WGS84）"
+    },
+    {
+      "id": "paiyunting",
+      "name": "排云亭",
+      "lat": 30.12722,
+      "lng": 118.15556,
+      "elevation": 1680,
+      "tags": ["cloudsea", "sunrise"],
+      "note": "西海大峡谷入口，云海摄影热门（WGS84）"
     }
   ]
 }

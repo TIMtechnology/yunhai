@@ -1,0 +1,55 @@
+{
+  "id": "haituoshan",
+  "name": "海坨山",
+  "aliases": [
+    "海陀山",
+    "大海坨",
+    "大海陀",
+    "延庆海坨山"
+  ],
+  "region": "北京市延庆区/河北省赤城县",
+  "peak_elevation": 2241.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "dahaituo",
+      "name": "大海坨",
+      "lat": 40.57494,
+      "lng": 115.81856,
+      "elevation": 2241.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "维基/WGS84标注；平缓草甸顶，露营观日出热门",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "id": "hemu",
+  "name": "禾木",
+  "aliases": [
+    "禾木村",
+    "禾木晨雾",
+    "神的自留地"
+  ],
+  "region": "新疆阿勒泰地区布尔津县禾木乡",
+  "peak_elevation": 1124.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 85
+  },
+  "viewpoints": [
+    {
+      "id": "hemu_guanjing",
+      "name": "禾木观景台（哈登平台）",
+      "lat": 48.562,
+      "lng": 87.418,
+      "elevation": 1120.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "俯瞰禾木村晨雾",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "hemu_bridge",
+      "name": "禾木桥",
+      "lat": 48.558,
+      "lng": 87.422,
+      "elevation": 1080.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "河谷低角度晨雾",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

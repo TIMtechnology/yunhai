@@ -33,7 +33,7 @@
   </style>
 </head>
 <body>
-  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-4 text-sm">
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
     <a href="index.html" class="active font-semibold">使用指南</a>
     <a href="data-sources.html">数据来源</a>
     <a href="prediction-model.html">预测模型</a>
@@ -42,6 +42,7 @@
     <a href="cloudsea-forecast.html">云海预测方法</a>
     <a href="sunrise-cloudsea.html">日出云海</a>
     <a href="how-to-read-meteogram.html">Meteogram</a>
+    <a href="cloudsea-conditions.html">形成条件</a>
     <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
   </nav>
 
@@ -107,7 +108,8 @@
         <li><strong>搜索地点</strong>：左侧输入景区名（如「云台山」「大黑山」）或点击快捷按钮。绿色标签为<strong>天地图 POI</strong>，紫色为<strong>精选观景点</strong>。</li>
         <li><strong>选择观景点</strong>：精选景区可切换多个内置观景点（如五女山「点将台」）；POI 结果则直接使用该 POI 坐标。</li>
         <li><strong>微调定位</strong>：地图右上角「定位控制」可<strong>拖动标记</strong>或开启「点击放置」，修正 GPS 偏差后自动重新预测。</li>
-        <li><strong>查看概率</strong>：右侧显示云海 / 日出双概率环、场景判断；「场景因子」Tab 为雷达图（加权评分维度），「云海」Tab 为完整因子列表（含 ML、规则、底层观测）。</li>
+        <li><strong>查看概率</strong>：右侧显示云海 / 日出双概率环、综合场景（如「较可能日出云海」「晴日日出」）；「场景因子」Tab 为雷达图，「云海」Tab 含 ML、规则与底层观测；可展开 <strong>Meteogram 气象详图</strong> 核对逐小时场。</li>
+        <li><strong>分享与解读</strong>：可生成分享链接与竖版长图；开启 <strong>AI 出行解读</strong> 可对照规则与 ML 输出获得文字摘要（需服务端配置 LLM）。</li>
         <li><strong>可选云图</strong>：顶栏开启「云层蒙版」可叠加 Himawari 红外卫星图（随地图缩放自动裁切）。</li>
       </ol>
     </section>
@@ -129,7 +131,7 @@
     <section class="grid md:grid-cols-2 gap-4">
       <div class="glass p-5">
         <h3 class="text-sky-600 font-semibold mb-2">云海概率</h3>
-        <p class="text-sm text-slate-600">日出窗口 03:00–07:00 由 <strong>ML v2</strong> 给出主概率；同时展示规则引擎 10 项加权因子、底层观测（分层云量、垂直场、型态）及 Himawari 卫星可选校正。详见 <a href="prediction-model.html">预测模型</a>。</p>
+        <p class="text-sm text-slate-600">日出窗口 03:00–07:00 由 <strong>规则引擎 + ML v6</strong> 按点位权重融合（五女山约 65% ML / 35% 规则；近库水体雾、低能见度谷地雾场景会进一步降 ML 权重）；同时展示完整加权因子、底层观测及 Himawari 卫星可选校正。详见 <a href="prediction-model.html">预测模型</a>。</p>
       </div>
       <div class="glass p-5">
         <h3 class="text-orange-500 font-semibold mb-2">日出概率</h3>

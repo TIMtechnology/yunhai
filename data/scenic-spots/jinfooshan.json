@@ -1,0 +1,72 @@
+{
+  "id": "jinfooshan",
+  "name": "南川金佛山",
+  "aliases": [
+    "金佛山",
+    "南川金佛山",
+    "金佛山顶",
+    "世界自然遗产"
+  ],
+  "region": "重庆市南川区",
+  "peak_elevation": 2251.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11,
+      12,
+      1,
+      2
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "jinfoding",
+      "name": "金佛顶",
+      "lat": 29.048,
+      "lng": 107.128,
+      "elevation": 2251.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区主峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "lanchuan",
+      "name": "兰草坝/药池坝",
+      "lat": 29.042,
+      "lng": 107.135,
+      "elevation": 2100.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "高山草甸云海",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

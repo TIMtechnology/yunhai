@@ -1,0 +1,66 @@
+{
+  "id": "wangxiangu",
+  "name": "望仙谷",
+  "aliases": [
+    "望仙谷",
+    "望仙谷景区",
+    "上饶望仙谷"
+  ],
+  "region": "江西省上饶市广信区望仙乡",
+  "peak_elevation": 580.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      9,
+      10
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 85
+  },
+  "viewpoints": [
+    {
+      "id": "xiansu_guanjing",
+      "name": "悬崖民宿观景带",
+      "lat": 28.417,
+      "lng": 117.978,
+      "elevation": 520.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区核心峡谷东侧高台",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "baizhang_pubu",
+      "name": "百丈瀑上方平台",
+      "lat": 28.415,
+      "lng": 117.975,
+      "elevation": 480.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "瀑布与峡谷雾",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.5,
+    "span_lat": 0.4
+  }
+}

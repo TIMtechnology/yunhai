@@ -29,6 +29,8 @@ def _spot_json_files() -> list[Path]:
         if not directory:
             continue
         for file in directory.glob("*.json"):
+            if file.name.startswith("_"):
+                continue
             if file.name in seen:
                 continue
             seen.add(file.name)

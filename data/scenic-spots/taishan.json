@@ -32,13 +32,22 @@
       "note": "云雾缭绕的标志性街景（WGS84）"
     },
     {
+      "id": "yuhuangding",
+      "name": "玉皇顶",
+      "lat": 36.25222,
+      "lng": 117.10139,
+      "elevation": 1545,
+      "tags": ["sunrise", "cloudsea"],
+      "note": "泰山主峰，经典日出与云海机位（WGS84）"
+    },
+    {
       "id": "hongmen",
       "name": "红门",
       "lat": 36.20833,
       "lng": 117.12917,
       "elevation": 250,
-      "tags": ["sunrise"],
-      "note": "传统登山路线起点（WGS84）"
+      "tags": ["cloudsea"],
+      "note": "传统登山路线起点，低海拔参考点（WGS84）"
     }
   ]
 }

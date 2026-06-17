@@ -1,0 +1,82 @@
+{
+  "id": "gongga",
+  "name": "贡嘎山",
+  "aliases": [
+    "贡嘎",
+    "贡嘎雪山",
+    "蜀山之王",
+    "Minya Konka"
+  ],
+  "region": "四川省甘孜州康定市/泸定县",
+  "peak_elevation": 7508.9,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 18,
+    "rh_threshold": 60
+  },
+  "viewpoints": [
+    {
+      "id": "zimeiyakou",
+      "name": "子梅垭口",
+      "lat": 29.583,
+      "lng": 101.789,
+      "elevation": 4550.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "正面观贡嘎主峰",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "lenggacuo",
+      "name": "冷噶措",
+      "lat": 29.568,
+      "lng": 101.812,
+      "elevation": 4500.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "贡嘎倒影+云海",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "zhufeng",
+      "name": "贡嘎主峰",
+      "lat": 29.5953,
+      "lng": 101.8797,
+      "elevation": 7509.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "29°35′43″N 101°52′47″E",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 2.0,
+    "span_lat": 1.5
+  }
+}

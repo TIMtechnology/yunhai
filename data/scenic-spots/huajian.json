@@ -1,0 +1,56 @@
+{
+  "id": "huajian",
+  "name": "华尖",
+  "aliases": [
+    "华尖",
+    "华尖山",
+    "黑石城"
+  ],
+  "region": "四川省甘孜州泸定县/雅安市荥经县",
+  "peak_elevation": 3540.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "fengding",
+      "name": "华尖山顶",
+      "lat": 29.582,
+      "lng": 102.368,
+      "elevation": 3540.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "贡嘎东坡观山点",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

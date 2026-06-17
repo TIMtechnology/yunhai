@@ -1,0 +1,84 @@
+{
+  "id": "fanjingshan",
+  "name": "梵净山",
+  "aliases": [
+    "梵净山",
+    "红云金顶",
+    "蘑菇石",
+    "弥勒道场"
+  ],
+  "region": "贵州省铜仁市江口县/印江县",
+  "peak_elevation": 2572.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 82
+  },
+  "viewpoints": [
+    {
+      "id": "hongyunjinding",
+      "name": "红云金顶",
+      "lat": 27.886,
+      "lng": 108.672,
+      "elevation": 2336.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "新金顶，晨间红云瑞气",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "mogushi",
+      "name": "蘑菇石",
+      "lat": 27.884,
+      "lng": 108.668,
+      "elevation": 2310.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "标志性景观；山体中心27°53′N 108°40′E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "laojinding",
+      "name": "老金顶（月镜山）",
+      "lat": 27.888,
+      "lng": 108.665,
+      "elevation": 2493.0,
+      "tags": [
+        "cloudsea"
+      ],
+      "note": "梵净第二高峰",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

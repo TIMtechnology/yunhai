@@ -1,0 +1,98 @@
+{
+  "id": "huangling",
+  "name": "婺源篁岭",
+  "aliases": [
+    "晒秋人家",
+    "梯云人家",
+    "篁岭",
+    "篁岭晒秋",
+    "篁岭景区"
+  ],
+  "region": "江西省上饶市婺源县江湾镇",
+  "peak_elevation": 580.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      3,
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 78
+  },
+  "viewpoints": [
+    {
+      "id": "shaiqiu_guanjingtai",
+      "name": "晒秋观景台",
+      "lat": 29.324,
+      "lng": 117.857,
+      "elevation": 580.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "俯瞰晒秋全景，经典日出机位",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "wuguitang",
+      "name": "五桂堂",
+      "lat": 29.3255,
+      "lng": 117.8562,
+      "elevation": 590.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区制高点，框景拍晒秋+远山云雾",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "shaiqiu_guanjing",
+      "name": "晒秋观景台",
+      "lat": 29.294,
+      "lng": 117.862,
+      "elevation": 630.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "天街东侧，俯瞰村落与晨雾",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "yihao_guanjingtai",
+      "name": "一号观景台",
+      "lat": 29.292,
+      "lng": 117.865,
+      "elevation": 660.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "360°梯田与山谷雾海",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

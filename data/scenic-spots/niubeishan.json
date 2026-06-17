@@ -1,0 +1,72 @@
+{
+  "id": "niubeishan",
+  "name": "牛背山",
+  "aliases": [
+    "牛背山",
+    "360°观景平台",
+    "亚洲最大观景平台",
+    "云瀑之乡"
+  ],
+  "region": "四川省雅安市荥经县/甘孜州泸定县",
+  "peak_elevation": 3666.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 65
+  },
+  "viewpoints": [
+    {
+      "id": "guangmingding",
+      "name": "光明顶（3666观景台）",
+      "lat": 29.775,
+      "lng": 102.374,
+      "elevation": 3666.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区核心观景平台；peakwiki主峰29.77518°N 102.37380°E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "jieyuanfang",
+      "name": "街心花园",
+      "lat": 29.768,
+      "lng": 102.368,
+      "elevation": 3550.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "住宿区周边观贡嘎与云海",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.5,
+    "span_lat": 1.2
+  }
+}

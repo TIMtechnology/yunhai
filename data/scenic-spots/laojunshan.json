@@ -1,0 +1,46 @@
+{
+  "id": "laojunshan",
+  "name": "洛阳老君山",
+  "aliases": ["老君山", "老君山景区", "中原第一仙山"],
+  "region": "河南省洛阳市栾川县",
+  "peak_elevation": 2217,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [4, 5, 6, 7, 8, 9, 10, 11],
+    "sunrise_months": [4, 5, 6, 9, 10, 11],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "viewing_mode": "peak_overlook",
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 75
+  },
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  },
+  "viewpoints": [
+    {
+      "id": "jinding",
+      "name": "金顶道观群",
+      "lat": 33.73667,
+      "lng": 111.65278,
+      "elevation": 2217,
+      "viewing_mode": "peak_overlook",
+      "tags": ["sunrise", "cloudsea"],
+      "note": "伏牛山主峰，云海+金顶日出为中原顶流机位（WGS84，维基33°44′12″N 111°39′10″E）"
+    },
+    {
+      "id": "shizi",
+      "name": "十里画屏",
+      "lat": 33.728,
+      "lng": 111.648,
+      "elevation": 1900,
+      "viewing_mode": "peak_overlook",
+      "tags": ["cloudsea"],
+      "note": "栈道观云海，侧向视角"
+    }
+  ],
+  "source": "curated"
+}

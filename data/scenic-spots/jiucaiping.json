@@ -1,0 +1,66 @@
+{
+  "id": "jiucaiping",
+  "name": "韭菜坪",
+  "aliases": [
+    "韭菜坪",
+    "贵州屋脊",
+    "阿西里西韭菜坪"
+  ],
+  "region": "贵州省毕节市赫章县/六盘水市钟山区",
+  "peak_elevation": 2900.6,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 15,
+    "rh_threshold": 70
+  },
+  "viewpoints": [
+    {
+      "id": "zhupeak",
+      "name": "大韭菜坪主峰",
+      "lat": 26.872,
+      "lng": 104.618,
+      "elevation": 2901.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "贵州海拔最高点",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "fengche",
+      "name": "风车观景台",
+      "lat": 26.868,
+      "lng": 104.625,
+      "elevation": 2750.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "风电场与云海",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

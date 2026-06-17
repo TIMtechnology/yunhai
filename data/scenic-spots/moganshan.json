@@ -1,0 +1,69 @@
+{
+  "id": "moganshan",
+  "name": "莫干山",
+  "aliases": [
+    "莫干山",
+    "塔山",
+    "江南第一山"
+  ],
+  "region": "浙江省湖州市德清县",
+  "peak_elevation": 718.9,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 75
+  },
+  "viewpoints": [
+    {
+      "id": "tashan",
+      "name": "塔山",
+      "lat": 30.6,
+      "lng": 119.867,
+      "elevation": 718.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "莫干主峰；中心坐标30°36′N 119°52′E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "xuguangtai",
+      "name": "旭光台",
+      "lat": 30.598,
+      "lng": 119.872,
+      "elevation": 650.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "景区专门观日出全景平台",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

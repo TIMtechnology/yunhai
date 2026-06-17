@@ -1,0 +1,50 @@
+{
+  "id": "yangcaoshan",
+  "name": "雪乡羊草山",
+  "aliases": [
+    "羊草山",
+    "羊草山骆驼峰",
+    "雪谷穿越羊草山"
+  ],
+  "region": "黑龙江省牡丹江市海林市雪乡景区",
+  "peak_elevation": 1350.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      12,
+      1,
+      2
+    ],
+    "sunrise_months": [
+      12,
+      1,
+      2
+    ],
+    "sunrise_best": "winter"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 80
+  },
+  "viewpoints": [
+    {
+      "id": "luotuofeng",
+      "name": "骆驼峰顶",
+      "lat": 44.392,
+      "lng": 128.148,
+      "elevation": 1235.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "树少草多视野开阔，雪乡侧上山看日出最省力",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

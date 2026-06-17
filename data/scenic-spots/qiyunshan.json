@@ -1,0 +1,69 @@
+{
+  "id": "qiyunshan",
+  "name": "齐云山",
+  "aliases": [
+    "齐云山",
+    "白岳",
+    "江南小武当",
+    "月华天街"
+  ],
+  "region": "安徽省黄山市休宁县",
+  "peak_elevation": 585.4,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
+    "sunrise_best": "spring_autumn"
+  },
+  "rules": {
+    "min_wind": 0.3,
+    "max_wind": 8,
+    "rh_threshold": 80
+  },
+  "viewpoints": [
+    {
+      "id": "yuehuatianjie",
+      "name": "月华天街",
+      "lat": 29.808,
+      "lng": 118.04,
+      "elevation": 540.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "崖壁道观与山谷雾海",
+      "viewing_mode": "valley_fill"
+    },
+    {
+      "id": "feiyunding",
+      "name": "飞云亭/齐云山顶",
+      "lat": 29.812,
+      "lng": 118.035,
+      "elevation": 585.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "主峰俯瞰休宁盆地",
+      "viewing_mode": "valley_fill"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

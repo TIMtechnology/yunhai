@@ -1,0 +1,57 @@
+{
+  "id": "miaofengshan",
+  "name": "妙峰山",
+  "aliases": [
+    "妙峰山",
+    "金顶妙峰山",
+    "北京妙峰山"
+  ],
+  "region": "北京市门头沟区妙峰山镇",
+  "peak_elevation": 1291.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 10,
+    "rh_threshold": 70
+  },
+  "viewpoints": [
+    {
+      "id": "huijici",
+      "name": "惠济祠（金顶）",
+      "lat": 39.9757,
+      "lng": 116.0502,
+      "elevation": 1291.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "娘娘庙金顶，维基坐标39°58′33″N 116°03′01″E",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 0.8,
+    "span_lat": 0.6
+  }
+}

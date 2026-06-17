@@ -1,0 +1,86 @@
+{
+  "id": "yandangshan",
+  "name": "雁荡山",
+  "aliases": [
+    "东南第一山",
+    "北雁荡山",
+    "寰中绝胜",
+    "百岗云海",
+    "百岗尖",
+    "雁荡三绝",
+    "雁荡山"
+  ],
+  "region": "浙江省温州市乐清市",
+  "peak_elevation": 1150.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      9,
+      10
+    ],
+    "sunrise_best": "spring"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 75
+  },
+  "viewpoints": [
+    {
+      "id": "baigangjian",
+      "name": "百岗尖",
+      "lat": 28.37,
+      "lng": 121.06,
+      "elevation": 1108.0,
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
+      "note": "雁荡主峰；维基28°22′N 121°04′E",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "yanhu",
+      "name": "雁湖",
+      "lat": 28.365,
+      "lng": 121.08,
+      "elevation": 890.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "「雁湖日出」传统景目",
+      "viewing_mode": "peak_overlook"
+    },
+    {
+      "id": "lingfeng",
+      "name": "灵峰",
+      "lat": 28.385,
+      "lng": 121.095,
+      "elevation": 320.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "经典日出机位，夜观灵峰",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.0,
+    "span_lat": 0.8
+  }
+}

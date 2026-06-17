@@ -1,0 +1,55 @@
+{
+  "id": "wulingshan",
+  "name": "河北雾灵山",
+  "aliases": [
+    "雾灵山",
+    "京东第一峰",
+    "歪桃峰",
+    "兴隆雾灵山"
+  ],
+  "region": "河北省承德市兴隆县",
+  "peak_elevation": 2118.0,
+  "coord_sys": "WGS84",
+  "seasonality": {
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sunrise_best": "summer_autumn"
+  },
+  "rules": {
+    "min_wind": 0.5,
+    "max_wind": 12,
+    "rh_threshold": 68
+  },
+  "viewpoints": [
+    {
+      "id": "waitaofeng",
+      "name": "歪桃峰（主峰）",
+      "lat": 40.6214,
+      "lng": 117.4364,
+      "elevation": 2118.0,
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
+      "note": "官方标注约40°37′17″N 117°26′11″E；可远眺密云水库",
+      "viewing_mode": "peak_overlook"
+    }
+  ],
+  "source": "curated",
+  "cloud_region": {
+    "span_lng": 1.2,
+    "span_lat": 1.0
+  }
+}

@@ -4,55 +4,63 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>云海预测方法：如何根据湿度、低云、风速和逆温判断云海</title>
-  <meta name="description" content="云海预测方法说明：如何根据湿度、低云、中云、能见度、风速、阵风、逆温和日出窗口判断云海概率，并结合规则引擎与 ML 模型做出行参考。" />
+  <meta name="description" content="云海预测方法：湿度、低云、能见度、风速、逆温与近库水体如何影响概率；规则引擎与 ML v6 如何融合。" />
   <meta name="keywords" content="云海预测,云海预报,云海概率,低云量,逆温层,湿度,风速,日出云海,摄影天气" />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/cloudsea-forecast.html" />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="云海预测方法：如何根据湿度、低云、风速和逆温判断云海" />
-  <meta property="og:description" content="用湿度、低云、风速、逆温、能见度和 Meteogram 气象详图判断云海概率。" />
+  <meta property="og:description" content="用湿度、低云、风速、逆温、能见度和 Meteogram 判断云海概率。" />
   <meta property="og:url" content="https://yunhai.timkj.com/docs/cloudsea-forecast.html" />
   <meta property="og:image" content="https://yunhai.timkj.com/docs/images/share-og-landscape.png" />
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": "云海预测方法：如何根据湿度、低云、风速和逆温判断云海",
-    "inLanguage": "zh-CN",
-    "about": ["云海预测", "日出云海", "Meteogram", "山岳气象"],
-    "mainEntityOfPage": "https://yunhai.timkj.com/docs/cloudsea-forecast.html"
-  }
+  {"@context":"https://schema.org","@type":"Article","headline":"云海预测方法","inLanguage":"zh-CN","mainEntityOfPage":"https://yunhai.timkj.com/docs/cloudsea-forecast.html"}
   </script>
   <style>
     body{margin:0;background:#f8fafc;color:#334155;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;line-height:1.75}
-    nav{background:white;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:16px;flex-wrap:wrap;position:sticky;top:0}
-    nav a,a{color:#0284c7;text-decoration:none}main{max-width:920px;margin:auto;padding:32px 20px}.card{background:white;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
-    h1,h2,h3{color:#0f172a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.pill{background:#eff6ff;border-radius:14px;padding:14px}.cta{display:inline-block;background:#0284c7;color:white;padding:12px 18px;border-radius:999px;font-weight:700}
+    nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;gap:12px 16px;flex-wrap:wrap;position:sticky;top:0;z-index:10;font-size:14px}
+    nav a{color:#475569;text-decoration:none}nav a:hover,nav a.active{color:#0369a1;font-weight:600}
+    main{max-width:920px;margin:auto;padding:32px 20px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;margin:18px 0}
+    h1,h2,h3{color:#0f172a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.pill{background:#eff6ff;border-radius:14px;padding:14px}
+    .cta{display:inline-block;background:#0284c7;color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;text-decoration:none}
+    a{color:#0284c7}
   </style>
 </head>
 <body>
   <nav>
-    <a href="index.html">使用指南</a><a href="cloudsea-forecast.html">云海预测方法</a><a href="sunrise-cloudsea.html">日出云海</a><a href="how-to-read-meteogram.html">Meteogram</a><a href="cloudsea-conditions.html">形成条件</a><a href="/">打开预测工具</a>
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="cloudsea-forecast.html" class="active">云海预测方法</a>
+    <a href="sunrise-cloudsea.html">日出云海</a>
+    <a href="how-to-read-meteogram.html">Meteogram</a>
+    <a href="cloudsea-conditions.html">形成条件</a>
+    <a href="/" style="margin-left:auto">← 返回应用</a>
   </nav>
   <main>
     <section class="card">
       <h1>云海预测方法：如何根据湿度、低云、风速和逆温判断云海</h1>
-      <p>云海预测不是简单看“晴天”或“湿度高”。更可靠的方法是同时检查日出窗口的湿度、低云和中云、能见度、风速阵风、前期降水、逆温或稳定层，以及观景点与谷底的海拔关系。</p>
+      <p>云海预测不是简单看「晴天」或「湿度高」。可靠做法是同时检查<strong>日出窗口 03:00–07:00</strong>的湿度、低云/中云、能见度、风速、垂直场（850/700 hPa）以及观景点与谷底/水面的高差关系。</p>
       <p><a class="cta" href="/">查看实时云海预测</a></p>
     </section>
     <section class="card">
       <h2>核心判断因子</h2>
       <div class="grid">
-        <div class="pill"><strong>湿度</strong><br />谷地近地层湿度越接近饱和，越容易形成雾或低云。</div>
-        <div class="pill"><strong>低云 / 中云</strong><br />低云决定云海主体，中云和高云会影响日出遮挡。</div>
-        <div class="pill"><strong>风速与阵风</strong><br />弱风利于云雾维持，强风或阵风会破坏稳定云层。</div>
-        <div class="pill"><strong>能见度</strong><br />低能见度可能是雾，也可能是云海前兆，需要结合海拔和云层高度判断。</div>
+        <div class="pill"><strong>湿度</strong><br />谷地近地层越接近饱和，越容易形成雾或低云；模式报 RH 72–85% 时仍可能有观赏级云海。</div>
+        <div class="pill"><strong>低云 / 中云</strong><br />低云决定云海主体；中高云影响日出。NWP 低云≈0 时，需结合<strong>能见度</strong>推断谷地雾。</div>
+        <div class="pill"><strong>风速</strong><br />微风 ~1–4 m/s 利于维持；强风破坏稳定层。</div>
+        <div class="pill"><strong>能见度</strong><br />300–600 m 常对应谷地雾/层云；与海拔、云底高度一起判断能否「看见脚下云海」。</div>
+        <div class="pill"><strong>逆温 / 稳定层</strong><br />850–925 hPa 正逆温利于填谷；近库辐射雾日上层可偏干，由规则 Type B 补偿。</div>
+        <div class="pill"><strong>近库水体</strong><br />山脚大型水库（如五女山桓龙湖）可触发「水体蒸发型谷地雾」规则，<strong>仅规则引擎</strong>使用，不进 ML 特征。</div>
       </div>
     </section>
     <section class="card">
-      <h2>系统如何融合规则与 ML</h2>
-      <p>本站会把规则引擎、点位 ML 模型、Meteogram 气象详图和日出窗口逐时数据一起展示。规则引擎解释气象机理，ML 模型根据历史标注修正本点位概率，融合值用于页面主评分和分享图。</p>
-      <p>可参考 <a href="prediction-model.html">预测模型说明</a>、<a href="/spots/wunvshan.html">五女山云海预报</a>、<a href="/spots/donglingshan.html">东灵山云海预报</a>。</p>
+      <h2>规则引擎 + ML v6 如何协作</h2>
+      <p>本站采用<strong>混合预测</strong>：规则引擎解释气象机理并做能见度/型态补偿；ML 根据历史标注修正本点位偏差。日出窗口内按点位融合（如五女山 ML 约 65%）；近库水体雾、低能见度谷地雾时降低 ML 权重，避免模式低云漏报时 ML 压分。</p>
+      <p>页面同时展示 Meteogram 气象详图、因子雷达图与底层观测，便于核对「为什么是这个概率」。</p>
+      <p>延伸阅读：<a href="prediction-model.html">预测模型说明</a> · <a href="/spots/wunvshan.html">五女山云海预报</a> · <a href="/spots/donglingshan.html">东灵山云海预报</a></p>
     </section>
   </main>
 </body>
