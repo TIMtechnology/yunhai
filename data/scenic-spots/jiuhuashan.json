@@ -12,7 +12,7 @@
   ],
   "region": "安徽省池州市青阳县",
   "peak_elevation": 1342.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -44,8 +44,8 @@
     {
       "id": "tiantaifeng_pengriting",
       "name": "天台峰捧日亭",
-      "lat": 30.481,
-      "lng": 117.802,
+      "lat": 30.493152,
+      "lng": 117.809566,
       "elevation": 1306.0,
       "tags": [
         "sunrise",
@@ -57,8 +57,8 @@
     {
       "id": "shiwangfeng",
       "name": "十王峰",
-      "lat": 30.478,
-      "lng": 117.804,
+      "lat": 30.493152,
+      "lng": 117.809566,
       "elevation": 1342.0,
       "tags": [
         "cloudsea",
@@ -70,8 +70,8 @@
     {
       "id": "tiantai",
       "name": "天台峰（天台寺）",
-      "lat": 30.48222,
-      "lng": 117.80444,
+      "lat": 30.493152,
+      "lng": 117.809566,
       "elevation": 1306.0,
       "tags": [
         "sunrise",

@@ -8,7 +8,7 @@
   ],
   "region": "四川省甘孜州泸定县/雅安市荥经县",
   "peak_elevation": 3540.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -37,8 +37,8 @@
     {
       "id": "fengding",
       "name": "华尖山顶",
-      "lat": 29.582,
-      "lng": 102.368,
+      "lat": 29.794634,
+      "lng": 102.275925,
       "elevation": 3540.0,
       "tags": [
         "sunrise",

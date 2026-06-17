@@ -9,7 +9,7 @@
   ],
   "region": "四川省甘孜州稻城县",
   "peak_elevation": 6032.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -38,8 +38,8 @@
     {
       "id": "luorongniuchang",
       "name": "洛绒牛场",
-      "lat": 28.398,
-      "lng": 100.338,
+      "lat": 28.38666,
+      "lng": 100.382576,
       "elevation": 4180.0,
       "tags": [
         "sunrise",
@@ -51,8 +51,8 @@
     {
       "id": "chonggu_si",
       "name": "冲古寺",
-      "lat": 28.412,
-      "lng": 100.352,
+      "lat": 28.42782,
+      "lng": 100.358151,
       "elevation": 3880.0,
       "tags": [
         "sunrise",

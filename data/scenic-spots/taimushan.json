@@ -8,7 +8,7 @@
   ],
   "region": "福建省宁德市福鼎市",
   "peak_elevation": 917.3,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -37,8 +37,8 @@
     {
       "id": "fengding",
       "name": "覆鼎峰（峰顶）",
-      "lat": 27.105,
-      "lng": 120.135,
+      "lat": 27.121305,
+      "lng": 120.187202,
       "elevation": 917.0,
       "tags": [
         "sunrise",
@@ -50,8 +50,8 @@
     {
       "id": "guanriyan",
       "name": "观日岩",
-      "lat": 27.102,
-      "lng": 120.128,
+      "lat": 27.124142,
+      "lng": 120.184719,
       "elevation": 860.0,
       "tags": [
         "sunrise",

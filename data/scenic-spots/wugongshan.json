@@ -12,7 +12,7 @@
   ],
   "region": "江西省萍乡市芦溪县/吉安市安福县",
   "peak_elevation": 1918.3,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -43,8 +43,8 @@
     {
       "id": "jinding",
       "name": "金顶（白鹤峰）",
-      "lat": 27.45528,
-      "lng": 114.17333,
+      "lat": 27.452275,
+      "lng": 114.178625,
       "elevation": 1918.0,
       "tags": [
         "sunrise",
@@ -56,8 +56,8 @@
     {
       "id": "fayunjie",
       "name": "发云界",
-      "lat": 27.492,
-      "lng": 114.128,
+      "lat": 27.523846,
+      "lng": 114.196746,
       "elevation": 1628.0,
       "tags": [
         "cloudsea",

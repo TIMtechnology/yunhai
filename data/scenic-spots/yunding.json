@@ -9,7 +9,7 @@
   ],
   "region": "福建省福州市永泰县",
   "peak_elevation": 1070.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -36,8 +36,8 @@
     {
       "id": "yunding_tianchi",
       "name": "云顶天池",
-      "lat": 25.885,
-      "lng": 118.728,
+      "lat": 25.76655,
+      "lng": 118.999222,
       "elevation": 1000.0,
       "tags": [
         "sunrise",
@@ -49,8 +49,8 @@
     {
       "id": "caochang",
       "name": "高山草甸",
-      "lat": 25.882,
-      "lng": 118.732,
+      "lat": 25.79612,
+      "lng": 118.958862,
       "elevation": 1050.0,
       "tags": [
         "cloudsea",

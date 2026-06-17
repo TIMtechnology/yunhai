@@ -1,4 +1,4 @@
-"""中国常用坐标系转换。天地图/Open-Meteo 使用 WGS84/CGCS2000；高德/腾讯为 GCJ-02。"""
+"""中国常用坐标系转换。Open-Meteo 使用 WGS84/CGCS2000；高德/腾讯为 GCJ-02。"""
 from __future__ import annotations
 
 import math
@@ -28,8 +28,36 @@ def _transform_lng(lng: float, lat: float) -> float:
     return ret
 
 
+def is_gcj02_coord_sys(coord_sys: str | None) -> bool:
+    normalized = (coord_sys or "GCJ-02").upper().replace("_", "-")
+    return normalized in ("GCJ-02", "GCJ02", "AMAP", "高德")
+
+
+def weather_coords(lat: float, lng: float, coord_sys: str | None = "GCJ-02") -> tuple[float, float]:
+    """地图坐标 → Open-Meteo / DEM 使用的 WGS84。"""
+    if is_gcj02_coord_sys(coord_sys):
+        wgs_lng, wgs_lat = gcj02_to_wgs84(lng, lat)
+        return wgs_lat, wgs_lng
+    return lat, lng
+
+
+def wgs84_to_gcj02(lng: float, lat: float) -> tuple[float, float]:
+    """WGS84/CGCS2000 → GCJ-02（高德地图）。"""
+    if _out_of_china(lng, lat):
+        return lng, lat
+    dlat = _transform_lat(lng - 105.0, lat - 35.0)
+    dlng = _transform_lng(lng - 105.0, lat - 35.0)
+    radlat = lat / 180.0 * math.pi
+    magic = math.sin(radlat)
+    magic = 1 - _EE * magic * magic
+    sqrtmagic = math.sqrt(magic)
+    dlat = (dlat * 180.0) / ((_A * (1 - _EE)) / (magic * sqrtmagic) * math.pi)
+    dlng = (dlng * 180.0) / (_A / sqrtmagic * math.cos(radlat) * math.pi)
+    return lng + dlng, lat + dlat
+
+
 def gcj02_to_wgs84(lng: float, lat: float) -> tuple[float, float]:
-    """GCJ-02（火星坐标）→ WGS84/CGCS2000，供天地图与 Open-Meteo 使用。"""
+    """GCJ-02（火星坐标）→ WGS84/CGCS2000，供 Open-Meteo 使用。"""
     if _out_of_china(lng, lat):
         return lng, lat
     dlat = _transform_lat(lng - 105.0, lat - 35.0)

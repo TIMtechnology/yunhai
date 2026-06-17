@@ -8,7 +8,7 @@
   ],
   "region": "江西省上饶市广信区望仙乡",
   "peak_elevation": 580.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -35,8 +35,8 @@
     {
       "id": "xiansu_guanjing",
       "name": "悬崖民宿观景带",
-      "lat": 28.417,
-      "lng": 117.978,
+      "lat": 28.451217,
+      "lng": 117.905231,
       "elevation": 520.0,
       "tags": [
         "sunrise",
@@ -48,8 +48,8 @@
     {
       "id": "baizhang_pubu",
       "name": "百丈瀑上方平台",
-      "lat": 28.415,
-      "lng": 117.975,
+      "lat": 28.451217,
+      "lng": 117.905231,
       "elevation": 480.0,
       "tags": [
         "cloudsea"

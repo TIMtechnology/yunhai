@@ -8,7 +8,7 @@
   ],
   "region": "北京市门头沟区妙峰山镇",
   "peak_elevation": 1291.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -38,8 +38,8 @@
     {
       "id": "huijici",
       "name": "惠济祠（金顶）",
-      "lat": 39.9757,
-      "lng": 116.0502,
+      "lat": 39.990168,
+      "lng": 116.054148,
       "elevation": 1291.0,
       "tags": [
         "sunrise",

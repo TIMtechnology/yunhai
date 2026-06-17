@@ -27,6 +27,7 @@ class ScenicSpot(BaseModel):
     aliases: List[str] = Field(default_factory=list)
     region: str
     peak_elevation: float
+    coord_sys: str = "GCJ-02"
     viewpoints: List[Viewpoint]
     seasonality: dict = Field(default_factory=dict)
     rules: dict = Field(default_factory=dict)
@@ -131,6 +132,7 @@ class PredictRequest(BaseModel):
     spot_id: Optional[str] = None
     viewpoint_id: Optional[str] = None
     hours: int = 120
+    coord_sys: str = "GCJ-02"
 
 
 class PredictResponse(BaseModel):

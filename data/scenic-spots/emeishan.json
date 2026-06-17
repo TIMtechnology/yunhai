@@ -1,43 +1,72 @@
 {
   "id": "emeishan",
   "name": "峨眉山",
-  "aliases": ["峨眉山风景区", "峨眉金顶"],
+  "aliases": [
+    "峨眉山风景区",
+    "峨眉金顶"
+  ],
   "region": "四川省乐山市",
   "peak_elevation": 3079,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [9, 10, 11, 12, 1, 2],
-    "sunrise_months": [3, 4, 5, 9, 10, 11],
+    "cloudsea_months": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2
+    ],
+    "sunrise_months": [
+      3,
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
     "sunrise_best": "autumn"
   },
-  "rules": { "rh_threshold": 82 },
-  "cloud_region": { "span_lng": 2.8, "span_lat": 2.0 },
+  "rules": {
+    "rh_threshold": 82
+  },
+  "cloud_region": {
+    "span_lng": 2.8,
+    "span_lat": 2.0
+  },
   "viewpoints": [
     {
       "id": "jinding",
       "name": "金顶",
-      "lat": 29.51972,
-      "lng": 103.33722,
+      "lat": 29.520593,
+      "lng": 103.336584,
       "elevation": 3079,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "峨眉山最高观景点（WGS84）"
     },
     {
       "id": "wanfo",
       "name": "万佛顶",
-      "lat": 29.5175,
-      "lng": 103.33639,
+      "lat": 29.50718,
+      "lng": 103.334402,
       "elevation": 3077,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "历史最高观景点，视野开阔；海拔略低于金顶主平台（WGS84）"
     },
     {
       "id": "jieyin",
       "name": "接引殿",
-      "lat": 29.5285,
-      "lng": 103.342,
+      "lat": 29.532506,
+      "lng": 103.335231,
       "elevation": 2540,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "索道附近，常见云海（WGS84）"
     }
   ]

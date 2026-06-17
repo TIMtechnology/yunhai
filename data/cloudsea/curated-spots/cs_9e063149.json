@@ -10,8 +10,8 @@
     {
       "id": "main",
       "name": "东灵山",
-      "lat": 40.0161,
-      "lng": 115.50136,
+      "lat": 40.031959,
+      "lng": 115.460534,
       "elevation": 2274.0,
       "tags": [
         "sunrise",
@@ -62,5 +62,6 @@
     "span_lat": 1.0
   },
   "source": "curated",
-  "community_location_id": "cs_9e063149"
+  "community_location_id": "cs_9e063149",
+  "coord_sys": "GCJ-02"
 }

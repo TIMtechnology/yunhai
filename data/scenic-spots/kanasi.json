@@ -9,7 +9,7 @@
   ],
   "region": "新疆阿勒泰地区布尔津县",
   "peak_elevation": 4374.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -36,8 +36,8 @@
     {
       "id": "guanyutai",
       "name": "观鱼台",
-      "lat": 48.712,
-      "lng": 87.038,
+      "lat": 48.692694,
+      "lng": 87.02898,
       "elevation": 2030.0,
       "tags": [
         "sunrise",
@@ -49,8 +49,8 @@
     {
       "id": "yueliangwan",
       "name": "月亮湾",
-      "lat": 48.698,
-      "lng": 87.052,
+      "lat": 48.640995,
+      "lng": 87.045764,
       "elevation": 1370.0,
       "tags": [
         "sunrise",

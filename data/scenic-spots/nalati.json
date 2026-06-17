@@ -8,7 +8,7 @@
   ],
   "region": "新疆伊犁州新源县",
   "peak_elevation": 2200.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       5,
@@ -35,8 +35,8 @@
     {
       "id": "kongzhong_caoyuan",
       "name": "空中草原",
-      "lat": 43.268,
-      "lng": 84.018,
+      "lat": 43.2091,
+      "lng": 83.941432,
       "elevation": 2200.0,
       "tags": [
         "sunrise",
@@ -48,8 +48,8 @@
     {
       "id": "hegu_caoyuan",
       "name": "河谷草原",
-      "lat": 43.252,
-      "lng": 84.035,
+      "lat": 43.303225,
+      "lng": 84.109125,
       "elevation": 1800.0,
       "tags": [
         "cloudsea",

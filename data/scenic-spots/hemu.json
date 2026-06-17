@@ -8,7 +8,7 @@
   ],
   "region": "新疆阿勒泰地区布尔津县禾木乡",
   "peak_elevation": 1124.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -35,8 +35,8 @@
     {
       "id": "hemu_guanjing",
       "name": "禾木观景台（哈登平台）",
-      "lat": 48.562,
-      "lng": 87.418,
+      "lat": 48.577354,
+      "lng": 87.428572,
       "elevation": 1120.0,
       "tags": [
         "sunrise",
@@ -48,8 +48,8 @@
     {
       "id": "hemu_bridge",
       "name": "禾木桥",
-      "lat": 48.558,
-      "lng": 87.422,
+      "lat": 48.571972,
+      "lng": 87.430677,
       "elevation": 1080.0,
       "tags": [
         "sunrise",

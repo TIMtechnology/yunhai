@@ -186,7 +186,6 @@ function openGithub() {
           <SpotPanel />
           <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden p-3">
             <MapPanel
-              :key="store.currentSpot?.id ?? store.prediction?.location.name ?? 'default'"
               class="min-h-0"
               :lng="mapTarget.lng"
               :lat="mapTarget.lat"

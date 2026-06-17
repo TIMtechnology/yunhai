@@ -8,7 +8,7 @@
   ],
   "region": "江西省上饶市玉山县/德兴市",
   "peak_elevation": 1819.9,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -41,8 +41,8 @@
     {
       "id": "yujingfeng",
       "name": "玉京峰",
-      "lat": 28.919,
-      "lng": 118.065,
+      "lat": 28.912752,
+      "lng": 118.063138,
       "elevation": 1819.0,
       "tags": [
         "sunrise",
@@ -54,8 +54,8 @@
     {
       "id": "yutai",
       "name": "玉台",
-      "lat": 28.908,
-      "lng": 118.078,
+      "lat": 28.902585,
+      "lng": 118.071584,
       "elevation": 1600.0,
       "tags": [
         "sunrise",
@@ -67,8 +67,8 @@
     {
       "id": "yangguangyan",
       "name": "阳光海岸栈道",
-      "lat": 28.908,
-      "lng": 118.072,
+      "lat": 28.906546,
+      "lng": 118.073365,
       "elevation": 1580.0,
       "tags": [
         "cloudsea",

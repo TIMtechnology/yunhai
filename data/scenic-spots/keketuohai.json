@@ -8,7 +8,7 @@
   ],
   "region": "新疆阿勒泰地区富蕴县",
   "peak_elevation": 3100.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -35,8 +35,8 @@
     {
       "id": "shenzhongshan",
       "name": "神钟山",
-      "lat": 47.168,
-      "lng": 89.868,
+      "lat": 47.298558,
+      "lng": 89.975363,
       "elevation": 1350.0,
       "tags": [
         "sunrise",
@@ -48,8 +48,8 @@
     {
       "id": "shuanghua",
       "name": "双花台",
-      "lat": 47.175,
-      "lng": 89.875,
+      "lat": 47.222081,
+      "lng": 89.884211,
       "elevation": 1400.0,
       "tags": [
         "cloudsea",

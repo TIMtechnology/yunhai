@@ -8,7 +8,7 @@
   ],
   "region": "新疆阿勒泰地区哈巴河县",
   "peak_elevation": 1120.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -35,8 +35,8 @@
     {
       "id": "guanjingtai",
       "name": "白哈巴观景台",
-      "lat": 48.472,
-      "lng": 86.828,
+      "lat": 48.682104,
+      "lng": 86.78144,
       "elevation": 1100.0,
       "tags": [
         "sunrise",

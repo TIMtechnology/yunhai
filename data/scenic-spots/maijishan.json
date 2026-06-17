@@ -8,7 +8,7 @@
   ],
   "region": "甘肃省天水市麦积区",
   "peak_elevation": 1742.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -37,8 +37,8 @@
     {
       "id": "shiku",
       "name": "麦积山石窟",
-      "lat": 34.352,
-      "lng": 106.008,
+      "lat": 34.348725,
+      "lng": 106.009975,
       "elevation": 1480.0,
       "tags": [
         "sunrise",
@@ -50,8 +50,8 @@
     {
       "id": "ruixiangfeng",
       "name": "瑞应峰",
-      "lat": 34.355,
-      "lng": 106.012,
+      "lat": 34.367288,
+      "lng": 106.001186,
       "elevation": 1742.0,
       "tags": [
         "cloudsea"

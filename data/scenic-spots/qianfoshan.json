@@ -8,7 +8,7 @@
   ],
   "region": "四川省成都市大邑县",
   "peak_elevation": 3060.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       5,
@@ -36,8 +36,8 @@
     {
       "id": "jinding",
       "name": "千佛山金顶",
-      "lat": 30.978,
-      "lng": 103.278,
+      "lat": 30.537485,
+      "lng": 103.230219,
       "elevation": 3060.0,
       "tags": [
         "sunrise",

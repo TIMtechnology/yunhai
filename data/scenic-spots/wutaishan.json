@@ -1,61 +1,93 @@
 {
   "id": "wutaishan",
   "name": "五台山",
-  "aliases": ["五台山风景区", "文殊五台山"],
+  "aliases": [
+    "五台山风景区",
+    "文殊五台山"
+  ],
   "region": "山西省忻州市",
   "peak_elevation": 3061,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [6, 7, 8, 9, 10],
-    "sunrise_months": [5, 6, 7, 8, 9],
+    "cloudsea_months": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
     "sunrise_best": "summer"
   },
-  "rules": { "rh_threshold": 74 },
-  "cloud_region": { "span_lng": 2.4, "span_lat": 1.6 },
+  "rules": {
+    "rh_threshold": 74
+  },
+  "cloud_region": {
+    "span_lng": 2.4,
+    "span_lat": 1.6
+  },
   "viewpoints": [
     {
       "id": "dongtai",
       "name": "东台顶",
-      "lat": 39.04056,
-      "lng": 113.57222,
+      "lat": 39.041873,
+      "lng": 113.66785,
       "elevation": 2795,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "五台山看日出首选（WGS84）"
     },
     {
       "id": "beitai",
       "name": "北台顶",
-      "lat": 39.08111,
-      "lng": 113.56861,
+      "lat": 39.080888,
+      "lng": 113.57354,
       "elevation": 3061,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "华北最高，云海频发（WGS84）"
     },
     {
       "id": "tayuan",
       "name": "塔院寺",
-      "lat": 39.0075,
-      "lng": 113.59361,
+      "lat": 39.008339,
+      "lng": 113.595946,
       "elevation": 1700,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "台怀镇核心，常见云雾（WGS84）"
     },
     {
       "id": "zhongtai",
       "name": "中台顶",
-      "lat": 39.03972,
-      "lng": 113.55694,
+      "lat": 39.047162,
+      "lng": 113.537445,
       "elevation": 2894,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "五台中心，翠岩峰（WGS84）"
     },
     {
       "id": "xiantong",
       "name": "西台顶",
-      "lat": 39.03889,
-      "lng": 113.50278,
+      "lat": 39.038044,
+      "lng": 113.497309,
       "elevation": 2773,
-      "tags": ["cloudsea", "sunrise"],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
       "note": "挂月峰，西向日落/云海（WGS84）"
     }
   ]

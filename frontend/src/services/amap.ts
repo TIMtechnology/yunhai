@@ -1,8 +1,10 @@
-import { TIANDITU_KEY } from '../config'
+import AMapLoader from '@amap/amap-jsapi-loader'
+import { AMAP_KEY, AMAP_SECURITY } from '../config'
 
 declare global {
   interface Window {
-    T: any
+    AMap: any
+    _AMapSecurityConfig?: { securityJsCode: string }
   }
 }
 
@@ -10,6 +12,26 @@ let loading: Promise<void> | null = null
 let markerRef: any = null
 let infoWindowRef: any = null
 let mapClickCleanup: (() => void) | null = null
+let mapContainerSeq = 0
+let mapInitGeneration = 0
+
+export function nextMapInitGeneration(): number {
+  return ++mapInitGeneration
+}
+
+export function isMapInitAlive(generation: number): boolean {
+  return generation === mapInitGeneration
+}
+
+export function cancelMapInits(): void {
+  mapInitGeneration += 1
+}
+
+export function assignMapContainerId(container: HTMLElement): string {
+  const id = `yunhai-amap-${++mapContainerSeq}-${Date.now().toString(36)}`
+  container.id = id
+  return id
+}
 
 export interface CloudBounds {
   west: number
@@ -30,44 +52,96 @@ export interface MarkerOptions {
   onMove?: (lng: number, lat: number) => void
 }
 
-export function loadTianditu(): Promise<void> {
-  if (window.T) return Promise.resolve()
+export function loadAmap(): Promise<void> {
+  if (!AMAP_KEY || !AMAP_SECURITY) {
+    return Promise.reject(new Error('未配置高德地图 Key / 安全密钥'))
+  }
+  if (window.AMap) return Promise.resolve()
   if (loading) return loading
 
-  loading = new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = `https://api.tianditu.gov.cn/api?v=4.0&tk=${TIANDITU_KEY}`
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('天地图加载失败'))
-    document.head.appendChild(script)
+  window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY }
+
+  loading = AMapLoader.load({
+    key: AMAP_KEY,
+    version: '2.0',
   })
+    .then(() => {
+      if (!window.AMap) throw new Error('高德 SDK 未就绪')
+    })
+    .catch((err) => {
+      loading = null
+      throw err
+    })
+
   return loading
 }
 
-export function createMap(container: HTMLElement, lng: number, lat: number, zoom = 12) {
-  const T = window.T
-  const map = new T.Map(container)
-  map.centerAndZoom(new T.LngLat(lng, lat), zoom)
-  map.enableScrollWheelZoom()
+export function scheduleMapResize(map: any) {
+  const run = () => map?.resize?.()
+  run()
+  window.requestAnimationFrame(run)
+  window.setTimeout(run, 120)
+  window.setTimeout(run, 400)
+}
 
-  const layer = new T.TileLayer(
-    `https://t0.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=${TIANDITU_KEY}`,
-    { minZoom: 1, maxZoom: 18 },
-  )
-  const labelLayer = new T.TileLayer(
-    `https://t0.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=${TIANDITU_KEY}`,
-    { minZoom: 1, maxZoom: 18 },
-  )
-  map.addLayer(layer)
-  map.addLayer(labelLayer)
-  return map
+export function createMap(
+  container: HTMLElement,
+  lng: number,
+  lat: number,
+  zoom = 12,
+): Promise<any> {
+  if (!container.isConnected) {
+    return Promise.reject(new Error('地图容器未挂载到 DOM'))
+  }
+  if (container.clientWidth < 8 || container.clientHeight < 8) {
+    return Promise.reject(new Error('地图容器尺寸为零'))
+  }
+
+  const id = assignMapContainerId(container)
+  const el = document.getElementById(id)
+  if (!el || el !== container) {
+    return Promise.reject(new Error('地图容器 id 无效'))
+  }
+
+  return new Promise((resolve, reject) => {
+    let settled = false
+    const timer = window.setTimeout(() => {
+      if (settled) return
+      settled = true
+      reject(new Error('地图瓦片加载超时，请检查高德控制台域名白名单是否包含 yunhai.timkj.com'))
+    }, 20000)
+
+    try {
+      const map = new window.AMap.Map(id, {
+        center: [lng, lat],
+        zoom,
+        resizeEnable: true,
+      })
+
+      const onComplete = () => {
+        if (settled) return
+        settled = true
+        window.clearTimeout(timer)
+        scheduleMapResize(map)
+        resolve(map)
+      }
+
+      map.on('complete', onComplete)
+
+      if (typeof map.getStatus === 'function' && map.getStatus() === 'complete') {
+        onComplete()
+      }
+    } catch (err) {
+      window.clearTimeout(timer)
+      reject(err)
+    }
+  })
 }
 
 function readLngLat(point: any): { lng: number; lat: number } | null {
   if (!point) return null
-  const lng = point.lng ?? point.getLng?.()
-  const lat = point.lat ?? point.getLat?.()
+  const lng = typeof point.getLng === 'function' ? point.getLng() : point.lng
+  const lat = typeof point.getLat === 'function' ? point.getLat() : point.lat
   if (typeof lng !== 'number' || typeof lat !== 'number') return null
   return { lng, lat }
 }
@@ -79,33 +153,31 @@ export function addMarker(
   label: string,
   options?: MarkerOptions,
 ) {
-  const T = window.T
-  if (markerRef) map.removeOverLay(markerRef)
-  if (infoWindowRef) map.closeInfoWindow()
+  if (markerRef) map.remove(markerRef)
+  infoWindowRef?.close?.()
 
-  const point = new T.LngLat(lng, lat)
-  const marker = new T.Marker(point)
-  map.addOverLay(marker)
+  const marker = new window.AMap.Marker({
+    position: [lng, lat],
+    draggable: Boolean(options?.draggable),
+  })
+  map.add(marker)
   markerRef = marker
 
-  if (options?.draggable) {
-    marker.enableDragging?.()
-    marker.addEventListener?.('dragend', () => {
-      const pos = readLngLat(marker.getLngLat?.())
-      if (pos && options.onMove) options.onMove(pos.lng, pos.lat)
+  if (options?.draggable && options.onMove) {
+    marker.on('dragend', () => {
+      const pos = readLngLat(marker.getPosition?.())
+      if (pos) options.onMove!(pos.lng, pos.lat)
     })
   }
 
-  if (T.InfoWindow) {
-    const hint = options?.draggable ? '<div style="font-size:10px;color:#64748b;margin-top:2px;">可拖动调整位置</div>' : ''
-    const win = new T.InfoWindow(
-      `<div style="font-size:12px;padding:2px 4px;">${label}${hint}</div>`,
-      { offset: new T.Point(0, -20) },
-    )
-    map.openInfoWindow(win, point)
-    infoWindowRef = win
-  }
-  map.panTo(point)
+  const hint = options?.draggable
+    ? '<div style="font-size:10px;color:#64748b;margin-top:2px;">可拖动调整位置</div>'
+    : ''
+  infoWindowRef = new window.AMap.InfoWindow({
+    content: `<div style="font-size:12px;padding:2px 4px;">${label}${hint}</div>`,
+    offset: new window.AMap.Pixel(0, -28),
+  })
+  infoWindowRef.open(map, [lng, lat])
 }
 
 export function bindMapClickForMarker(
@@ -121,22 +193,22 @@ export function bindMapClickForMarker(
     const pos = readLngLat(event.lnglat ?? event.lngLat)
     if (pos) onClick(pos.lng, pos.lat)
   }
-  map.addEventListener?.('click', handler)
-  mapClickCleanup = () => map.removeEventListener?.('click', handler)
+  map.on('click', handler)
+  mapClickCleanup = () => map.off('click', handler)
 }
 
 export function getMapViewportBounds(map: any): CloudBounds | null {
   const bounds = map?.getBounds?.()
   if (!bounds) return null
 
-  const sw = bounds.getSouthWest?.() ?? bounds.Lq ?? bounds.southWest
-  const ne = bounds.getNorthEast?.() ?? bounds.kq ?? bounds.northEast
+  const sw = bounds.getSouthWest?.()
+  const ne = bounds.getNorthEast?.()
   if (!sw || !ne) return null
 
-  const west = sw.lng ?? sw.getLng?.()
-  const south = sw.lat ?? sw.getLat?.()
-  const east = ne.lng ?? ne.getLng?.()
-  const north = ne.lat ?? ne.getLat?.()
+  const west = sw.getLng?.() ?? sw.lng
+  const south = sw.getLat?.() ?? sw.lat
+  const east = ne.getLng?.() ?? ne.lng
+  const north = ne.getLat?.() ?? ne.lat
   if ([west, south, east, north].some((v) => typeof v !== 'number' || Number.isNaN(v))) {
     return null
   }
@@ -145,22 +217,21 @@ export function getMapViewportBounds(map: any): CloudBounds | null {
 }
 
 function bindMapSync(map: any, handler: () => void): () => void {
-  const events = ['move', 'moveend', 'zoomend', 'resize']
+  const events = ['mapmove', 'moveend', 'zoomend', 'resize']
   for (const name of events) {
-    map.addEventListener?.(name, handler)
+    map.on(name, handler)
   }
   return () => {
     for (const name of events) {
-      map.removeEventListener?.(name, handler)
+      map.off(name, handler)
     }
   }
 }
 
 function computeOverlayRect(map: any, bounds: CloudBounds): OverlayRect | null {
-  const T = window.T
   try {
-    const sw = map.lngLatToContainerPoint(new T.LngLat(bounds.west, bounds.south))
-    const ne = map.lngLatToContainerPoint(new T.LngLat(bounds.east, bounds.north))
+    const sw = map.lngLatToContainer([bounds.west, bounds.south])
+    const ne = map.lngLatToContainer([bounds.east, bounds.north])
     if (!sw || !ne) return null
     return {
       left: Math.min(sw.x, ne.x),
@@ -188,7 +259,6 @@ function applyOverlayRect(
   frame.style.height = `${rect.height}px`
 }
 
-/** 将卫星云图贴到地图宿主层（wrapRef），避免被天地图瓦片层遮挡 */
 export function attachCloudImageOverlay(
   map: any,
   hostEl: HTMLElement,
@@ -245,12 +315,12 @@ export function bindMapViewportChange(map: any, handler: () => void): () => void
   }
   const events = ['zoomend', 'moveend', 'resize']
   for (const name of events) {
-    map.addEventListener?.(name, debounced)
+    map.on(name, debounced)
   }
   return () => {
     if (timer) clearTimeout(timer)
     for (const name of events) {
-      map.removeEventListener?.(name, debounced)
+      map.off(name, debounced)
     }
   }
 }

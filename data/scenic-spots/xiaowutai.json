@@ -9,7 +9,7 @@
   ],
   "region": "河北省张家口市蔚县/涿鹿县",
   "peak_elevation": 2882.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -34,8 +34,8 @@
     {
       "id": "dongtai",
       "name": "东台",
-      "lat": 39.8742,
-      "lng": 114.5917,
+      "lat": 39.942519,
+      "lng": 115.048971,
       "elevation": 2882.0,
       "tags": [
         "sunrise",

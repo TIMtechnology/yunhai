@@ -1,4 +1,5 @@
-export const TIANDITU_KEY = import.meta.env.VITE_TIANDITU_KEY ?? ''
+export const AMAP_KEY = import.meta.env.VITE_AMAP_KEY ?? ''
+export const AMAP_SECURITY = import.meta.env.VITE_AMAP_SECURITY ?? ''
 
 /** 开源仓库（README 与页头入口保持一致） */
 export const GITHUB_REPO_URL = 'https://github.com/TIMtechnology/yunhai'

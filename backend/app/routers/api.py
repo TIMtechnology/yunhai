@@ -34,7 +34,7 @@ async def spots_search(
     curated_only: bool = True,
     poi_only: bool = False,
 ):
-    """精选景区搜索。POI 由前端浏览器直连天地图（Key 为浏览器端权限）。"""
+    """精选景区搜索。POI 由前端浏览器直连高德（Key 为浏览器端权限）。"""
     if poi_only:
         return {"results": []}
 
@@ -82,6 +82,7 @@ async def predict_viewpoint(spot_id: str, viewpoint_id: str, hours: int = 120):
         spot_id=spot_id,
         viewpoint_id=viewpoint_id,
         hours=hours,
+        coord_sys=spot.coord_sys if spot else "GCJ-02",
     )
     return await run_prediction(req)
 

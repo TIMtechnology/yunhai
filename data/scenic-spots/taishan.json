@@ -1,52 +1,83 @@
 {
   "id": "taishan",
   "name": "泰山",
-  "aliases": ["泰山风景区", "东岳泰山"],
+  "aliases": [
+    "泰山风景区",
+    "东岳泰山"
+  ],
   "region": "山东省泰安市",
   "peak_elevation": 1532,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [10, 11, 12, 1, 2, 3],
-    "sunrise_months": [3, 4, 5, 9, 10],
+    "cloudsea_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "sunrise_months": [
+      3,
+      4,
+      5,
+      9,
+      10
+    ],
     "sunrise_best": "spring"
   },
-  "rules": { "rh_threshold": 75 },
-  "cloud_region": { "span_lng": 2.0, "span_lat": 1.4 },
+  "rules": {
+    "rh_threshold": 75
+  },
+  "cloud_region": {
+    "span_lng": 2.0,
+    "span_lat": 1.4
+  },
   "viewpoints": [
     {
       "id": "riguan",
       "name": "日观峰",
-      "lat": 36.25472,
-      "lng": 117.10083,
+      "lat": 36.256101,
+      "lng": 117.111701,
       "elevation": 1545,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "泰山经典日出点（WGS84）"
     },
     {
       "id": "tianjie",
       "name": "天街",
-      "lat": 36.24972,
-      "lng": 117.09972,
+      "lat": 36.256052,
+      "lng": 117.104801,
       "elevation": 1460,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "云雾缭绕的标志性街景（WGS84）"
     },
     {
       "id": "yuhuangding",
       "name": "玉皇顶",
-      "lat": 36.25222,
-      "lng": 117.10139,
+      "lat": 36.257337,
+      "lng": 117.109129,
       "elevation": 1545,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "泰山主峰，经典日出与云海机位（WGS84）"
     },
     {
       "id": "hongmen",
       "name": "红门",
-      "lat": 36.20833,
-      "lng": 117.12917,
+      "lat": 36.210221,
+      "lng": 117.128382,
       "elevation": 250,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "传统登山路线起点，低海拔参考点（WGS84）"
     }
   ]

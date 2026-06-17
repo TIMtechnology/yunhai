@@ -9,7 +9,7 @@
   ],
   "region": "山东省青岛市崂山区",
   "peak_elevation": 1132.7,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -40,8 +40,8 @@
     {
       "id": "jufeng",
       "name": "巨峰（崂顶）",
-      "lat": 36.175,
-      "lng": 120.62639,
+      "lat": 36.176609,
+      "lng": 120.631686,
       "elevation": 1132.0,
       "tags": [
         "sunrise",
@@ -53,8 +53,8 @@
     {
       "id": "zhaixingting",
       "name": "摘星亭",
-      "lat": 36.1745,
-      "lng": 120.6275,
+      "lat": 36.172189,
+      "lng": 120.630663,
       "elevation": 1100.0,
       "tags": [
         "sunrise",

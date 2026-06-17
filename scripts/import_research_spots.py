@@ -58,7 +58,7 @@ def _clean_spot(raw: dict) -> dict:
         "aliases": list(raw.get("aliases") or []),
         "region": raw["region"],
         "peak_elevation": float(raw["peak_elevation"]),
-        "coord_sys": raw.get("coord_sys") or "WGS84",
+        "coord_sys": raw.get("coord_sys") or "GCJ-02",
         "seasonality": dict(raw.get("seasonality") or {}),
         "rules": rules,
         "viewpoints": cleaned_vps,

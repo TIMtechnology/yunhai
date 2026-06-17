@@ -8,7 +8,7 @@
   ],
   "region": "吉林省延边州安图县/白山市抚松县",
   "peak_elevation": 2691.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -34,8 +34,8 @@
     {
       "id": "tianwenfeng",
       "name": "天文峰（北坡主峰观景台）",
-      "lat": 42.0119,
-      "lng": 128.0708,
+      "lat": 42.029017,
+      "lng": 128.072936,
       "elevation": 2670.0,
       "tags": [
         "sunrise",
@@ -47,8 +47,8 @@
     {
       "id": "xipo_guanjingtai",
       "name": "西坡天池观景台",
-      "lat": 41.9978,
-      "lng": 128.0562,
+      "lat": 42.05372,
+      "lng": 128.084997,
       "elevation": 2500.0,
       "tags": [
         "sunrise",

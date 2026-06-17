@@ -28,7 +28,7 @@ const presets = [
 ]
 
 function sourceLabel(item: SpotSearchResult) {
-  return item.source === 'curated' ? '精选' : '天地图'
+  return item.source === 'curated' ? '精选' : '高德'
 }
 
 function sourceClass(item: SpotSearchResult) {
@@ -53,7 +53,7 @@ const hasSearchResults = computed(
         size="small"
       />
       <div class="mt-1.5 text-[10px] text-slate-500">
-        支持天地图 POI 与精选观景点；POI 结果带绿色「天地图」标签
+        支持高德 POI 与精选观景点；POI 结果带绿色「高德」标签
       </div>
       <div class="mt-2 flex flex-wrap gap-1.5">
         <n-button
@@ -106,7 +106,7 @@ const hasSearchResults = computed(
       </div>
 
       <div v-if="store.poiResults.length">
-        <div class="mb-1 px-1 text-[10px] font-medium text-emerald-300">天地图 POI</div>
+        <div class="mb-1 px-1 text-[10px] font-medium text-emerald-300">高德 POI</div>
         <button
           v-for="item in store.poiResults"
           :key="item.id"
@@ -158,7 +158,7 @@ const hasSearchResults = computed(
       </div>
 
       <div v-if="store.poiSuggestions.length" class="mt-2 shrink-0 border-t border-slate-700/80 pt-2">
-        <div class="mb-1 text-[10px] font-medium text-emerald-300">天地图定位建议</div>
+        <div class="mb-1 text-[10px] font-medium text-emerald-300">高德定位建议</div>
         <div class="max-h-24 space-y-1 overflow-auto">
           <button
             v-for="item in store.poiSuggestions"
@@ -182,7 +182,7 @@ const hasSearchResults = computed(
 
     <div v-else-if="store.prediction" class="glass shrink-0 space-y-2 p-3">
       <div>
-        <div class="text-[10px] text-slate-400">当前位置（天地图 POI / 自定义）</div>
+        <div class="text-[10px] text-slate-400">当前位置（高德 POI / 自定义）</div>
         <div class="truncate text-sm font-semibold">{{ store.prediction.location.name }}</div>
         <div class="mt-0.5 text-[10px] text-slate-500">
           {{ store.prediction.location.lat.toFixed(5) }},
@@ -199,7 +199,7 @@ const hasSearchResults = computed(
       v-else
       class="glass flex flex-1 items-center justify-center p-4 text-center text-xs text-slate-500"
     >
-      搜索天地图 POI 或点选精选景区
+      搜索高德 POI 或点选精选景区
     </div>
   </div>
 </template>

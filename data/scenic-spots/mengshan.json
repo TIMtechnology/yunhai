@@ -9,7 +9,7 @@
   ],
   "region": "山东省临沂市平邑县",
   "peak_elevation": 1156.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -37,8 +37,8 @@
     {
       "id": "guimengding",
       "name": "龟蒙顶",
-      "lat": 35.2506,
-      "lng": 117.946,
+      "lat": 35.227752,
+      "lng": 117.913272,
       "elevation": 1156.0,
       "tags": [
         "sunrise",

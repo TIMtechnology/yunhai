@@ -12,7 +12,7 @@
   ],
   "region": "浙江省温州市乐清市",
   "peak_elevation": 1150.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -41,8 +41,8 @@
     {
       "id": "baigangjian",
       "name": "百岗尖",
-      "lat": 28.37,
-      "lng": 121.06,
+      "lat": 28.365995,
+      "lng": 121.053466,
       "elevation": 1108.0,
       "tags": [
         "cloudsea",
@@ -54,8 +54,8 @@
     {
       "id": "yanhu",
       "name": "雁湖",
-      "lat": 28.365,
-      "lng": 121.08,
+      "lat": 28.338534,
+      "lng": 121.022,
       "elevation": 890.0,
       "tags": [
         "sunrise",
@@ -67,8 +67,8 @@
     {
       "id": "lingfeng",
       "name": "灵峰",
-      "lat": 28.385,
-      "lng": 121.095,
+      "lat": 28.378185,
+      "lng": 121.114931,
       "elevation": 320.0,
       "tags": [
         "sunrise",

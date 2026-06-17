@@ -1,13 +1,31 @@
 {
   "id": "donglingshan",
   "name": "东灵山",
-  "aliases": ["东灵山", "灵山", "北京灵山", "北京东灵山"],
+  "aliases": [
+    "东灵山",
+    "灵山",
+    "北京灵山",
+    "北京东灵山"
+  ],
   "region": "北京市门头沟区",
   "peak_elevation": 2303,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [5, 6, 7, 8, 9, 10],
-    "sunrise_months": [5, 6, 7, 8, 9],
+    "cloudsea_months": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "sunrise_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
     "sunrise_best": "summer_autumn"
   },
   "rules": {
@@ -24,11 +42,14 @@
     {
       "id": "fengding",
       "name": "峰顶",
-      "lat": 40.0161,
-      "lng": 115.50136,
+      "lat": 40.016715,
+      "lng": 115.494375,
       "elevation": 2274,
       "viewing_mode": "peak_overlook",
-      "tags": ["cloudsea", "sunrise"],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
       "note": "华北高峰，典型峰顶俯瞰云海场景（坐标与社区标注一致）"
     }
   ],

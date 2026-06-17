@@ -1,13 +1,32 @@
 {
   "id": "daheishan",
   "name": "大连大黑山",
-  "aliases": ["大黑山", "大连大黑山", "金州大黑山"],
+  "aliases": [
+    "大黑山",
+    "大连大黑山",
+    "金州大黑山"
+  ],
   "region": "辽宁省大连市金州区",
   "peak_elevation": 663.1,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [4, 5, 6, 9, 10, 11],
-    "sunrise_months": [4, 5, 6, 7, 8, 9, 10],
+    "cloudsea_months": [
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "sunrise_months": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
     "sunrise_best": "spring_autumn"
   },
   "rules": {
@@ -23,28 +42,35 @@
     {
       "id": "zhufeng",
       "name": "主峰",
-      "lat": 39.09811,
-      "lng": 121.78396,
+      "lat": 39.104356,
+      "lng": 121.791993,
       "elevation": 663,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "金州区大黑山主峰，海拔663m（WGS84）"
     },
     {
       "id": "tanggong",
       "name": "唐王宫道院",
-      "lat": 39.04972,
-      "lng": 121.77917,
+      "lat": 39.090741,
+      "lng": 121.779213,
       "elevation": 513,
-      "tags": ["sunrise"],
+      "tags": [
+        "sunrise"
+      ],
       "note": "大黑山西麓唐王殿道院附近（WGS84）"
     },
     {
       "id": "beijiangtai",
       "name": "北疆台",
-      "lat": 39.05083,
-      "lng": 121.78528,
+      "lat": 39.104356,
+      "lng": 121.791993,
       "elevation": 620,
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "主峰北侧观景台，雨后常见云海（WGS84）"
     }
   ]

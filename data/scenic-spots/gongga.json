@@ -9,7 +9,7 @@
   ],
   "region": "四川省甘孜州康定市/泸定县",
   "peak_elevation": 7508.9,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -38,8 +38,8 @@
     {
       "id": "zimeiyakou",
       "name": "子梅垭口",
-      "lat": 29.583,
-      "lng": 101.789,
+      "lat": 29.515434,
+      "lng": 101.723028,
       "elevation": 4550.0,
       "tags": [
         "sunrise",
@@ -51,8 +51,8 @@
     {
       "id": "lenggacuo",
       "name": "冷噶措",
-      "lat": 29.568,
-      "lng": 101.812,
+      "lat": 29.546092,
+      "lng": 101.634064,
       "elevation": 4500.0,
       "tags": [
         "sunrise",
@@ -64,8 +64,8 @@
     {
       "id": "zhufeng",
       "name": "贡嘎主峰",
-      "lat": 29.5953,
-      "lng": 101.8797,
+      "lat": 29.594001,
+      "lng": 101.880084,
       "elevation": 7509.0,
       "tags": [
         "cloudsea"

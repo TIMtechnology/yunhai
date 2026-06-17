@@ -9,7 +9,7 @@
   ],
   "region": "辽宁省丹东市凤城市",
   "peak_elevation": 836.4,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -38,8 +38,8 @@
     {
       "id": "laoniubei",
       "name": "老牛背",
-      "lat": 40.4265,
-      "lng": 124.0538,
+      "lat": 40.40943,
+      "lng": 124.072344,
       "elevation": 800.0,
       "tags": [
         "cloudsea",
@@ -51,8 +51,8 @@
     {
       "id": "zanyunfeng",
       "name": "攒云峰",
-      "lat": 40.4312,
-      "lng": 124.0615,
+      "lat": 40.416942,
+      "lng": 124.077952,
       "elevation": 836.0,
       "tags": [
         "sunrise",

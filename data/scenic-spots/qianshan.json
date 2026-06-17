@@ -8,7 +8,7 @@
   ],
   "region": "辽宁省鞍山市铁东区",
   "peak_elevation": 708.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -37,8 +37,8 @@
     {
       "id": "wufoding",
       "name": "五佛顶",
-      "lat": 40.0978,
-      "lng": 123.1012,
+      "lat": 41.023351,
+      "lng": 123.111474,
       "elevation": 554.0,
       "tags": [
         "sunrise",
@@ -50,8 +50,8 @@
     {
       "id": "xianrentai",
       "name": "仙人台",
-      "lat": 40.1025,
-      "lng": 123.1088,
+      "lat": 40.993733,
+      "lng": 123.133058,
       "elevation": 708.0,
       "tags": [
         "cloudsea",

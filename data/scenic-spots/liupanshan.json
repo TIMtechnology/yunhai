@@ -9,7 +9,7 @@
   ],
   "region": "宁夏固原市泾源县/甘肃省平凉市",
   "peak_elevation": 2942.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -35,8 +35,8 @@
     {
       "id": "migangshan",
       "name": "米缸山（主峰）",
-      "lat": 35.522,
-      "lng": 106.278,
+      "lat": 35.668739,
+      "lng": 106.206621,
       "elevation": 2942.0,
       "tags": [
         "cloudsea",
@@ -48,8 +48,8 @@
     {
       "id": "liangdian",
       "name": "六盘山红军长征纪念馆观景台",
-      "lat": 35.658,
-      "lng": 106.312,
+      "lat": 35.668091,
+      "lng": 106.206978,
       "elevation": 2380.0,
       "tags": [
         "sunrise",

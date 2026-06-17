@@ -9,7 +9,7 @@
   ],
   "region": "四川省阿坝州小金县",
   "peak_elevation": 6247.8,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       5,
@@ -37,8 +37,8 @@
     {
       "id": "maobiliang",
       "name": "猫鼻梁观景台",
-      "lat": 31.058,
-      "lng": 102.885,
+      "lat": 30.987878,
+      "lng": 102.84704,
       "elevation": 3500.0,
       "tags": [
         "sunrise",
@@ -50,8 +50,8 @@
     {
       "id": "yaomeifeng",
       "name": "幺妹峰",
-      "lat": 31.10636,
-      "lng": 102.90199,
+      "lat": 31.100572,
+      "lng": 102.900233,
       "elevation": 6248.0,
       "tags": [
         "cloudsea"

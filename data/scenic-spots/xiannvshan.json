@@ -8,7 +8,7 @@
   ],
   "region": "重庆市武隆区",
   "peak_elevation": 2033.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       11,
@@ -37,8 +37,8 @@
     {
       "id": "caoyuan",
       "name": "仙女山大草原",
-      "lat": 29.402,
-      "lng": 107.752,
+      "lat": 29.508685,
+      "lng": 107.756186,
       "elevation": 1900.0,
       "tags": [
         "sunrise",
@@ -50,8 +50,8 @@
     {
       "id": "tree_hotel",
       "name": "树顶漫步/观光台",
-      "lat": 29.398,
-      "lng": 107.748,
+      "lat": 29.433682,
+      "lng": 107.804818,
       "elevation": 1850.0,
       "tags": [
         "cloudsea"

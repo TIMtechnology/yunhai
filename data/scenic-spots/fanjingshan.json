@@ -9,7 +9,7 @@
   ],
   "region": "贵州省铜仁市江口县/印江县",
   "peak_elevation": 2572.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -40,8 +40,8 @@
     {
       "id": "hongyunjinding",
       "name": "红云金顶",
-      "lat": 27.886,
-      "lng": 108.672,
+      "lat": 27.906376,
+      "lng": 108.695812,
       "elevation": 2336.0,
       "tags": [
         "sunrise",
@@ -53,8 +53,8 @@
     {
       "id": "mogushi",
       "name": "蘑菇石",
-      "lat": 27.884,
-      "lng": 108.668,
+      "lat": 27.908755,
+      "lng": 108.697891,
       "elevation": 2310.0,
       "tags": [
         "cloudsea",
@@ -66,8 +66,8 @@
     {
       "id": "laojinding",
       "name": "老金顶（月镜山）",
-      "lat": 27.888,
-      "lng": 108.665,
+      "lat": 27.910765,
+      "lng": 108.697183,
       "elevation": 2493.0,
       "tags": [
         "cloudsea"

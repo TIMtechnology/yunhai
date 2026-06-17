@@ -8,7 +8,7 @@
   ],
   "region": "福建省福州市晋安区",
   "peak_elevation": 919.1,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -36,8 +36,8 @@
     {
       "id": "dadingfeng",
       "name": "大顶峰",
-      "lat": 26.05666,
-      "lng": 119.39054,
+      "lat": 26.056358,
+      "lng": 119.391068,
       "elevation": 919.0,
       "tags": [
         "sunrise",
@@ -49,8 +49,8 @@
     {
       "id": "yongquansi",
       "name": "涌泉寺观景台",
-      "lat": 26.052,
-      "lng": 119.388,
+      "lat": 26.05504,
+      "lng": 119.395689,
       "elevation": 450.0,
       "tags": [
         "cloudsea"

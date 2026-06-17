@@ -1,13 +1,33 @@
 {
   "id": "zhangjiajie",
   "name": "张家界",
-  "aliases": ["张家界国家森林公园", "武陵源", "天门山", "天子山"],
+  "aliases": [
+    "张家界国家森林公园",
+    "武陵源",
+    "天门山",
+    "天子山"
+  ],
   "region": "湖南省张家界市",
   "peak_elevation": 1262,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [3, 4, 5, 9, 10, 11, 12],
-    "sunrise_months": [3, 4, 5, 9, 10, 11],
+    "cloudsea_months": [
+      3,
+      4,
+      5,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sunrise_months": [
+      3,
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
     "sunrise_best": "spring_autumn"
   },
   "rules": {
@@ -24,31 +44,39 @@
     {
       "id": "tianzishan",
       "name": "天子山",
-      "lat": 29.40833,
-      "lng": 110.44167,
+      "lat": 29.401558,
+      "lng": 110.443813,
       "elevation": 1262,
       "viewing_mode": "peak_overlook",
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "峰林云海经典机位（WGS84）"
     },
     {
       "id": "tianmenshan",
       "name": "天门山玻璃栈道",
-      "lat": 29.05528,
-      "lng": 110.47917,
+      "lat": 29.067325,
+      "lng": 110.47564,
       "elevation": 1518,
       "viewing_mode": "peak_overlook",
-      "tags": ["cloudsea", "sunrise"],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
       "note": "天门洞上方，云雾缭绕（WGS84）"
     },
     {
       "id": "yuanjiajie",
       "name": "袁家界（迷魂台）",
-      "lat": 29.25278,
-      "lng": 110.43611,
+      "lat": 29.343647,
+      "lng": 110.444085,
       "elevation": 1074,
       "viewing_mode": "peak_overlook",
-      "tags": ["cloudsea"],
+      "tags": [
+        "cloudsea"
+      ],
       "note": "阿凡达悬浮山原型，云海频发"
     }
   ],

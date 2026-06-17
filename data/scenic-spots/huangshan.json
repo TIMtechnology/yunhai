@@ -1,16 +1,35 @@
 {
   "id": "huangshan",
   "name": "黄山",
-  "aliases": ["黄山风景区", "徽州黄山"],
+  "aliases": [
+    "黄山风景区",
+    "徽州黄山"
+  ],
   "region": "安徽省黄山市",
   "peak_elevation": 1864,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
-    "cloudsea_months": [11, 12, 1, 2, 3, 4],
-    "sunrise_months": [3, 4, 5, 9, 10, 11],
+    "cloudsea_months": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sunrise_months": [
+      3,
+      4,
+      5,
+      9,
+      10,
+      11
+    ],
     "sunrise_best": "winter_spring"
   },
-  "rules": { "rh_threshold": 80 },
+  "rules": {
+    "rh_threshold": 80
+  },
   "cloud_region": {
     "span_lng": 2.5,
     "span_lat": 1.8
@@ -19,46 +38,60 @@
     {
       "id": "guangmingding",
       "name": "光明顶",
-      "lat": 30.13472,
-      "lng": 118.16861,
+      "lat": 30.132266,
+      "lng": 118.169186,
       "elevation": 1860,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "黄山第二高峰，经典日出点（WGS84）"
     },
     {
       "id": "shixin",
       "name": "始信峰",
-      "lat": 30.14111,
-      "lng": 118.15889,
+      "lat": 30.141666,
+      "lng": 118.174747,
       "elevation": 1668,
-      "tags": ["cloudsea", "sunrise"],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
       "note": "北海景区经典云海点（WGS84）"
     },
     {
       "id": "danxia",
       "name": "丹霞峰",
-      "lat": 30.12833,
-      "lng": 118.15417,
+      "lat": 30.147429,
+      "lng": 118.162222,
       "elevation": 1690,
-      "tags": ["sunrise"],
+      "tags": [
+        "sunrise"
+      ],
       "note": "西海方向日出视角（WGS84）"
     },
     {
       "id": "qingliangtai",
       "name": "清凉台",
-      "lat": 30.13778,
-      "lng": 118.16222,
+      "lat": 30.144042,
+      "lng": 118.171048,
       "elevation": 1670,
-      "tags": ["sunrise", "cloudsea"],
+      "tags": [
+        "sunrise",
+        "cloudsea"
+      ],
       "note": "北海景区经典日出云海机位（WGS84）"
     },
     {
       "id": "paiyunting",
       "name": "排云亭",
-      "lat": 30.12722,
-      "lng": 118.15556,
+      "lat": 30.140201,
+      "lng": 118.161581,
       "elevation": 1680,
-      "tags": ["cloudsea", "sunrise"],
+      "tags": [
+        "cloudsea",
+        "sunrise"
+      ],
       "note": "西海大峡谷入口，云海摄影热门（WGS84）"
     }
   ]

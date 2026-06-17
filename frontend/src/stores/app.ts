@@ -9,7 +9,7 @@ import {
   trackSpotSelect,
   trackViewpointSelect,
 } from '../services/analytics'
-import { searchTiandituPoi } from '../services/tiandituPoi'
+import { searchAmapPoi } from '../services/amapPoi'
 
 export interface CloudBounds {
   west: number
@@ -96,7 +96,7 @@ export const useAppStore = defineStore('app', () => {
   )
 
   const poiResults = computed(() =>
-    searchResults.value.filter((item) => item.source === 'tianditu'),
+    searchResults.value.filter((item) => item.source === 'amap'),
   )
 
   const markerAdjusted = computed(() => markerOverride.value !== null)
@@ -125,8 +125,8 @@ export const useAppStore = defineStore('app', () => {
     }
 
     const curatedPromise = searchSpots(q, { curatedOnly: true })
-    const poiPromise = searchTiandituPoi(q, { count: 12 }).catch((err: Error) => {
-      poiSearchError.value = err.message || '天地图 POI 搜索失败'
+    const poiPromise = searchAmapPoi(q, { count: 12 }).catch((err: Error) => {
+      poiSearchError.value = err.message || '高德 POI 搜索失败'
       return [] as SpotSearchResult[]
     })
 
@@ -143,7 +143,7 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     try {
-      poiSuggestions.value = await searchTiandituPoi(q, {
+      poiSuggestions.value = await searchAmapPoi(q, {
         lat: center?.lat,
         lng: center?.lng,
         count: 8,
@@ -151,7 +151,7 @@ export const useAppStore = defineStore('app', () => {
       })
       trackPoiSearch(q, poiSuggestions.value.length)
     } catch (err: any) {
-      poiSearchError.value = err?.message || '天地图 POI 搜索失败'
+      poiSearchError.value = err?.message || '高德 POI 搜索失败'
       poiSuggestions.value = []
     }
   }

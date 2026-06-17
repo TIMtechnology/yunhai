@@ -8,7 +8,7 @@
   ],
   "region": "贵州省毕节市赫章县/六盘水市钟山区",
   "peak_elevation": 2900.6,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -34,8 +34,8 @@
     {
       "id": "zhupeak",
       "name": "大韭菜坪主峰",
-      "lat": 26.872,
-      "lng": 104.618,
+      "lat": 26.839442,
+      "lng": 104.693385,
       "elevation": 2901.0,
       "tags": [
         "sunrise",
@@ -47,8 +47,8 @@
     {
       "id": "fengche",
       "name": "风车观景台",
-      "lat": 26.868,
-      "lng": 104.625,
+      "lat": 26.849074,
+      "lng": 104.695673,
       "elevation": 2750.0,
       "tags": [
         "cloudsea",

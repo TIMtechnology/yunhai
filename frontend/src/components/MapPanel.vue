@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { fetchCloudImage, type WeatherSnapshot } from '../services/api'
 import {
   addMarker,
   attachCloudImageOverlay,
   bindMapClickForMarker,
   bindMapViewportChange,
+  cancelMapInits,
   cleanupMapInteractions,
   createMap,
   getMapViewportBounds,
-  loadTianditu,
+  isMapInitAlive,
+  loadAmap,
+  nextMapInitGeneration,
   removeCloudImageOverlay,
-} from '../services/tianditu'
+  scheduleMapResize,
+} from '../services/amap'
 import { useAppStore } from '../stores/app'
 
 const props = defineProps<{
@@ -33,6 +37,17 @@ const wrapRef = ref<HTMLElement | null>(null)
 const container = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let map: any = null
+let mapReady = false
+const mapError = ref('')
+const mapLoading = ref(true)
+
+async function waitForMapLayout(el: HTMLElement, attempts = 40): Promise<boolean> {
+  for (let i = 0; i < attempts; i += 1) {
+    if (el.clientWidth > 8 && el.clientHeight > 8) return true
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()))
+  }
+  return el.clientWidth > 8 && el.clientHeight > 8
+}
 let resizeObserver: ResizeObserver | null = null
 let fetchToken = 0
 let cloudCleanup: (() => void) | null = null
@@ -361,18 +376,79 @@ function syncMarker() {
   })
 }
 
-async function initMap() {
-  if (!container.value) return
-  await loadTianditu()
-  map = createMap(container.value, props.lng, props.lat, props.zoom ?? 13)
-  syncMarker()
-  setupViewportSync()
-  await refreshCloudLayer()
+async function initMap(retry = 0) {
+  const generation = nextMapInitGeneration()
+  mapLoading.value = true
+  mapError.value = ''
+  await nextTick()
+  if (!isMapInitAlive(generation)) return
+
+  const host = wrapRef.value
+  if (!host?.isConnected) {
+    mapLoading.value = false
+    return
+  }
+
+  if (!(await waitForMapLayout(host))) {
+    if (retry < 5 && isMapInitAlive(generation)) {
+      window.setTimeout(() => initMap(retry + 1), 200)
+      return
+    }
+    mapError.value = '地图容器尺寸为零，请刷新页面'
+    mapLoading.value = false
+    return
+  }
+
+  const el = container.value
+  if (!el?.isConnected) {
+    mapLoading.value = false
+    return
+  }
+
+  try {
+    await loadAmap()
+  } catch (err) {
+    mapError.value = err instanceof Error ? err.message : '高德 SDK 加载失败'
+    mapLoading.value = false
+    console.error('[MapPanel] 高德 SDK 加载失败', err)
+    return
+  }
+  if (!isMapInitAlive(generation)) return
+
+  if (!el.isConnected || !(await waitForMapLayout(host))) {
+    if (retry < 5 && isMapInitAlive(generation)) {
+      window.setTimeout(() => initMap(retry + 1), 200)
+      return
+    }
+    mapError.value = '地图容器未就绪'
+    mapLoading.value = false
+    return
+  }
+
+  try {
+    map?.destroy?.()
+    map = await createMap(el, props.lng, props.lat, props.zoom ?? 13)
+    mapReady = true
+    mapLoading.value = false
+    syncMarker()
+    setupViewportSync()
+    scheduleMapResize(map)
+    await refreshCloudLayer()
+  } catch (err) {
+    mapError.value = err instanceof Error ? err.message : '地图初始化失败'
+    mapLoading.value = false
+    console.error('[MapPanel] 地图初始化失败', err)
+    if (retry < 2 && isMapInitAlive(generation)) {
+      window.setTimeout(() => initMap(retry + 1), 500)
+    }
+  }
 }
 
 watch(
-  () => [props.lng, props.lat, props.label],
+  () => [props.lng, props.lat, props.label, props.zoom],
   () => {
+    if (!map || !mapReady) return
+    map.setZoomAndCenter?.(props.zoom ?? 13, [props.lng, props.lat], true)
     syncMarker()
   },
 )
@@ -397,6 +473,7 @@ onMounted(() => {
   initMap()
   if (wrapRef.value) {
     resizeObserver = new ResizeObserver(() => {
+      map?.resize?.()
       drawCloudCanvas()
       if (cloudMode.value === 'satellite') refreshCloudLayer()
     })
@@ -405,6 +482,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  cancelMapInits()
   if (markerMoveTimer) clearTimeout(markerMoveTimer)
   resizeObserver?.disconnect()
   viewportCleanup?.()
@@ -412,7 +490,9 @@ onBeforeUnmount(() => {
   clearCloudOverlay()
   revokeDebugBlob()
   store.resetCloudDebug()
+  map?.destroy?.()
   map = null
+  mapReady = false
 })
 </script>
 
@@ -422,7 +502,19 @@ onBeforeUnmount(() => {
     class="relative h-full min-h-0 w-full overflow-hidden rounded-2xl border border-slate-800"
     :class="props.class"
   >
-    <div ref="container" class="absolute inset-0 z-0" />
+    <div ref="container" class="yunhai-amap-host absolute inset-0 z-[1] h-full w-full" />
+    <div
+      v-if="mapLoading"
+      class="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-slate-950/40 text-xs text-slate-400"
+    >
+      地图加载中…
+    </div>
+    <div
+      v-if="mapError"
+      class="absolute inset-0 z-[3] flex items-center justify-center bg-slate-950/80 p-4 text-center text-xs text-amber-300"
+    >
+      {{ mapError }}
+    </div>
     <canvas
       ref="canvasRef"
       class="pointer-events-none absolute inset-0 z-[500] transition-opacity duration-700"
@@ -483,3 +575,11 @@ onBeforeUnmount(() => {
     <slot />
   </div>
 </template>
+
+<style scoped>
+:deep(.yunhai-amap-host),
+:deep(.yunhai-amap-host .amap-container) {
+  width: 100% !important;
+  height: 100% !important;
+}
+</style>

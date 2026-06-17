@@ -8,7 +8,7 @@
   ],
   "region": "浙江省湖州市德清县",
   "peak_elevation": 718.9,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -37,8 +37,8 @@
     {
       "id": "tashan",
       "name": "塔山",
-      "lat": 30.6,
-      "lng": 119.867,
+      "lat": 30.60914,
+      "lng": 119.85968,
       "elevation": 718.0,
       "tags": [
         "sunrise",
@@ -50,8 +50,8 @@
     {
       "id": "xuguangtai",
       "name": "旭光台",
-      "lat": 30.598,
-      "lng": 119.872,
+      "lat": 30.607426,
+      "lng": 119.877815,
       "elevation": 650.0,
       "tags": [
         "sunrise",

@@ -8,7 +8,7 @@
   ],
   "region": "四川省巴中市南江县",
   "peak_elevation": 2507.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       10,
@@ -35,8 +35,8 @@
     {
       "id": "xianglushan",
       "name": "香炉山",
-      "lat": 32.682,
-      "lng": 106.785,
+      "lat": 32.67465,
+      "lng": 106.946094,
       "elevation": 2310.0,
       "tags": [
         "sunrise",
@@ -48,8 +48,8 @@
     {
       "id": "heaven_road",
       "name": "云天梯/天然画廊",
-      "lat": 32.675,
-      "lng": 106.778,
+      "lat": 32.691844,
+      "lng": 106.922595,
       "elevation": 1850.0,
       "tags": [
         "cloudsea"

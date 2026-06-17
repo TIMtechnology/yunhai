@@ -10,7 +10,7 @@
   ],
   "region": "江西省上饶市婺源县江湾镇",
   "peak_elevation": 580.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -40,8 +40,8 @@
     {
       "id": "shaiqiu_guanjingtai",
       "name": "晒秋观景台",
-      "lat": 29.324,
-      "lng": 117.857,
+      "lat": 29.315246,
+      "lng": 118.124587,
       "elevation": 580.0,
       "tags": [
         "sunrise",
@@ -53,8 +53,8 @@
     {
       "id": "wuguitang",
       "name": "五桂堂",
-      "lat": 29.3255,
-      "lng": 117.8562,
+      "lat": 29.320821,
+      "lng": 118.119716,
       "elevation": 590.0,
       "tags": [
         "sunrise",
@@ -66,8 +66,8 @@
     {
       "id": "shaiqiu_guanjing",
       "name": "晒秋观景台",
-      "lat": 29.294,
-      "lng": 117.862,
+      "lat": 29.315246,
+      "lng": 118.124587,
       "elevation": 630.0,
       "tags": [
         "sunrise",
@@ -79,8 +79,8 @@
     {
       "id": "yihao_guanjingtai",
       "name": "一号观景台",
-      "lat": 29.292,
-      "lng": 117.865,
+      "lat": 29.317732,
+      "lng": 118.120171,
       "elevation": 660.0,
       "tags": [
         "sunrise",

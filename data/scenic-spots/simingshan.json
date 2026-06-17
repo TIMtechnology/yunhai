@@ -9,7 +9,7 @@
   ],
   "region": "浙江省宁波市余姚市/奉化区",
   "peak_elevation": 1011.6,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -37,8 +37,8 @@
     {
       "id": "jinzhongshan",
       "name": "金钟山（四明主峰）",
-      "lat": 29.768,
-      "lng": 121.198,
+      "lat": 29.759055,
+      "lng": 121.16323,
       "elevation": 1012.0,
       "tags": [
         "cloudsea",
@@ -50,8 +50,8 @@
     {
       "id": "yangtianhu",
       "name": "仰天湖",
-      "lat": 29.752,
-      "lng": 121.082,
+      "lat": 29.742707,
+      "lng": 121.076194,
       "elevation": 780.0,
       "tags": [
         "cloudsea",

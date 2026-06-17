@@ -7,7 +7,7 @@ export interface SpotSearchResult {
   id: string
   name: string
   region: string
-  source: 'curated' | 'tianditu'
+  source: 'curated' | 'amap'
   lat?: number
   lng?: number
   peak_elevation?: number
@@ -218,8 +218,13 @@ export async function predictCustom(payload: {
   elevation?: number
   name?: string
   spot_id?: string
+  coord_sys?: string
 }) {
-  const { data } = await api.post<PredictResponse>('/predict', { ...payload, hours: FORECAST_HOURS })
+  const { data } = await api.post<PredictResponse>('/predict', {
+    ...payload,
+    coord_sys: payload.coord_sys ?? 'GCJ-02',
+    hours: FORECAST_HOURS,
+  })
   return data
 }
 

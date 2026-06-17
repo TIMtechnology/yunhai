@@ -26,6 +26,7 @@ from app.services.meteo_cache import (
 )
 from app.services.cloudsea_store import load_full_day_meteo_rows, load_meteo_day_cache, save_meteo_day_cache
 from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
+from app.engine.coord_transform import weather_coords
 from app.engine.cloudsea_features import hour_raw_from_forecast
 from app.engine.cloudsea_ml import (
     build_observational_factors,
@@ -53,6 +54,18 @@ from app.services.cache import cache_get, cache_set
 from app.services.spot_loader import get_spot
 
 TZ = ZoneInfo("Asia/Shanghai")
+
+
+def _resolve_coord_sys(req: PredictRequest) -> str:
+    if req.spot_id:
+        spot = get_spot(req.spot_id)
+        if spot and spot.coord_sys:
+            return spot.coord_sys
+    return req.coord_sys or "GCJ-02"
+
+
+def _weather_lat_lng(req: PredictRequest) -> tuple[float, float]:
+    return weather_coords(req.lat, req.lng, _resolve_coord_sys(req))
 
 
 def _profile_date_from_astronomy(astronomy: dict[str, dict]) -> date_cls | None:
@@ -391,6 +404,7 @@ def build_predictions_from_hourly(
     t_925_series = hourly.get("temperature_925hPa", [])
 
     ml_day_cache: dict[str, PredictionScore | None] = {}
+    wlat, wlng = _weather_lat_lng(req)
 
     def _sunrise_window_rows(day_key: str) -> list[dict]:
         rows: list[dict] = []
@@ -454,7 +468,7 @@ def build_predictions_from_hourly(
         cloud_base = estimate_cloud_base(temp, dew)
         cloud_top_est = estimate_cloud_top_m(cloud_base, low, mid)
         sun_az = (
-            sunrise_azimuth_for_datetime(req.lat, req.lng, sunrise_at)
+            sunrise_azimuth_for_datetime(wlat, wlng, sunrise_at)
             if sunrise_at
             else terrain_ctx.get("sunrise_azimuth_deg")
         )
@@ -729,9 +743,10 @@ def _build_response(
 
 
 async def run_prediction(req: PredictRequest) -> PredictResponse:
+    wlat, wlng = _weather_lat_lng(req)
     elevation = req.elevation
     if elevation is None:
-        elevation = await fetch_elevation(req.lat, req.lng)
+        elevation = await fetch_elevation(wlat, wlng)
 
     spot = get_spot(req.spot_id) if req.spot_id else None
     cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
@@ -740,10 +755,10 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     profile_day = now.date()
 
     forecast, terrain = await asyncio.gather(
-        fetch_forecast(req.lat, req.lng, days=5),
+        fetch_forecast(wlat, wlng, days=5),
         get_terrain_context(
-            req.lat,
-            req.lng,
+            wlat,
+            wlng,
             elevation=elevation,
             profile_date=profile_day,
             spot_id=req.spot_id,
@@ -757,7 +772,7 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     }
     hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
     astronomy = parse_daily_astronomy(forecast)
-    satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
+    satellite_context = await _fetch_satellite_context(wlat, wlng, spot)
     viewing_mode, viewing_mode_note, _ = resolve_viewing_mode(
         spot_id=req.spot_id,
         viewpoint_id=req.viewpoint_id,
@@ -767,8 +782,8 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
     terrain["viewing_mode"] = viewing_mode
 
     await _ensure_sector_meteo_if_needed(
-        lat=req.lat,
-        lng=req.lng,
+        lat=wlat,
+        lng=wlng,
         terrain=terrain,
         viewing_mode=viewing_mode,
         hourly_times=hourly.get("time", []),
@@ -822,9 +837,10 @@ async def run_backtest_prediction(
     if isinstance(target_date, str):
         target_date = date_cls.fromisoformat(target_date)
 
+    wlat, wlng = _weather_lat_lng(req)
     elevation = req.elevation
     if elevation is None:
-        elevation = await fetch_elevation(req.lat, req.lng)
+        elevation = await fetch_elevation(wlat, wlng)
 
     spot = get_spot(req.spot_id) if req.spot_id else None
     cloudsea_months = spot.seasonality.get("cloudsea_months") if spot else None
@@ -839,8 +855,8 @@ async def run_backtest_prediction(
     def _fetch_terrain() -> asyncio.Task:
         return asyncio.create_task(
             get_terrain_context(
-                req.lat,
-                req.lng,
+                wlat,
+                wlng,
                 elevation=elevation,
                 profile_date=target_date,
                 spot_id=req.spot_id,
@@ -864,7 +880,7 @@ async def run_backtest_prediction(
             astro_bundle = bundle.get("astronomy") if bundle else None
             astronomy = astronomy_from_bundle(astro_bundle, date_key)
             if not astronomy:
-                forecast = await fetch_historical_forecast(req.lat, req.lng, target_date, target_date)
+                forecast = await fetch_historical_forecast(wlat, wlng, target_date, target_date)
                 day_astro = parse_astronomy_for_date(forecast, target_date)
                 astronomy = {date_key: day_astro} if day_astro else {}
             data_source = "cached_meteo"
@@ -883,7 +899,7 @@ async def run_backtest_prediction(
         forecast_days = min(max((target_date - today).days + 1, 5), 16)
         terrain_task = _fetch_terrain()
         forecast, terrain = await asyncio.gather(
-            fetch_forecast(req.lat, req.lng, days=forecast_days),
+            fetch_forecast(wlat, wlng, days=forecast_days),
             terrain_task,
         )
         hourly = slice_hourly_window(forecast.get("hourly", {}), days=forecast_days)
@@ -891,7 +907,7 @@ async def run_backtest_prediction(
         astronomy = parse_daily_astronomy(forecast)
         data_source = "live_forecast"
         if target_date == today:
-            satellite_context = await _fetch_satellite_context(req.lat, req.lng, spot)
+            satellite_context = await _fetch_satellite_context(wlat, wlng, spot)
             backtest_now = datetime.now(TZ)
         else:
             backtest_now = datetime(
@@ -905,7 +921,7 @@ async def run_backtest_prediction(
     elif not used_cached_meteo:
         terrain_task = _fetch_terrain()
         forecast, terrain = await asyncio.gather(
-            fetch_historical_forecast(req.lat, req.lng, target_date, target_date),
+            fetch_historical_forecast(wlat, wlng, target_date, target_date),
             terrain_task,
         )
         full_hourly = forecast.get("hourly", {})
@@ -950,8 +966,8 @@ async def run_backtest_prediction(
     terrain["viewing_mode"] = viewing_mode
 
     await _ensure_sector_meteo_if_needed(
-        lat=req.lat,
-        lng=req.lng,
+        lat=wlat,
+        lng=wlng,
         terrain=terrain,
         viewing_mode=viewing_mode,
         hourly_times=display_hourly.get("time", []),

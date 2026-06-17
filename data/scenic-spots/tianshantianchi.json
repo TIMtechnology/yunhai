@@ -8,7 +8,7 @@
   ],
   "region": "新疆昌吉州阜康市",
   "peak_elevation": 5445.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -33,8 +33,8 @@
     {
       "id": "dongxiao",
       "name": "东小天池/马牙山",
-      "lat": 43.885,
-      "lng": 88.135,
+      "lat": 43.861253,
+      "lng": 88.110901,
       "elevation": 3056.0,
       "tags": [
         "sunrise",
@@ -46,8 +46,8 @@
     {
       "id": "tianchi_hub",
       "name": "天池北岸",
-      "lat": 43.882,
-      "lng": 88.128,
+      "lat": 43.899726,
+      "lng": 88.121707,
       "elevation": 1900.0,
       "tags": [
         "sunrise",

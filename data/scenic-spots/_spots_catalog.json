@@ -2,7 +2,7 @@
   "updated": "2026-06-11",
   "total_spots": 70,
   "total_viewpoints": 150,
-  "coord_sys": "WGS84 (天地图/CGCS2000 兼容)",
+  "coord_sys": "GCJ-02 (高德地图)",
   "spots": [
     {
       "id": "baihaba",

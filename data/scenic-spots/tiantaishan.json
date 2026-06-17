@@ -10,7 +10,7 @@
   ],
   "region": "浙江省台州市天台县",
   "peak_elevation": 1098.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       3,
@@ -44,8 +44,8 @@
     {
       "id": "huading_baijingtai",
       "name": "华顶拜经台",
-      "lat": 29.1586,
-      "lng": 121.028,
+      "lat": 29.167801,
+      "lng": 121.046451,
       "elevation": 1098.0,
       "tags": [
         "sunrise",
@@ -57,8 +57,8 @@
     {
       "id": "huading",
       "name": "华顶山",
-      "lat": 29.17884,
-      "lng": 121.04221,
+      "lat": 29.157011,
+      "lng": 121.034111,
       "elevation": 1138.0,
       "tags": [
         "sunrise",
@@ -70,8 +70,8 @@
     {
       "id": "shiliang",
       "name": "石梁飞瀑",
-      "lat": 29.165,
-      "lng": 121.055,
+      "lat": 29.273387,
+      "lng": 121.061117,
       "elevation": 680.0,
       "tags": [
         "cloudsea"

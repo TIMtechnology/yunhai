@@ -9,7 +9,7 @@
   ],
   "region": "四川省雅安市荥经县/甘孜州泸定县",
   "peak_elevation": 3666.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       4,
@@ -40,8 +40,8 @@
     {
       "id": "guangmingding",
       "name": "光明顶（3666观景台）",
-      "lat": 29.775,
-      "lng": 102.374,
+      "lat": 29.771273,
+      "lng": 102.416716,
       "elevation": 3666.0,
       "tags": [
         "sunrise",
@@ -53,8 +53,8 @@
     {
       "id": "jieyuanfang",
       "name": "街心花园",
-      "lat": 29.768,
-      "lng": 102.368,
+      "lat": 29.771273,
+      "lng": 102.416716,
       "elevation": 3550.0,
       "tags": [
         "cloudsea",

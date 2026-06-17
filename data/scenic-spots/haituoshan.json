@@ -9,7 +9,7 @@
   ],
   "region": "北京市延庆区/河北省赤城县",
   "peak_elevation": 2241.0,
-  "coord_sys": "WGS84",
+  "coord_sys": "GCJ-02",
   "seasonality": {
     "cloudsea_months": [
       6,
@@ -36,8 +36,8 @@
     {
       "id": "dahaituo",
       "name": "大海坨",
-      "lat": 40.57494,
-      "lng": 115.81856,
+      "lat": 40.576262,
+      "lng": 115.824592,
       "elevation": 2241.0,
       "tags": [
         "sunrise",

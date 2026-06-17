@@ -10,8 +10,8 @@
     {
       "id": "main",
       "name": "黄丫口",
-      "lat": 40.478146,
-      "lng": 122.98325,
+      "lat": 40.473631,
+      "lng": 122.97756,
       "elevation": 751.0,
       "tags": [
         "sunrise",
@@ -62,5 +62,6 @@
     "span_lat": 1.0
   },
   "source": "curated",
-  "community_location_id": "cs_0c28f6f2"
+  "community_location_id": "cs_0c28f6f2",
+  "coord_sys": "GCJ-02"
 }
