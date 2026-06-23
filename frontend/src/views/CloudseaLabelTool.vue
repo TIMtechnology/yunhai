@@ -24,11 +24,12 @@ import {
   fetchAccuracy,
   fetchCalendar,
   fetchLabelSession,
+  fetchPredictionHistory,
   fetchSpotDetail,
   fetchSpots,
   saveLabel,
 } from '../services/cloudseaLabel'
-import type { ReviewQueueItem } from '../services/cloudseaLabel'
+import type { PredictionHistory, ReviewQueueItem } from '../services/cloudseaLabel'
 import AdminReviewPanel from '../components/AdminReviewPanel.vue'
 
 const TOKEN_KEY = 'cloudsea_admin_token'
@@ -66,6 +67,7 @@ const editLocLat = ref<number | null>(null)
 const editLocLng = ref<number | null>(null)
 const editLocElev = ref<number | null>(null)
 const savingLocation = ref(false)
+const predictionHistory = ref<PredictionHistory | null>(null)
 let loadSessionSeq = 0
 let loadAccuracySeq = 0
 
@@ -192,6 +194,17 @@ function syncUrl() {
     q.set('vp', viewpointId.value)
   }
   history.replaceState(null, '', `${location.pathname}?${q.toString()}`)
+}
+
+function formatAccessTime(iso: string) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function outcomeMark(ok: number | null | undefined) {
+  if (ok == null) return '—'
+  return ok ? '✓' : '✗'
 }
 
 function shiftDate(days: number) {
@@ -376,6 +389,20 @@ async function loadSession() {
           },
         ]),
       )
+      if (keys.spotId !== 'community') {
+        try {
+          predictionHistory.value = await fetchPredictionHistory(
+            token.value,
+            keys.spotId,
+            keys.viewpointId,
+            currentDate.value,
+          )
+        } catch {
+          predictionHistory.value = null
+        }
+      } else {
+        predictionHistory.value = null
+      }
       return
     }
 
@@ -810,6 +837,54 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                       <td class="px-2 py-1 text-right">{{ session.hours.find((h) => h.time === row.time)?.cloudsea.probability ?? '—' }}</td>
                       <td class="px-2 py-1 text-right">{{ session.hours.find((h) => h.time === row.time)?.scenario.combined_score ?? '—' }}</td>
                       <td class="px-2 py-1">{{ session.hours.find((h) => h.time === row.time)?.scenario.label ?? '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div
+              v-if="adminMode && predictionHistory && locationMode === 'curated'"
+              class="rounded-xl border border-slate-800 bg-slate-900/60 p-4"
+            >
+              <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div class="font-semibold">历史预测访问</div>
+                <div class="text-xs text-slate-400">
+                  标注 {{ predictionHistory.label?.status || '未标注' }}
+                  · 访问 {{ predictionHistory.access_count }} 次
+                  <template v-if="predictionHistory.snapshot_count != null && predictionHistory.snapshot_count < predictionHistory.access_count">
+                    · {{ predictionHistory.snapshot_count }} 条预报快照
+                  </template>
+                  <template v-if="predictionHistory.outcome_count">
+                    · 正确 {{ predictionHistory.correct_count }}/{{ predictionHistory.outcome_count }}
+                  </template>
+                </div>
+              </div>
+              <div v-if="!predictionHistory.entries.length" class="text-xs text-slate-500">
+                暂无用户访问快照（上线后将随 /api/predict 自动积累）
+              </div>
+              <div v-else class="overflow-x-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-slate-400">
+                    <tr>
+                      <th class="px-2 py-1 text-left">访问时间</th>
+                      <th class="px-2 py-1 text-right">P(云海)</th>
+                      <th class="px-2 py-1 text-right">lead(h)</th>
+                      <th class="px-2 py-1 text-center">结果</th>
+                      <th class="px-2 py-1 text-left">诊断</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="row in predictionHistory.entries"
+                      :key="row.id"
+                      class="border-t border-slate-800"
+                    >
+                      <td class="px-2 py-1">{{ formatAccessTime(row.created_at) }}<span v-if="row.same_forecast" class="ml-1 text-slate-500">同预报</span></td>
+                      <td class="px-2 py-1 text-right">{{ row.peak_cloudsea_prob ?? '—' }}%</td>
+                      <td class="px-2 py-1 text-right">{{ row.lead_hours_to_dawn?.toFixed(1) ?? '—' }}</td>
+                      <td class="px-2 py-1 text-center">{{ outcomeMark(row.direction_ok) }}</td>
+                      <td class="px-2 py-1 text-slate-400">{{ row.diagnosis?.summary || row.diagnosis?.tags?.join(', ') || '—' }}</td>
                     </tr>
                   </tbody>
                 </table>

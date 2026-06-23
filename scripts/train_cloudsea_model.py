@@ -32,9 +32,14 @@ from app.engine.cloudsea_features import (  # noqa: E402
     DAY_FEATURE_NAMES_V3,
     MIST_DISCRIM_FEATURE_NAMES,
     OBSERVABLE_FEATURE_NAMES,
+    PRECURSOR_FEATURE_NAMES,
     TERRAIN_FEATURE_NAMES,
+    V7_FEATURE_NAMES,
     aggregate_day_features,
+    aggregate_precursor_features,
+    aggregate_v7_features,
     build_meteo_hour_row,
+    filter_dawn_rows,
     label_to_target,
     meteo_row_complete,
 )
@@ -46,8 +51,14 @@ from app.engine.ml_eligibility import (  # noqa: E402
     sunrise_window_rain_summary,
 )
 from app.services.meteo_backfill import (  # noqa: E402
+    load_label_precursor_meteo,
     load_label_sunrise_meteo,
+    precursor_window_meteo_complete,
     resolve_label_coords,
+)
+from app.services.cloudsea_store import (  # noqa: E402
+    forecast_archive_precursor_complete,
+    load_forecast_archive_precursor,
 )
 
 LAT, LNG, ELEV = 41.31976, 125.40773, 804.0
@@ -100,11 +111,23 @@ def load_meteo_rows(
     *,
     db_path: Path,
     db_only: bool = False,
+    window: str = "sunrise",
+    mode: str = "oracle",
 ) -> list[dict]:
     spot_id = label["spot_id"]
     viewpoint_id = label["viewpoint_id"]
     day = label["date"]
-    hour_rows = load_label_sunrise_meteo(spot_id, viewpoint_id, day, db_path=db_path)
+    if window in ("precursor", "v7"):
+        if mode == "operational":
+            hour_rows = load_forecast_archive_precursor(
+                spot_id, viewpoint_id, day, db_path=db_path
+            )
+        else:
+            hour_rows = load_label_precursor_meteo(
+                spot_id, viewpoint_id, day, db_path=db_path
+            )
+    else:
+        hour_rows = load_label_sunrise_meteo(spot_id, viewpoint_id, day, db_path=db_path)
     if hour_rows and all(meteo_row_complete(r) for r in hour_rows):
         return hour_rows
     if db_only:
@@ -124,6 +147,8 @@ def load_dataset(
     use_observable_field: bool = True,
     db_only: bool = False,
     use_mist_discrim_features: bool = True,
+    window: str = "sunrise",
+    mode: str = "oracle",
 ) -> tuple[np.ndarray, np.ndarray, list[dict], list[str]]:
     """加载标注日特征。排除未审核、降水日（默认）与气象缺失样本。"""
     conn = sqlite3.connect(db_path)
@@ -149,20 +174,34 @@ def load_dataset(
     terrain_cache: dict[tuple[str, str], dict] = {}
 
     feature_names = (
-        DAY_FEATURE_NAMES
-        if use_terrain and use_observable_field
-        else DAY_FEATURE_NAMES_V3
-        if use_terrain
-        else DAY_FEATURE_NAMES_V2
+        V7_FEATURE_NAMES
+        if window == "v7"
+        else PRECURSOR_FEATURE_NAMES
+        if window == "precursor"
+        else (
+            DAY_FEATURE_NAMES
+            if use_terrain and use_observable_field
+            else DAY_FEATURE_NAMES_V3
+            if use_terrain
+            else DAY_FEATURE_NAMES_V2
+        )
     )
-    if not use_mist_discrim_features:
+    if window not in ("precursor", "v7") and not use_mist_discrim_features:
         feature_names = [n for n in feature_names if n not in MIST_DISCRIM_FEATURE_NAMES]
+
+    use_terrain_feats = use_terrain and window != "precursor"
 
     for raw in labels:
         label = dict(raw)
         day = label["date"]
         lat, lng, elev = resolve_label_coords(label)
-        hour_rows = load_meteo_rows(label, db_path=db_path, db_only=db_only)
+        hour_rows = load_meteo_rows(
+            label,
+            db_path=db_path,
+            db_only=db_only,
+            window=window,
+            mode=mode,
+        )
         if not hour_rows:
             reason = "DB 无缓存" if db_only else "no meteo"
             print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: {reason}")
@@ -170,12 +209,21 @@ def load_dataset(
         if not all(meteo_row_complete(r) for r in hour_rows):
             print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: incomplete meteo")
             continue
-        if exclude_rain and sunrise_window_rain_summary(hour_rows)["has_rain"]:
+        dawn_rows = (
+            hour_rows
+            if window == "sunrise"
+            else filter_dawn_rows(hour_rows, day)
+            if window in ("precursor", "v7")
+            else load_label_sunrise_meteo(
+                label["spot_id"], label["viewpoint_id"], day, db_path=db_path
+            )
+        )
+        if exclude_rain and dawn_rows and sunrise_window_rain_summary(dawn_rows)["has_rain"]:
             print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: rain in sunrise window")
             continue
 
         terrain: dict | None = None
-        if use_terrain:
+        if use_terrain_feats:
             tkey = (label["spot_id"], label["viewpoint_id"])
             if tkey not in terrain_cache:
                 try:
@@ -194,22 +242,34 @@ def load_dataset(
                     print(f"warn terrain {tkey}: {exc}")
                     terrain_cache[tkey] = {}
             terrain = dict(terrain_cache[tkey])
-            mode, _, _ = resolve_viewing_mode(
+            viewing_mode, _, _ = resolve_viewing_mode(
                 spot_id=label["spot_id"],
                 viewpoint_id=label["viewpoint_id"],
                 elevation=elev,
                 terrain=terrain,
                 location_id=label.get("location_id"),
             )
-            terrain["viewing_mode"] = mode
+            terrain["viewing_mode"] = viewing_mode
 
-        day_feat = aggregate_day_features(
-            hour_rows,
-            elevation=elev,
-            terrain=terrain,
-            use_observable_field=use_observable_field and use_terrain,
-            use_mist_discrim_features=use_mist_discrim_features,
-        )
+        if window == "v7":
+            day_feat = aggregate_v7_features(
+                hour_rows,
+                target_date=day,
+                elevation=elev,
+                terrain=terrain,
+                use_observable_field=use_observable_field and use_terrain_feats,
+                use_mist_discrim_features=use_mist_discrim_features,
+            )
+        elif window == "precursor":
+            day_feat = aggregate_precursor_features(hour_rows, target_date=day, elevation=elev)
+        else:
+            day_feat = aggregate_day_features(
+                hour_rows,
+                elevation=elev,
+                terrain=terrain,
+                use_observable_field=use_observable_field and use_terrain_feats,
+                use_mist_discrim_features=use_mist_discrim_features,
+            )
         X_rows.append([day_feat[n] for n in feature_names])
         y_rows.append(label_to_target(label["status"]))
         meta.append(
@@ -263,24 +323,42 @@ def save_artifact(
     feature_names: list[str],
     use_observable_field: bool,
     tuning: dict | None = None,
+    window: str = "sunrise",
+    meteo_mode: str = "oracle",
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    if tuning:
+    if window == "v7":
+        version = "cloudsea_ml_v7_hybrid"
+        aggregation = f"v6_dawn_plus_precursor_{meteo_mode}"
+    elif window == "precursor":
+        version = "cloudsea_ml_v7_precursor"
+        aggregation = f"precursor_{meteo_mode}"
+    elif tuning:
         version = "cloudsea_ml_v6_tuned"
+        aggregation = "sunrise_window_03_07"
     else:
         version = (
             "cloudsea_ml_v5_dry_low_vis"
             if use_observable_field
             else "cloudsea_ml_v3_terrain"
         )
+        aggregation = "sunrise_window_03_07"
     artifact = {
         "version": version,
-        "algorithm": "logistic_regression_day",
+        "algorithm": (
+            "logistic_regression_v7_hybrid"
+            if window == "v7"
+            else "logistic_regression_precursor"
+            if window == "precursor"
+            else "logistic_regression_day"
+        ),
         "feature_names": feature_names,
         "legacy_feature_names": DAY_FEATURE_NAMES_V2,
         "terrain_feature_names": TERRAIN_FEATURE_NAMES,
         "observable_feature_names": OBSERVABLE_FEATURE_NAMES if use_observable_field else [],
-        "aggregation": "sunrise_window_03_07",
+        "aggregation": aggregation,
+        "window": window,
+        "meteo_mode": meteo_mode,
         "spot_id": spot_id,
         "viewpoint_id": viewpoint_id,
         "model": model,
@@ -328,6 +406,8 @@ def train_group(
     loocv_detail: bool = False,
     enhanced: bool = False,
     min_recall: float | None = None,
+    window: str = "sunrise",
+    meteo_mode: str = "oracle",
 ) -> dict | None:
     min_n = min_labels_for_ml()
     X, y, meta, feature_names = load_dataset(
@@ -339,9 +419,12 @@ def train_group(
         use_terrain=use_terrain,
         use_observable_field=use_observable_field,
         db_only=db_only,
+        window=window,
+        mode=meteo_mode,
     )
     pos = int(y.sum()) if len(y) else 0
     print(f"\n=== {spot_id}/{viewpoint_id} ===")
+    print(f"窗口={window} 气象={meteo_mode}")
     print(f"有效标注日: {len(y)} | 有云海: {pos} | 无云海: {int(len(y) - pos)}")
     if len(y) < min_n:
         print(f"跳过：有效样本 {len(y)} < {min_n}")
@@ -355,7 +438,12 @@ def train_group(
         from app.engine.ml_tuning import apply_calibrator, build_production_pipeline, train_tuned
 
         tuned = train_tuned(
-            X, y, meta, feature_names, min_recall=min_recall, feature_strategy="none"
+            X, y, meta, feature_names, min_recall=min_recall,
+            feature_strategy=(
+                "v7_l1" if window == "v7"
+                else "precursor_core" if window == "precursor"
+                else "none"
+            ),
         )
         model = build_production_pipeline(X, y, tuned)
         loo_probs = tuned.loo_probs_calibrated
@@ -422,6 +510,8 @@ def train_group(
         feature_names=feature_names,
         use_observable_field=use_observable_field,
         tuning=tuning_extra,
+        window=window,
+        meteo_mode=meteo_mode,
     )
     print(f"模型已保存: {out}")
 
@@ -437,6 +527,8 @@ def train_group(
             feature_names=feature_names,
             use_observable_field=use_observable_field,
             tuning=tuning_extra,
+            window=window,
+            meteo_mode=meteo_mode,
         )
         print(f"默认模型已同步: {default_output}")
 
@@ -519,6 +611,19 @@ def main() -> None:
         default=None,
         help="增强模式下阈值调优的召回率下限",
     )
+    parser.add_argument(
+        "--window",
+        choices=("sunrise", "precursor", "v7"),
+        default="sunrise",
+        help="特征时间窗：sunrise=03-07；precursor=仅过程26维；v7=v6 dawn+evening/night/趋势",
+    )
+    parser.add_argument(
+        "--mode",
+        dest="meteo_mode",
+        choices=("oracle", "operational"),
+        default="operational",
+        help="precursor 训练气象源：oracle=事后真值，operational=预报 archive",
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -579,6 +684,8 @@ def main() -> None:
             loocv_detail=args.loocv_detail,
             enhanced=args.enhanced,
             min_recall=args.min_recall,
+            window=args.window,
+            meteo_mode=args.meteo_mode,
         )
         if result:
             trained.append(result)

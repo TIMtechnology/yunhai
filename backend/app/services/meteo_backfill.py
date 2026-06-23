@@ -5,7 +5,7 @@ import json
 import sqlite3
 import time
 import urllib.request
-from datetime import date as date_cls, datetime, timezone
+from datetime import date as date_cls, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +54,19 @@ def resolve_label_coords(label: dict[str, Any]) -> tuple[float, float, float]:
     raise ValueError(f"无法解析坐标: {spot_id}/{viewpoint_id}")
 
 
+PRECURSOR_EVENING_START = 20
+PRECURSOR_DAWN_END = 8  # 不含 08:00，覆盖 0–7 点
+
+
+def precursor_hour_keys(date_key: str) -> list[str]:
+    """标注日 D 的 precursor 窗：D-1 20–23 + D 0–7。"""
+    d = date_cls.fromisoformat(date_key)
+    prev = (d - timedelta(days=1)).isoformat()
+    keys = [f"{prev}T{h:02d}:00" for h in range(PRECURSOR_EVENING_START, 24)]
+    keys += [f"{date_key}T{h:02d}:00" for h in range(0, PRECURSOR_DAWN_END)]
+    return keys
+
+
 def _filter_sunrise_window(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for row in rows:
@@ -66,6 +79,19 @@ def _filter_sunrise_window(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(out, key=lambda r: str(r.get("time")))
 
 
+def _day_meteo_complete(
+    spot_id: str,
+    viewpoint_id: str,
+    date_key: str,
+    *,
+    db_path: Path | None = None,
+    min_hours: int = 20,
+) -> bool:
+    rows = load_label_day_meteo(spot_id, viewpoint_id, date_key, db_path=db_path)
+    complete = [r for r in rows if meteo_row_complete(r)]
+    return len(complete) >= min_hours
+
+
 def sunrise_window_meteo_complete(
     spot_id: str,
     viewpoint_id: str,
@@ -76,6 +102,18 @@ def sunrise_window_meteo_complete(
     rows = load_label_day_meteo(spot_id, viewpoint_id, date_key, db_path=db_path)
     window = _filter_sunrise_window(rows)
     return len(window) >= 3 and all(meteo_row_complete(r) for r in window)
+
+
+def precursor_window_meteo_complete(
+    spot_id: str,
+    viewpoint_id: str,
+    date_key: str,
+    *,
+    db_path: Path | None = None,
+) -> bool:
+    rows = load_label_precursor_meteo(spot_id, viewpoint_id, date_key, db_path=db_path)
+    have = {str(r.get("time")) for r in rows if meteo_row_complete(r)}
+    return all(k in have for k in precursor_hour_keys(date_key))
 
 
 def load_label_day_meteo(
@@ -135,6 +173,42 @@ def load_label_sunrise_meteo(
     return _filter_sunrise_window(
         load_label_day_meteo(spot_id, viewpoint_id, date_key, db_path=db_path)
     )
+
+
+def load_label_precursor_meteo(
+    spot_id: str,
+    viewpoint_id: str,
+    date_key: str,
+    *,
+    db_path: Path | None = None,
+) -> list[dict[str, Any]]:
+    """D-1 20:00 至 D 07:00 逐时（跨日合并）。"""
+    keys = set(precursor_hour_keys(date_key))
+    d = date_cls.fromisoformat(date_key)
+    prev = (d - timedelta(days=1)).isoformat()
+    merged: list[dict[str, Any]] = []
+    for dk in (prev, date_key):
+        merged.extend(load_label_day_meteo(spot_id, viewpoint_id, dk, db_path=db_path))
+    out = [r for r in merged if str(r.get("time") or "") in keys]
+    return sorted(out, key=lambda r: str(r.get("time")))
+
+
+def _days_to_backfill(
+    date_key: str,
+    spot_id: str,
+    viewpoint_id: str,
+    *,
+    db_path: Path | None = None,
+    force: bool = False,
+) -> list[str]:
+    d = date_cls.fromisoformat(date_key)
+    prev = (d - timedelta(days=1)).isoformat()
+    days: list[str] = []
+    if force or not _day_meteo_complete(spot_id, viewpoint_id, date_key, db_path=db_path):
+        days.append(date_key)
+    if force or not _day_meteo_complete(spot_id, viewpoint_id, prev, db_path=db_path):
+        days.append(prev)
+    return days
 
 
 def fetch_day_hourly_api(day: str, lat: float, lng: float) -> dict[str, Any]:
@@ -208,6 +282,7 @@ def persist_day_meteo(
         source="historical_forecast",
         hourly=hourly,
         astronomy=serialize_astronomy_for_store(astronomy) if astronomy else None,
+        db_path=path,
     )
     return saved
 
@@ -227,30 +302,40 @@ def backfill_label_meteo(
 
     if not force and sunrise_window_meteo_complete(
         spot_id, viewpoint_id, date_key, db_path=db_path
+    ) and precursor_window_meteo_complete(
+        spot_id, viewpoint_id, date_key, db_path=db_path
     ):
         return {"status": "skipped", "date": date_key, "reason": "已完整"}
 
     lat, lng, elev = resolve_label_coords(label)
-    try:
-        payload = fetch_day_hourly_api(date_key, lat, lng)
-    except Exception as exc:
+    days = _days_to_backfill(
+        date_key, spot_id, viewpoint_id, db_path=db_path, force=force
+    )
+    if not days:
+        days = [date_key]
+
+    total_hours = 0
+    for day in days:
+        try:
+            payload = fetch_day_hourly_api(day, lat, lng)
+        except Exception as exc:
+            if sleep_sec > 0:
+                time.sleep(sleep_sec)
+            return {"status": "failed", "date": date_key, "error": str(exc)}
+
+        total_hours += persist_day_meteo(
+            spot_id=spot_id,
+            viewpoint_id=viewpoint_id,
+            date_key=day,
+            lat=lat,
+            lng=lng,
+            elevation=elev,
+            payload=payload,
+            db_path=db_path,
+        )
         if sleep_sec > 0:
             time.sleep(sleep_sec)
-        return {"status": "failed", "date": date_key, "error": str(exc)}
-
-    hours = persist_day_meteo(
-        spot_id=spot_id,
-        viewpoint_id=viewpoint_id,
-        date_key=date_key,
-        lat=lat,
-        lng=lng,
-        elevation=elev,
-        payload=payload,
-        db_path=db_path,
-    )
-    if sleep_sec > 0:
-        time.sleep(sleep_sec)
-    return {"status": "ok", "date": date_key, "hours_saved": hours}
+    return {"status": "ok", "date": date_key, "hours_saved": total_hours, "days": days}
 
 
 def backfill_all_labels(

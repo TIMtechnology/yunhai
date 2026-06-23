@@ -21,6 +21,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://yunhai.timkj.com/docs/release-notes.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://yunhai.timkj.com/docs/architecture.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

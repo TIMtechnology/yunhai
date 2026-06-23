@@ -342,3 +342,62 @@ async def cloudsea_train_model(_: None = Depends(verify_cloudsea_token)):
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return metrics
+
+
+@router.get("/api/internal/cloudsea/prediction-history")
+async def cloudsea_prediction_history(
+    spot_id: str,
+    viewpoint_id: str,
+    date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    _: None = Depends(verify_cloudsea_token),
+):
+    from app.services.prediction_feedback import get_prediction_history
+
+    return get_prediction_history(spot_id, viewpoint_id, date)
+
+
+@router.get("/api/internal/cloudsea/prediction-history/{access_log_id}")
+async def cloudsea_prediction_history_detail(
+    access_log_id: int,
+    _: None = Depends(verify_cloudsea_token),
+):
+    from app.services.cloudsea_store import get_prediction_access_log
+
+    row = get_prediction_access_log(access_log_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="访问记录未找到")
+    return row
+
+
+@router.post("/api/internal/cloudsea/reconcile")
+async def cloudsea_reconcile_outcomes(
+    date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    force: bool = False,
+    _: None = Depends(verify_cloudsea_token),
+):
+    from app.services.prediction_feedback import reconcile_target_date
+
+    return reconcile_target_date(date, force=force)
+
+
+@router.get("/api/internal/cloudsea/export/feedback")
+async def cloudsea_export_feedback(
+    spot_id: Optional[str] = None,
+    viewpoint_id: Optional[str] = None,
+    month: Optional[str] = Query(default=None, pattern=r"^\d{4}-\d{2}$"),
+    format: str = Query(default="json", pattern=r"^(json|csv)$"),
+    _: None = Depends(verify_cloudsea_token),
+):
+    from fastapi.responses import PlainTextResponse
+
+    from app.services.cloudsea_store import export_prediction_feedback
+
+    payload = export_prediction_feedback(
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+        month=month,
+        export_format=format,
+    )
+    if format == "csv":
+        return PlainTextResponse(content=payload.get("body") or "", media_type="text/csv; charset=utf-8")
+    return payload

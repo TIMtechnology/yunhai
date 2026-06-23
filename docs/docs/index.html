@@ -37,6 +37,7 @@
     <a href="index.html" class="active font-semibold">使用指南</a>
     <a href="data-sources.html">数据来源</a>
     <a href="prediction-model.html">预测模型</a>
+    <a href="release-notes.html">更新说明</a>
     <a href="architecture.html">架构</a>
     <a href="ui-design.html">界面设计</a>
     <a href="cloudsea-forecast.html">云海预测方法</a>
@@ -60,6 +61,10 @@
       <strong>数据时效：</strong>每次选点或刷新页面都会重新请求最新预报。你看到的概率对应当前时刻 Open-Meteo 返回的<strong>近 5 天逐小时数据</strong>，不同小时、不同时间打开页面，数值可能略有变化——这是数值天气预报正常更新，并非 bug。
     </div>
 
+    <div class="tip text-sm">
+      <strong>2026-06 更新：</strong>线上 ML 已升级至 <strong>v7</strong>（precursor 12h · 62 维特征）。五女山 LOOCV <strong>85.5%</strong>（较 v6 +4 pp）。详见 <a href="release-notes.html">更新说明</a>。
+    </div>
+
     <section class="glass p-6">
       <h2 class="text-xl font-semibold mb-4">云海预测专题</h2>
       <div class="grid gap-3 sm:grid-cols-2 text-sm">
@@ -67,6 +72,7 @@
         <a class="rounded-xl bg-orange-50 p-4 text-orange-700" href="sunrise-cloudsea.html"><strong>日出云海怎么看</strong><br />摄影出行前的气象判断指南</a>
         <a class="rounded-xl bg-violet-50 p-4 text-violet-700" href="how-to-read-meteogram.html"><strong>Meteogram 怎么看</strong><br />用气象详图判断云海与日出概率</a>
         <a class="rounded-xl bg-emerald-50 p-4 text-emerald-700" href="cloudsea-conditions.html"><strong>云海形成条件</strong><br />湿度、逆温、低云和风速如何影响云海</a>
+        <a class="rounded-xl bg-slate-100 p-4 text-slate-700 sm:col-span-2" href="release-notes.html"><strong>2026-06 更新说明</strong><br />ML v7 · LOOCV 提升 · 预测反馈闭环</a>
       </div>
     </section>
 
@@ -93,12 +99,13 @@
       <h2 class="text-xl font-semibold mb-4">Admin 审核（维护者）</h2>
       <p class="text-sm text-slate-600 mb-3">
         打开 <a href="/label.html?admin=1" target="_blank"><code>/label.html?admin=1</code></a>，
-        填入 Admin Token 后可：查看待审队列 → 通过/驳回 → 重训 ML → 达标社区点「精选落库」。
+        填入 Admin Token 后可：查看待审队列 → 通过/驳回 → 重训 ML → 达标社区点「精选落库」→ 查看<strong>历史预测访问</strong>（v7 上线后自动积累）。
       </p>
       <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
         <li>仅 <strong>approved</strong> 标注进入训练集</li>
         <li>单社区点 ≥1 天标注后自动「落库」为精选景区</li>
-        <li>重训通过后需在服务器更新模型 pkl 并重启，03–07 点云海概率才会变化</li>
+        <li>当前线上为 <strong>ML v7</strong> 点位模型；重训后热补丁部署 pkl 即可生效</li>
+        <li>Admin 面板可对比「用户当时看到的预报」与现场标注结果</li>
       </ul>
     </section>
 
@@ -131,7 +138,7 @@
     <section class="grid md:grid-cols-2 gap-4">
       <div class="glass p-5">
         <h3 class="text-sky-600 font-semibold mb-2">云海概率</h3>
-        <p class="text-sm text-slate-600">日出窗口 03:00–07:00 由 <strong>规则引擎 + ML v6</strong> 按点位权重融合（五女山约 65% ML / 35% 规则；近库水体雾、低能见度谷地雾场景会进一步降 ML 权重）；同时展示完整加权因子、底层观测及 Himawari 卫星可选校正。详见 <a href="prediction-model.html">预测模型</a>。</p>
+        <p class="text-sm text-slate-600">日出窗口 03:00–07:00 由 <strong>规则引擎 + ML v7</strong> 按点位权重融合（五女山约 65% ML / 35% 规则；precursor 12h 特征；近库水体雾场景会降 ML 权重）。详见 <a href="prediction-model.html">预测模型</a> · <a href="release-notes.html">更新说明</a>。</p>
       </div>
       <div class="glass p-5">
         <h3 class="text-orange-500 font-semibold mb-2">日出概率</h3>

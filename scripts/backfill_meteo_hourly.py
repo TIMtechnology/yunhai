@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.services.meteo_backfill import (  # noqa: E402
     backfill_all_labels,
     backfill_label_meteo,
+    precursor_window_meteo_complete,
     sunrise_window_meteo_complete,
 )
 
@@ -51,16 +52,29 @@ def main() -> None:
             params,
         ).fetchall()
         conn.close()
-        missing = [
+        missing_sunrise = [
             f"{r['date']} {r['spot_id']}/{r['viewpoint_id']}"
             for r in labels
             if not sunrise_window_meteo_complete(
                 r["spot_id"], r["viewpoint_id"], r["date"], db_path=db_path
             )
         ]
-        print(f"标注日 {len(labels)}，缺失气象 {len(missing)}")
-        for line in missing:
-            print(f"  - {line}")
+        missing_precursor = [
+            f"{r['date']} {r['spot_id']}/{r['viewpoint_id']}"
+            for r in labels
+            if not precursor_window_meteo_complete(
+                r["spot_id"], r["viewpoint_id"], r["date"], db_path=db_path
+            )
+        ]
+        print(f"标注日 {len(labels)}，缺失日出窗 {len(missing_sunrise)}，缺失 precursor {len(missing_precursor)}")
+        if missing_sunrise:
+            print("日出窗(03-06)缺失:")
+            for line in missing_sunrise:
+                print(f"  - {line}")
+        if missing_precursor:
+            print("precursor(D-1 20:00→D 07:00)缺失:")
+            for line in missing_precursor:
+                print(f"  - {line}")
         return
 
     stats = backfill_all_labels(

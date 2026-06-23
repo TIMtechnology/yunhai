@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+from datetime import date
 
 from app.adapters.dem import estimate_cloud_top_m
 from app.adapters.open_meteo import estimate_cloud_base
@@ -484,3 +485,253 @@ def hour_raw_from_forecast(
         "temp": _series_val(temps or [], idx),
         "dewpoint": _series_val(dews or [], idx),
     }
+
+
+PRECURSOR_SEGMENT_NAMES = ("evening", "night", "dawn")
+
+# v7 增量：evening + night + 跨段趋势 + 季节；不含 dawn（由 DAY_FEATURE_NAMES 覆盖）
+V7_INCREMENTAL_NAMES = [
+    "evening_rh_mean",
+    "evening_rh_max",
+    "evening_cloud_low_mean",
+    "evening_cloud_low_max",
+    "evening_wind_mean",
+    "evening_inversion_mean",
+    "night_rh_mean",
+    "night_rh_max",
+    "night_cloud_low_mean",
+    "night_cloud_mid_mean",
+    "night_wind_mean",
+    "night_inversion_mean",
+    "delta_rh_night_to_dawn",
+    "delta_cloud_low_evening_to_dawn",
+    "delta_wind_night_to_dawn",
+    "rh_monotonic_night",
+    "dawn_vs_night_type_b_delta",
+    "doy_sin",
+    "doy_cos",
+]
+
+V7_FEATURE_NAMES = list(DAY_FEATURE_NAMES) + V7_INCREMENTAL_NAMES
+
+PRECURSOR_FEATURE_NAMES = [
+    "evening_rh_mean",
+    "evening_rh_max",
+    "evening_cloud_low_mean",
+    "evening_cloud_low_max",
+    "evening_wind_mean",
+    "evening_inversion_mean",
+    "night_rh_mean",
+    "night_rh_max",
+    "night_cloud_low_mean",
+    "night_cloud_mid_mean",
+    "night_wind_mean",
+    "night_inversion_mean",
+    "dawn_rh_mean",
+    "dawn_rh_max",
+    "dawn_cloud_low_mean",
+    "dawn_cloud_low_max",
+    "dawn_wind_mean",
+    "dawn_vis_min",
+    "dawn_inversion_mean",
+    "delta_rh_night_to_dawn",
+    "delta_cloud_low_evening_to_dawn",
+    "delta_wind_night_to_dawn",
+    "rh_monotonic_night",
+    "dawn_vs_night_type_b_delta",
+    "doy_sin",
+    "doy_cos",
+    "precip48",
+]
+
+
+def _hour_from_row(row: dict) -> int:
+    time_str = str(row.get("time") or "")
+    return int(time_str[11:13]) if "T" in time_str else 0
+
+
+def _date_from_row(row: dict) -> str:
+    time_str = str(row.get("time") or "")
+    return time_str[:10] if len(time_str) >= 10 else ""
+
+
+def _segment_for_row(row: dict, target_date: str) -> str | None:
+    hour = _hour_from_row(row)
+    row_date = _date_from_row(row)
+    if row_date < target_date and hour >= 20:
+        return "evening"
+    if row_date == target_date and hour < 3:
+        return "night"
+    if row_date == target_date and 3 <= hour < 8:
+        return "dawn"
+    return None
+
+
+def _segment_aggregate(rows: list[dict], *, elevation: float) -> dict[str, float]:
+    if not rows:
+        return {}
+    feats = [build_feature_row(r, elevation=elevation) for r in rows]
+    return {
+        "rh_mean": float(np.mean([f["rh"] for f in feats])),
+        "rh_max": float(np.max([f["rh"] for f in feats])),
+        "cloud_low_mean": float(np.mean([f["cloud_low"] for f in feats])),
+        "cloud_low_max": float(np.max([f["cloud_low"] for f in feats])),
+        "cloud_mid_mean": float(np.mean([f["cloud_mid"] for f in feats])),
+        "wind_mean": float(np.mean([f["wind"] for f in feats])),
+        "vis_min": float(np.min([f["visibility"] for f in feats])),
+        "inversion_mean": float(np.mean([f["inversion"] for f in feats])),
+        "type_b_count": float(sum(f["is_type_b"] for f in feats)),
+    }
+
+
+def filter_dawn_rows(hour_rows: list[dict], target_date: str) -> list[dict]:
+    """标注日 D 的 dawn 段（03–07），供 v7 与 v6 一致的日出窗聚合。"""
+    out = [r for r in hour_rows if _segment_for_row(r, target_date) == "dawn"]
+    return sorted(out, key=lambda r: str(r.get("time")))
+
+
+def _build_v7_incremental_features(
+    segments: dict[str, list[dict]],
+    *,
+    target_date: str,
+    hour_rows: list[dict],
+    elevation: float,
+) -> dict[str, float]:
+    evening = _segment_aggregate(segments["evening"], elevation=elevation)
+    night = _segment_aggregate(segments["night"], elevation=elevation)
+    dawn = _segment_aggregate(segments["dawn"], elevation=elevation)
+
+    night_sorted = sorted(segments["night"], key=lambda r: str(r.get("time")))
+    rh_mono = 0.0
+    if len(night_sorted) >= 2:
+        rhs = [build_feature_row(r, elevation=elevation)["rh"] for r in night_sorted]
+        rh_mono = 1.0 if all(rhs[i] <= rhs[i + 1] for i in range(len(rhs) - 1)) else 0.0
+
+    d = date.fromisoformat(target_date) if target_date else date(2026, 5, 1)
+    doy = float(d.timetuple().tm_yday)
+
+    out = {
+        "evening_rh_mean": evening.get("rh_mean", 0.0),
+        "evening_rh_max": evening.get("rh_max", 0.0),
+        "evening_cloud_low_mean": evening.get("cloud_low_mean", 0.0),
+        "evening_cloud_low_max": evening.get("cloud_low_max", 0.0),
+        "evening_wind_mean": evening.get("wind_mean", 0.0),
+        "evening_inversion_mean": evening.get("inversion_mean", 0.0),
+        "night_rh_mean": night.get("rh_mean", 0.0),
+        "night_rh_max": night.get("rh_max", 0.0),
+        "night_cloud_low_mean": night.get("cloud_low_mean", 0.0),
+        "night_cloud_mid_mean": night.get("cloud_mid_mean", 0.0),
+        "night_wind_mean": night.get("wind_mean", 0.0),
+        "night_inversion_mean": night.get("inversion_mean", 0.0),
+        "delta_rh_night_to_dawn": dawn.get("rh_mean", 0.0) - night.get("rh_mean", 0.0),
+        "delta_cloud_low_evening_to_dawn": dawn.get("cloud_low_mean", 0.0) - evening.get("cloud_low_mean", 0.0),
+        "delta_wind_night_to_dawn": dawn.get("wind_mean", 0.0) - night.get("wind_mean", 0.0),
+        "rh_monotonic_night": rh_mono,
+        "dawn_vs_night_type_b_delta": dawn.get("type_b_count", 0.0) - night.get("type_b_count", 0.0),
+        "doy_sin": float(np.sin(2 * np.pi * doy / 365.25)),
+        "doy_cos": float(np.cos(2 * np.pi * doy / 365.25)),
+    }
+    return {n: float(out.get(n, 0.0)) for n in V7_INCREMENTAL_NAMES}
+
+
+def aggregate_v7_features(
+    hour_rows: list[dict],
+    *,
+    target_date: str,
+    elevation: float = 804.0,
+    terrain: dict | None = None,
+    use_observable_field: bool = True,
+    use_mist_discrim_features: bool = True,
+) -> dict[str, float]:
+    """v7：v6 dawn 全量特征 + evening/night/趋势增量（train/serve 均用 precursor 窗）。"""
+    segments: dict[str, list[dict]] = {name: [] for name in PRECURSOR_SEGMENT_NAMES}
+    for row in hour_rows:
+        seg = _segment_for_row(row, target_date)
+        if seg:
+            segments[seg].append(row)
+
+    dawn_feat = aggregate_day_features(
+        segments["dawn"],
+        elevation=elevation,
+        terrain=terrain,
+        use_observable_field=use_observable_field,
+        use_mist_discrim_features=use_mist_discrim_features,
+    )
+    incr_feat = _build_v7_incremental_features(
+        segments,
+        target_date=target_date,
+        hour_rows=hour_rows,
+        elevation=elevation,
+    )
+    merged = {**dawn_feat, **incr_feat}
+    return {n: float(merged.get(n, 0.0)) for n in V7_FEATURE_NAMES}
+
+
+def aggregate_precursor_features(
+    hour_rows: list[dict],
+    *,
+    target_date: str,
+    elevation: float = 804.0,
+) -> dict[str, float]:
+    """前夜–清晨过程特征（evening / night / dawn + 跨段趋势）。"""
+    segments: dict[str, list[dict]] = {name: [] for name in PRECURSOR_SEGMENT_NAMES}
+    for row in hour_rows:
+        seg = _segment_for_row(row, target_date)
+        if seg:
+            segments[seg].append(row)
+
+    evening = _segment_aggregate(segments["evening"], elevation=elevation)
+    night = _segment_aggregate(segments["night"], elevation=elevation)
+    dawn = _segment_aggregate(segments["dawn"], elevation=elevation)
+
+    incr = _build_v7_incremental_features(
+        segments,
+        target_date=target_date,
+        hour_rows=hour_rows,
+        elevation=elevation,
+    )
+    precip48 = float(max((build_feature_row(r, elevation=elevation)["precip48"] for r in hour_rows), default=0.0))
+
+    out = {
+        **{f"dawn_{k}": v for k, v in {
+            "rh_mean": dawn.get("rh_mean", 0.0),
+            "rh_max": dawn.get("rh_max", 0.0),
+            "cloud_low_mean": dawn.get("cloud_low_mean", 0.0),
+            "cloud_low_max": dawn.get("cloud_low_max", 0.0),
+            "wind_mean": dawn.get("wind_mean", 0.0),
+            "vis_min": dawn.get("vis_min", 0.0),
+            "inversion_mean": dawn.get("inversion_mean", 0.0),
+        }.items()},
+        **incr,
+        "precip48": precip48,
+    }
+    # legacy precursor-only names (dawn_* flat keys)
+    out.update({
+        "evening_rh_mean": incr["evening_rh_mean"],
+        "evening_rh_max": incr["evening_rh_max"],
+        "evening_cloud_low_mean": incr["evening_cloud_low_mean"],
+        "evening_cloud_low_max": incr["evening_cloud_low_max"],
+        "evening_wind_mean": incr["evening_wind_mean"],
+        "evening_inversion_mean": incr["evening_inversion_mean"],
+        "night_rh_mean": incr["night_rh_mean"],
+        "night_rh_max": incr["night_rh_max"],
+        "night_cloud_low_mean": incr["night_cloud_low_mean"],
+        "night_cloud_mid_mean": incr["night_cloud_mid_mean"],
+        "night_wind_mean": incr["night_wind_mean"],
+        "night_inversion_mean": incr["night_inversion_mean"],
+        "dawn_rh_mean": out["dawn_rh_mean"],
+        "dawn_rh_max": out["dawn_rh_max"],
+        "dawn_cloud_low_mean": out["dawn_cloud_low_mean"],
+        "dawn_cloud_low_max": out["dawn_cloud_low_max"],
+        "dawn_wind_mean": out["dawn_wind_mean"],
+        "dawn_vis_min": out["dawn_vis_min"],
+        "dawn_inversion_mean": out["dawn_inversion_mean"],
+        "delta_rh_night_to_dawn": incr["delta_rh_night_to_dawn"],
+        "delta_cloud_low_evening_to_dawn": incr["delta_cloud_low_evening_to_dawn"],
+        "delta_wind_night_to_dawn": incr["delta_wind_night_to_dawn"],
+        "rh_monotonic_night": incr["rh_monotonic_night"],
+        "dawn_vs_night_type_b_delta": incr["dawn_vs_night_type_b_delta"],
+        "doy_sin": incr["doy_sin"],
+        "doy_cos": incr["doy_cos"],
+    })
+    return {n: float(out.get(n, 0.0)) for n in PRECURSOR_FEATURE_NAMES}

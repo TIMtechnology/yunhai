@@ -7,7 +7,12 @@ from pathlib import Path
 import numpy as np
 
 from app.config import settings
-from app.engine.cloudsea_features import DAY_FEATURE_NAMES, aggregate_day_features
+from app.engine.cloudsea_features import (
+    DAY_FEATURE_NAMES,
+    aggregate_day_features,
+    aggregate_precursor_features,
+    aggregate_v7_features,
+)
 from app.engine.ml_eligibility import build_ml_status, spot_model_path
 from app.engine.utils import grade_from_probability
 from app.models.schemas import FactorDetail, PredictionScore
@@ -371,6 +376,8 @@ def predict_day_cloudsea(
     spot_id: str | None = None,
     viewpoint_id: str | None = None,
     terrain: dict | None = None,
+    target_date: str | None = None,
+    precursor_rows: list[dict] | None = None,
 ) -> PredictionScore | None:
     artifact = resolve_ml_artifact(spot_id, viewpoint_id)
     if not artifact:
@@ -378,13 +385,30 @@ def predict_day_cloudsea(
 
     feature_names = artifact.get("feature_names") or DAY_FEATURE_NAMES
     infer_names = artifact.get("selected_feature_names") or feature_names
-    use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
-    day_feat = aggregate_day_features(
-        hour_rows,
-        elevation=elevation,
-        terrain=terrain,
-        use_observable_field=use_observable,
-    )
+    window = artifact.get("window") or "sunrise"
+    if window == "v7":
+        rows = precursor_rows if precursor_rows is not None else hour_rows
+        date_key = target_date or str((rows[0] if rows else {}).get("time") or "")[:10]
+        use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
+        day_feat = aggregate_v7_features(
+            rows,
+            target_date=date_key,
+            elevation=elevation,
+            terrain=terrain,
+            use_observable_field=use_observable,
+        )
+    elif window == "precursor":
+        rows = precursor_rows if precursor_rows is not None else hour_rows
+        date_key = target_date or str((rows[0] if rows else {}).get("time") or "")[:10]
+        day_feat = aggregate_precursor_features(rows, target_date=date_key, elevation=elevation)
+    else:
+        use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
+        day_feat = aggregate_day_features(
+            hour_rows,
+            elevation=elevation,
+            terrain=terrain,
+            use_observable_field=use_observable,
+        )
     model = artifact["model"]
     x = np.array([[day_feat.get(n, 0.0) for n in infer_names]])
     prob = float(model.predict_proba(x)[0, 1])

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>云海预测方法：如何根据湿度、低云、风速和逆温判断云海</title>
-  <meta name="description" content="云海预测方法：湿度、低云、能见度、风速、逆温与近库水体如何影响概率；规则引擎与 ML v6 如何融合。" />
+  <meta name="description" content="云海预测方法：湿度、低云、能见度、风速、逆温与近库水体如何影响概率；规则引擎与 ML v7 如何融合。" />
   <meta name="keywords" content="云海预测,云海预报,云海概率,低云量,逆温层,湿度,风速,日出云海,摄影天气" />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/cloudsea-forecast.html" />
@@ -31,6 +31,7 @@
     <a href="index.html">使用指南</a>
     <a href="data-sources.html">数据来源</a>
     <a href="prediction-model.html">预测模型</a>
+    <a href="release-notes.html">更新说明</a>
     <a href="architecture.html">架构</a>
     <a href="ui-design.html">界面设计</a>
     <a href="cloudsea-forecast.html" class="active">云海预测方法</a>
@@ -57,10 +58,10 @@
       </div>
     </section>
     <section class="card">
-      <h2>规则引擎 + ML v6 如何协作</h2>
-      <p>本站采用<strong>混合预测</strong>：规则引擎解释气象机理并做能见度/型态补偿；ML 根据历史标注修正本点位偏差。日出窗口内按点位融合（如五女山 ML 约 65%）；近库水体雾、低能见度谷地雾时降低 ML 权重，避免模式低云漏报时 ML 压分。</p>
+      <h2>规则引擎 + ML v7 如何协作</h2>
+      <p>本站采用<strong>混合预测</strong>：规则引擎解释气象机理并做能见度/型态补偿；ML v7 根据历史标注与前夜 precursor 过程（D-1 20:00 → 日出）修正本点位偏差。日出窗口内按点位融合（如五女山 ML 约 65%）；近库水体雾、低能见度谷地雾时降低 ML 权重。五女山 LOOCV <strong>85.5%</strong>（较 v6 +4 pp）。</p>
       <p>页面同时展示 Meteogram 气象详图、因子雷达图与底层观测，便于核对「为什么是这个概率」。</p>
-      <p>延伸阅读：<a href="prediction-model.html">预测模型说明</a> · <a href="/spots/wunvshan.html">五女山云海预报</a> · <a href="/spots/donglingshan.html">东灵山云海预报</a></p>
+      <p>延伸阅读：<a href="prediction-model.html">预测模型说明</a> · <a href="release-notes.html">2026-06 更新</a> · <a href="/spots/wunvshan.html">五女山云海预报</a> · <a href="/spots/donglingshan.html">东灵山云海预报</a></p>
     </section>
   </main>
 </body>

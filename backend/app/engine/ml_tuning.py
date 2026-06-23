@@ -23,6 +23,24 @@ from sklearn.preprocessing import StandardScaler
 DEFAULT_C_GRID: tuple[float, ...] = (0.05, 0.1, 0.3, 1.0)
 
 # 跨 sklearn 版本稳定的增强特征集（v5 判别 + 本地/线上 LOOCV 验证过的气象因子）
+PRECURSOR_STABLE_FEATURES: tuple[str, ...] = (
+    "delta_rh_night_to_dawn",
+    "delta_cloud_low_evening_to_dawn",
+    "delta_wind_night_to_dawn",
+    "evening_rh_mean",
+    "evening_cloud_low_mean",
+    "night_rh_mean",
+    "night_cloud_low_mean",
+    "dawn_rh_mean",
+    "dawn_cloud_low_mean",
+    "dawn_vis_min",
+    "rh_monotonic_night",
+    "dawn_vs_night_type_b_delta",
+    "precip48",
+    "doy_sin",
+    "doy_cos",
+)
+
 STABLE_ENHANCED_FEATURES: tuple[str, ...] = (
     "rh700_mean",
     "rh850_mean",
@@ -270,6 +288,45 @@ def core_feature_mask(feature_names: list[str]) -> tuple[np.ndarray, list[str]]:
     return mask, selected
 
 
+def precursor_core_feature_mask(feature_names: list[str]) -> tuple[np.ndarray, list[str]]:
+    mask = np.array([n in PRECURSOR_STABLE_FEATURES for n in feature_names], dtype=bool)
+    selected = [feature_names[i] for i in range(len(feature_names)) if mask[i]]
+    return mask, selected
+
+
+def v7_incremental_l1_mask(
+    X: np.ndarray,
+    y: np.ndarray,
+    feature_names: list[str],
+    *,
+    protected_names: tuple[str, ...],
+    c: float = 0.1,
+    min_incr_nonzero: int = 6,
+) -> tuple[np.ndarray, list[str]]:
+    """v7：DAY_FEATURE_NAMES 全保留，仅对增量特征做 L1 筛选。"""
+    protected = set(protected_names)
+    core_mask = np.array([n in protected for n in feature_names], dtype=bool)
+    incr_idx = [i for i, n in enumerate(feature_names) if n not in protected]
+    if not incr_idx:
+        selected = [feature_names[i] for i in range(len(feature_names)) if core_mask[i]]
+        return core_mask, selected
+
+    incr_names = [feature_names[i] for i in incr_idx]
+    incr_mask, _ = l1_feature_mask(
+        X[:, incr_idx],
+        y,
+        incr_names,
+        c=c,
+        min_nonzero=min(min_incr_nonzero, len(incr_idx)),
+    )
+    full_mask = core_mask.copy()
+    for local_i, global_i in enumerate(incr_idx):
+        if incr_mask[local_i]:
+            full_mask[global_i] = True
+    selected = [feature_names[i] for i in range(len(feature_names)) if full_mask[i]]
+    return full_mask, selected
+
+
 def train_tuned(
     X: np.ndarray,
     y: np.ndarray,
@@ -277,7 +334,7 @@ def train_tuned(
     feature_names: list[str],
     *,
     c_grid: tuple[float, ...] = DEFAULT_C_GRID,
-    feature_strategy: Literal["core", "l1", "none"] = "none",
+    feature_strategy: Literal["core", "precursor_core", "v7_l1", "l1", "none"] = "none",
     calibrate: bool = True,
     threshold_objective: Literal["f1", "accuracy"] = "f1",
     min_recall: float | None = None,
@@ -291,6 +348,22 @@ def train_tuned(
     if feature_strategy == "core":
         mask, active_names = core_feature_mask(feature_names)
         selection_note = f"稳定核心特征 {len(active_names)} 维"
+        best_c, c_scores = select_c_by_loocv(
+            X, y, c_grid, penalty="l2", feature_mask=mask, metric=threshold_objective
+        )
+    elif feature_strategy == "precursor_core":
+        mask, active_names = precursor_core_feature_mask(feature_names)
+        selection_note = f"precursor 核心特征 {len(active_names)} 维"
+        best_c, c_scores = select_c_by_loocv(
+            X, y, c_grid, penalty="l2", feature_mask=mask, metric=threshold_objective
+        )
+    elif feature_strategy == "v7_l1":
+        from app.engine.cloudsea_features import DAY_FEATURE_NAMES
+
+        mask, active_names = v7_incremental_l1_mask(
+            X, y, feature_names, protected_names=tuple(DAY_FEATURE_NAMES), c=min(0.1, best_c)
+        )
+        selection_note = f"v7 dawn 全保留 + L1 增量 {len(active_names) - len(DAY_FEATURE_NAMES)} 维"
         best_c, c_scores = select_c_by_loocv(
             X, y, c_grid, penalty="l2", feature_mask=mask, metric=threshold_objective
         )

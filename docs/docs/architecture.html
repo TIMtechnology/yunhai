@@ -37,6 +37,7 @@
     <a href="index.html">使用指南</a>
     <a href="data-sources.html">数据来源</a>
     <a href="prediction-model.html">预测模型</a>
+    <a href="release-notes.html">更新说明</a>
     <a href="architecture.html" class="active">架构</a>
     <a href="ui-design.html">界面设计</a>
     <a href="cloudsea-forecast.html">云海预测方法</a>
@@ -70,7 +71,8 @@
 
 predictor.py
   ├─ score_cloudsea (规则 + Type A/B/水体)
-  ├─ cloudsea_ml v6 (03–07 点融合)
+  ├─ cloudsea_ml v7 (03–07 点融合 · precursor 12h 特征)
+  ├─ prediction_feedback (访问快照 · 异步写 log)
   ├─ build_scenario (日出云海 / 晴日日出…)
   └─ Himawari 卫星轻量校正（当天已发生时段）
 
@@ -82,23 +84,27 @@ Open-Meteo 主站不可达时 → Historical Forecast API 回退</pre>
       <ol>
         <li>按观景点 WGS84 坐标拉取 Open-Meteo 5 天逐小时场（含 850/925/700 hPa）。</li>
         <li>DEM 地形：海拔窗、日出方位剖面、可选 <code>local_water</code> 近库水体。</li>
-        <li>逐小时规则评分；03:00–07:00 且 ML 激活时按日特征融合 ML 概率。</li>
+        <li>逐小时规则评分；03:00–07:00 且 ML 激活时按 <strong>precursor 12h + dawn</strong> 日特征融合 ML 概率（v7）。</li>
         <li>输出综合场景标签与日出/云海双概率。</li>
         <li>可选 Himawari 红外区域云量校正。</li>
       </ol>
     </section>
 
     <section class="card">
-      <h2>标注与 ML 闭环</h2>
+      <h2>标注 · ML · 预测反馈闭环</h2>
       <pre>label.html 人工标注
     ↓
 cloudsea.db (SQLite 持久化卷)
     ↓
-backfill_meteo_hourly → train_cloudsea_model
+backfill_meteo_hourly → train_cloudsea_model (--window v7)
     ↓
 spot 模型 pkl → Docker 镜像 / 热补丁
     ↓
-线上 03–07 融合预测 → LOOCV / 回测 → 再标注</pre>
+线上 03–07 融合预测
+    ↓
+/api/predict 访问快照 → prediction_access_log
+    ↓
+reconcile_outcomes → forecast vs 实况 → 标注页历史面板</pre>
     </section>
 
     <section class="card">

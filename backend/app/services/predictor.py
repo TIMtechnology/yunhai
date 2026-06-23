@@ -33,8 +33,10 @@ from app.engine.cloudsea_ml import (
     get_ml_status,
     merge_ml_cloudsea_score,
     predict_day_cloudsea,
+    resolve_ml_artifact,
     should_use_spot_ml,
 )
+from app.services.meteo_backfill import precursor_hour_keys
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, cloudsea_plausibility_cap, score_cloudsea
 from app.engine.water_context import water_fog_signal_hour
 from app.engine.satellite_analyzer import analyze_ir_image
@@ -433,6 +435,36 @@ def build_predictions_from_hourly(
             )
         return rows
 
+    def _precursor_window_rows(day_key: str) -> list[dict]:
+        keys = set(precursor_hour_keys(day_key))
+        rows: list[dict] = []
+        for j, ts in enumerate(times):
+            if ts not in keys:
+                continue
+            rows.append(
+                hour_raw_from_forecast(
+                    t_str=ts,
+                    idx=j,
+                    cloud_low=cloud_low,
+                    cloud_mid=cloud_mid,
+                    cloud_high=cloud_high,
+                    visibilities=visibilities,
+                    rhs=rhs,
+                    rh_850_series=rh_850_series,
+                    rh_700_series=rh_700_series,
+                    t_850_series=t_850_series,
+                    t_925_series=t_925_series,
+                    winds=winds,
+                    precips=precips,
+                    temps=temps,
+                    dews=dews,
+                )
+            )
+        return rows
+
+    ml_artifact = resolve_ml_artifact(req.spot_id, req.viewpoint_id)
+    ml_window = (ml_artifact.get("window") if ml_artifact else None) or "sunrise"
+
     terrain_ctx: dict = terrain if terrain is not None else {}
     if terrain_ctx and viewing_mode:
         terrain_ctx["viewing_mode"] = viewing_mode
@@ -585,14 +617,26 @@ def build_predictions_from_hourly(
         )
         if use_ml:
             if day_key not in ml_day_cache:
-                ml_day_cache[day_key] = predict_day_cloudsea(
-                    _sunrise_window_rows(day_key),
-                    elevation=elevation,
-                    cloud_base_m=cloud_base,
-                    spot_id=req.spot_id,
-                    viewpoint_id=req.viewpoint_id,
-                    terrain=terrain_ctx or None,
-                )
+                if ml_window in ("v7", "precursor"):
+                    ml_day_cache[day_key] = predict_day_cloudsea(
+                        _sunrise_window_rows(day_key),
+                        elevation=elevation,
+                        cloud_base_m=cloud_base,
+                        spot_id=req.spot_id,
+                        viewpoint_id=req.viewpoint_id,
+                        terrain=terrain_ctx or None,
+                        target_date=day_key,
+                        precursor_rows=_precursor_window_rows(day_key),
+                    )
+                else:
+                    ml_day_cache[day_key] = predict_day_cloudsea(
+                        _sunrise_window_rows(day_key),
+                        elevation=elevation,
+                        cloud_base_m=cloud_base,
+                        spot_id=req.spot_id,
+                        viewpoint_id=req.viewpoint_id,
+                        terrain=terrain_ctx or None,
+                    )
             ml_score = ml_day_cache.get(day_key)
             if ml_score is not None:
                 cloudsea = merge_ml_cloudsea_score(
@@ -742,7 +786,12 @@ def _build_response(
     )
 
 
-async def run_prediction(req: PredictRequest) -> PredictResponse:
+async def run_prediction(
+    req: PredictRequest,
+    *,
+    page_source: str | None = None,
+    client_id: str | None = None,
+) -> PredictResponse:
     wlat, wlng = _weather_lat_lng(req)
     elevation = req.elevation
     if elevation is None:
@@ -803,7 +852,7 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
         terrain=terrain,
         viewing_mode=viewing_mode,
     )
-    return _build_response(
+    resp = _build_response(
         req,
         elevation,
         results,
@@ -814,6 +863,20 @@ async def run_prediction(req: PredictRequest) -> PredictResponse:
         viewing_mode_note=viewing_mode_note,
         forecast_meta=forecast_meta,
     )
+    from app.services.prediction_feedback import schedule_prediction_access_log
+
+    schedule_prediction_access_log(
+        req=req,
+        resp=resp,
+        hourly=hourly,
+        elevation=elevation,
+        terrain=terrain,
+        issue_time=now,
+        page_source=page_source,
+        client_id=client_id,
+        data_source="live_forecast",
+    )
+    return resp
 
 
 async def run_backtest_prediction(

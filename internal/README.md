@@ -6,6 +6,9 @@
 
 | 文件 | 说明 |
 |------|------|
+| [`RELEASE-2026-06-V7.md`](RELEASE-2026-06-V7.md) | **2026-06 升级说明**（ML v7 LOOCV、预测反馈、热补丁） |
+| [`PREDICTION-FEEDBACK-PLAN.md`](PREDICTION-FEEDBACK-PLAN.md) | 预测访问快照 · 次日回测 · 标注页分析（已实施） |
+| [`ML-TRAINING-V2-PLAN.md`](ML-TRAINING-V2-PLAN.md) | ML v7 特征演进与 operational 训练方案 |
 | [`DEPLOY.md`](DEPLOY.md) | **生产部署备忘**（SSH、Docker、发布/热补丁，避免连错机器） |
 | [`terrain-cloudsea-plan.md`](terrain-cloudsea-plan.md) | **地形增强 + 区域云海**（DEM、100km 热力图、分阶段方案） |
 | [`viewing-mode-plan.md`](viewing-mode-plan.md) | **观云模式分型**（山谷填云 / 峰顶俯瞰 / 点位 profile） |

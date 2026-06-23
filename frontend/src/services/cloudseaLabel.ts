@@ -108,6 +108,47 @@ export async function fetchAccuracy(
   }
 }
 
+export interface PredictionHistoryEntry {
+  id: number | string
+  log_id?: number
+  created_at: string
+  lead_hours_to_dawn?: number | null
+  peak_cloudsea_prob?: number | null
+  model_version?: string | null
+  page_source?: string | null
+  direction_ok?: number | null
+  predicted_positive?: number | null
+  same_forecast?: boolean
+  diagnosis?: { tags?: string[]; summary?: string } | null
+}
+
+export interface PredictionHistory {
+  spot_id: string
+  viewpoint_id: string
+  target_date: string
+  label: CloudseaLabel | null
+  access_count: number
+  snapshot_count?: number
+  correct_count: number
+  outcome_count: number
+  entries: PredictionHistoryEntry[]
+  actual_precursor: Array<Record<string, unknown>>
+}
+
+export async function fetchPredictionHistory(
+  token: string,
+  spotId: string,
+  viewpointId: string,
+  date: string,
+): Promise<PredictionHistory> {
+  const q = new URLSearchParams({ spot_id: spotId, viewpoint_id: viewpointId, date })
+  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/prediction-history?${q}`, {
+    headers: headers(token),
+  })
+  if (!resp.ok) throw new Error(await resp.text())
+  return resp.json()
+}
+
 export async function fetchLabels(token: string, spotId: string, viewpointId: string, month: string) {
   const q = new URLSearchParams({ spot_id: spotId, viewpoint_id: viewpointId, month })
   const resp = await fetch(`${API_BASE}/api/internal/cloudsea/labels?${q}`, {

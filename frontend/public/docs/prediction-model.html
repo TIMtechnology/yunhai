@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>预测模型 · 云海日出预测</title>
-  <meta name="description" content="规则引擎 + ML v6 混合预测：Archetype 型态、43 维日特征、点位融合权重与场景标签说明。" />
+  <meta name="description" content="规则引擎 + ML v7 混合预测：precursor 12h、62 维特征、点位 LOOCV 与 Archetype 型态说明。" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/prediction-model.html" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -20,6 +20,7 @@
     a { color: #0284c7; }
     code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
     .tip { background: #eff6ff; border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #1e40af; font-size: 14px; }
+    .badge { display: inline-block; background: #dcfce7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -27,6 +28,7 @@
     <a href="index.html">使用指南</a>
     <a href="data-sources.html">数据来源</a>
     <a href="prediction-model.html" class="active">预测模型</a>
+    <a href="release-notes.html">更新说明</a>
     <a href="architecture.html">架构</a>
     <a href="ui-design.html">界面设计</a>
     <a href="cloudsea-forecast.html">云海预测方法</a>
@@ -37,30 +39,57 @@
   </nav>
   <main class="mx-auto max-w-5xl px-6 py-10 space-y-8">
     <h1 class="text-3xl font-bold">预测模型说明</h1>
-    <p class="text-slate-600">本系统采用 <strong>规则引擎（fuzzy v2 + Archetype）</strong> 与 <strong>标注驱动 ML v6</strong> 的混合架构：日出窗口 03:00–07:00 由两者按点位权重融合给出云海概率，同时保留完整气象因子与底层观测。每个预报小时独立计算；综合场景标签（如「较可能日出云海」）由云海概率、日出概率与能见度证据联合判定。</p>
+    <p class="text-slate-600">本系统采用 <strong>规则引擎（fuzzy v2 + Archetype）</strong> 与 <strong>标注驱动 ML v7</strong> 的混合架构：日出窗口 03:00–07:00 由两者按点位权重融合给出云海概率，同时保留完整气象因子与底层观测。2026-06 起线上默认使用 v7 点位模型。详见 <a href="release-notes.html">更新说明</a>。</p>
 
     <div class="tip">
       <strong>三层因子展示：</strong>① 模型层（ML 概率、规则参考、融合权重）② 规则层（加权评分因子，驱动雷达图）③ 观测层（分层云量、垂直场、云海型态等，不参与加权，供专业解读）。
     </div>
 
     <section class="glass">
-      <h2 class="text-lg font-semibold text-violet-600 mb-3">ML v6 · 日出窗口混合预测</h2>
+      <h2 class="text-lg font-semibold text-violet-600 mb-3"><span class="badge">当前线上</span> ML v7 · precursor 混合预测</h2>
       <table>
         <tr><th>项目</th><th>说明</th></tr>
-        <tr><td>启用时段</td><td>当地 03:00–07:00，且该观景点标注 ≥30 天且存在点位模型</td></tr>
-        <tr><td>算法</td><td>Logistic 回归 + StandardScaler + 可选概率校准，class_weight=balanced</td></tr>
-        <tr><td>训练样本</td><td>SQLite 标注库 <code>cloudsea_labels</code>（full / partial / none）</td></tr>
-        <tr><td>特征</td><td><strong>43 维</strong>日聚合：云量/能见度/RH850·700、逆温、Type A/B 小时计数、地形（海拔窗/填谷）、可观测场等；<strong>不含</strong>局地水体静态特征（水体判据仅走规则）</td></tr>
-        <tr><td>验证</td><td>留一日交叉验证 LOOCV；五女山点将台 v6 增强特征 LOOCV ≈ <strong>82%</strong>（baseline ≈ 73%）</td></tr>
-        <tr><td>融合权重</td><td>五女山默认 ML <strong>65%</strong>；其他内置景区 <strong>60%</strong>；近库水体雾或低能见度谷地雾时降至 <strong>40–50%</strong>，让规则 Type B 补偿主导</td></tr>
-        <tr><td>输出</td><td>融合概率 + 规则因子 + ML 特征贡献 + 底层观测</td></tr>
+        <tr><td>启用时段</td><td>当地 03:00–07:00，且该观景点有效标注 ≥30 天且存在点位 <code>spot_*.pkl</code></td></tr>
+        <tr><td>算法</td><td>Logistic 回归 + StandardScaler + 概率校准，class_weight=balanced；增强训练（C/阈值/特征 L1）</td></tr>
+        <tr><td>训练样本</td><td>SQLite <code>cloudsea_labels</code>（full / partial / none）；日出窗有降水日排除</td></tr>
+        <tr><td>气象窗</td><td><strong>precursor 12h</strong>：D-1 20:00–23:00 + D 00:00–07:00（推理与训练对齐）</td></tr>
+        <tr><td>特征</td><td><strong>62 维</strong> = v6 日出窗 43 维 + evening/night/趋势 19 维（如 <code>delta_rh_night_to_dawn</code>）</td></tr>
+        <tr><td>LOOCV（operational）</td>
+          <td>
+            五女山点将台 <strong>85.5%</strong>（55 日，AUC 0.884）· 较 v6 <strong>+4.0 pp</strong><br/>
+            东灵山峰顶 <strong>75.0%</strong>（36 日，2026-06 首次 v7 上线）
+          </td>
+        </tr>
+        <tr><td>融合权重</td><td>五女山默认 ML <strong>65%</strong>；其他内置景区 <strong>60%</strong>；近库水体雾或低能见度谷地雾时降至 <strong>40–50%</strong></td></tr>
+        <tr><td>模型文件</td><td><code>data/cloudsea/models/spot_{spot}_{viewpoint}.pkl</code></td></tr>
       </table>
-      <p class="mt-3 text-xs text-slate-500">训练：<code>scripts/train_cloudsea_model.py</code> · 点位模型：<code>data/cloudsea/models/{spot}__{viewpoint}.pkl</code></p>
+      <p class="mt-3 text-xs text-slate-500">训练：<code>scripts/train_cloudsea_model.py --window v7 --mode operational --enhanced</code></p>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">v7 相对 v6 为何更准？</h2>
+      <p class="text-sm text-slate-600 mb-3">v6 仅聚合日出 03–07 点场；v7 额外利用<strong>前夜湿度与低云演变</strong>，对「预报仍湿、实况已干」类虚高 case 更敏感：</p>
+      <table>
+        <tr><th>信号</th><th>示例特征</th><th>作用</th></tr>
+        <tr><td>傍晚段</td><td><code>evening_rh_mean</code>, <code>evening_cloud_low_mean</code></td><td>前夜水汽是否已经建立</td></tr>
+        <tr><td>夜间段</td><td><code>night_rh_mean</code>, <code>night_inversion_mean</code></td><td>夜间维持 / 消散趋势</td></tr>
+        <tr><td>跨段趋势</td><td><code>delta_rh_night_to_dawn</code>, <code>rh_monotonic_night</code></td><td>night→dawn 是否「预报升、实况降」</td></tr>
+      </table>
+    </section>
+
+    <section class="glass" id="v6-history">
+      <h2 class="text-lg font-semibold text-slate-500 mb-3">历史 · ML v6（2026-06 前线上版）</h2>
+      <table>
+        <tr><th>项目</th><th>说明</th></tr>
+        <tr><td>特征</td><td>43 维日聚合（日出窗 03–07 + 地形/可观测场）</td></tr>
+        <tr><td>LOOCV</td><td>五女山点将台 ≈ <strong>81.5%–82%</strong>（65 有效日；baseline ≈ 73%）</td></tr>
+        <tr><td>局限</td><td>不含前夜过程；operational 提前量场景下对 dissipating case 偏乐观</td></tr>
+      </table>
     </section>
 
     <section class="glass">
       <h2 class="text-lg font-semibold text-sky-600 mb-3">Archetype · 金标准型态</h2>
-      <p class="text-sm text-slate-600 mb-3">基于有/无云海日对比与点位地形归纳，用于低云补偿、概率上下限与 plausibility cap：</p>
+      <p class="text-sm text-slate-600 mb-3">基于有/无云海日对比与点位地形归纳，用于低云补偿、概率上下限与 plausibility cap（规则层，与 ML 并行）：</p>
       <table>
         <tr><th>型态</th><th>特征</th><th>规则处理</th></tr>
         <tr><td><strong>Type A</strong></td><td>高能见度（≥5 km）、模式低中云偏少、RH850 适中</td><td>有效低云补偿；高能见度山谷填云</td></tr>
@@ -68,7 +97,7 @@
         <tr><td><strong>Type C</strong></td><td>峰顶俯瞰（peak_overlook），谷地云海在日出扇区可观测</td><td>可观测场 + 扇区气象；峰顶专属权重</td></tr>
         <tr><td><strong>雾型排除</strong></td><td>近地面饱和雾、中层云偏高且无观赏结构</td><td>硬上限 ~25%，避免误判为观赏云海</td></tr>
       </table>
-      <p class="text-sm text-slate-600 mt-3">五女山等点位可在景区 JSON 配置 <code>local_water</code>（如桓龙湖），供规则引擎识别近库晨雾，<strong>不进入 ML 特征向量</strong>。</p>
+      <p class="text-sm text-slate-600 mt-3">近库水体判据走规则引擎，<strong>不进入 ML 特征向量</strong>。</p>
     </section>
 
     <section class="glass">
@@ -81,7 +110,7 @@
         <tr><th>因子</th><th>权重</th><th>理想条件</th></tr>
         <tr><td>850 hPa 湿度</td><td>0.16</td><td>80–95%</td></tr>
         <tr><td>700 hPa 上干</td><td>0.10</td><td>RH &lt; 60% 更佳</td></tr>
-        <tr><td>925–850 hPa 逆温</td><td>0.12</td><td>ΔT = T850 − T925 &gt; 0（近库辐射雾日上层可偏干，由 Type B 规则兜底）</td></tr>
+        <tr><td>925–850 hPa 逆温</td><td>0.12</td><td>ΔT = T850 − T925 &gt; 0</td></tr>
       </table>
     </section>
 
@@ -89,7 +118,7 @@
       <h2 class="text-lg font-semibold text-sky-600 mb-3">云海评分因子（规则引擎）</h2>
       <table>
         <tr><th>因子</th><th>权重</th><th>说明</th></tr>
-        <tr><td>低云量</td><td>0.20</td><td>层云直接证据；Type A/B 能见度补偿（模式低云≈0 时仍可推断谷地雾）</td></tr>
+        <tr><td>低云量</td><td>0.20</td><td>层云直接证据；Type A/B 能见度补偿</td></tr>
         <tr><td>850 hPa 湿度</td><td>0.16</td><td>低层充分湿润</td></tr>
         <tr><td>700 hPa 上干</td><td>0.10</td><td>850 hPa 以上相对干燥</td></tr>
         <tr><td>925–850 hPa 逆温</td><td>0.12</td><td>低层逆温利于云系堆积</td></tr>
@@ -105,7 +134,7 @@
         <tr><th>标签</th><th>含义</th></tr>
         <tr><td><strong>日出云海</strong></td><td>云海与日出概率均高，且有低云/能见度证据</td></tr>
         <tr><td><strong>较可能日出云海</strong></td><td>值得早起；含近库水体雾、谷地低能见度等补偿路径</td></tr>
-        <tr><td><strong>晴日日出</strong></td><td>日出条件尚可但缺少云海证据（低云偏少且非雾型）</td></tr>
+        <tr><td><strong>晴日日出</strong></td><td>日出条件尚可但缺少云海证据</td></tr>
         <tr><td><strong>有云海·日出难</strong></td><td>云海条件较好但中高云或能见度限制日出</td></tr>
       </table>
     </section>

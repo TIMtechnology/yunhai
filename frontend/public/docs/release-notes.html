@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>更新说明 · 2026-06 ML v7 · 云海日出预测</title>
+  <meta name="description" content="2026-06 升级：ML v7 模型 LOOCV 提升、东灵山上线、预测访问反馈闭环。" />
+  <link rel="canonical" href="https://yunhai.timkj.com/docs/release-notes.html" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f1f5f9; color: #334155; font-family: "PingFang SC", sans-serif; line-height: 1.7; }
+    .glass { background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    nav { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    nav a { color: #475569; }
+    nav a.active { color: #0369a1; font-weight: 600; }
+    h1, h2, h3 { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px; vertical-align: top; }
+    th { background: #f8fafc; }
+    a { color: #0284c7; }
+    code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .badge { display: inline-block; background: #dcfce7; color: #166534; font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .tip { background: #eff6ff; border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #1e40af; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <nav class="sticky top-0 z-10 backdrop-blur px-6 py-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+    <a href="index.html">使用指南</a>
+    <a href="data-sources.html">数据来源</a>
+    <a href="prediction-model.html">预测模型</a>
+    <a href="release-notes.html" class="active">更新说明</a>
+    <a href="architecture.html">架构</a>
+    <a href="ui-design.html">界面设计</a>
+    <a href="cloudsea-forecast.html">云海预测方法</a>
+    <a href="sunrise-cloudsea.html">日出云海</a>
+    <a href="how-to-read-meteogram.html">Meteogram</a>
+    <a href="cloudsea-conditions.html">形成条件</a>
+    <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
+  </nav>
+
+  <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
+    <header>
+      <p class="text-sm text-sky-600 mb-2"><span class="badge">2026-06 已上线</span></p>
+      <h1 class="text-3xl font-bold mb-3">ML v7 升级 & 预测反馈闭环</h1>
+      <p class="text-slate-600">本次更新将线上云海 ML 从 <strong>v6（日出窗 43 维）</strong> 升级为 <strong>v7（precursor 12h + 62 维）</strong>，并为五女山、东灵山部署点位专属模型；同时上线「预测访问快照 → 次日回测」能力，供标注与模型迭代使用。</p>
+    </header>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-violet-600 mb-3">LOOCV 准确率对比</h2>
+      <p class="text-sm text-slate-600 mb-4">留一日交叉验证（LOOCV）在<strong>已标注、无日出降水</strong>的有效样本上评估；v7 使用 operational 气象（更接近用户提前一晚查看预报的真实场景）。</p>
+      <table>
+        <tr>
+          <th>观景点</th>
+          <th>上一版 (v6)</th>
+          <th>当前 (v7)</th>
+          <th>变化</th>
+          <th>训练样本</th>
+        </tr>
+        <tr>
+          <td><strong>本溪五女山 · 点将台</strong></td>
+          <td>81.5%</td>
+          <td><strong>85.5%</strong></td>
+          <td class="text-emerald-700 font-semibold">+4.0 pp</td>
+          <td>55 日</td>
+        </tr>
+        <tr>
+          <td><strong>北京东灵山 · 峰顶</strong></td>
+          <td>—（未专项 v6）</td>
+          <td><strong>75.0%</strong></td>
+          <td>首次 v7 上线</td>
+          <td>36 日</td>
+        </tr>
+      </table>
+      <p class="mt-3 text-xs text-slate-500">五女山 v7 LOOCV AUC ≈ 0.884 · Brier ≈ 0.112。详见 <a href="prediction-model.html">预测模型说明</a>。</p>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">v7 模型改了什么？</h2>
+      <ul class="list-disc list-inside text-sm text-slate-700 space-y-2">
+        <li><strong>更长的气象记忆窗</strong>：除日出 03–07 点外，纳入前一日 20–23 点与当日 0–2 点（precursor 12h），捕捉「前夜增湿 → 日出是否维持」的过程信号。</li>
+        <li><strong>62 维特征</strong>：保留 v6 日出窗 43 维，新增 evening / night 段均值与 night→dawn 趋势特征（如 <code>delta_rh_night_to_dawn</code>）。</li>
+        <li><strong>推理对齐训练</strong>：线上 ML 在 03–07 点展示时，同样读取 live forecast 的 precursor 窗构建特征，避免「训练用长窗、推理只用 4 小时」的偏差。</li>
+        <li><strong>点位专属模型</strong>：五女山、东灵山各有一份 <code>spot_*.pkl</code>，与规则引擎按点位权重融合。</li>
+      </ul>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-emerald-600 mb-3">预测反馈（维护者 / 标注员）</h2>
+      <p class="text-sm text-slate-600 mb-3">用户或标注员打开某日出日的预测时，系统会在后台记录当时的预报快照与概率（不阻塞页面）。日出日结束且已有现场标注后，可回测「当时预报 vs 实况」。</p>
+      <ul class="list-disc list-inside text-sm text-slate-700 space-y-1">
+        <li>Admin 标注页（<code>/label.html?admin=1</code>）新增 <strong>「历史预测访问」</strong> 面板</li>
+        <li>展示每次访问时间、P(云海)、提前量 lead(h)、对错标记与自动诊断摘要</li>
+        <li>数据从本次升级部署后起积累；可用于分析虚高 case、按提前量分层准确率</li>
+      </ul>
+      <div class="tip mt-4">
+        普通用户无感知变化；概率展示逻辑与因子面板不变，底层 ML 特征窗已升级。
+      </div>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3">对你意味着什么？</h2>
+      <table>
+        <tr><th>角色</th><th>变化</th></tr>
+        <tr><td>摄影 / 出行用户</td><td>五女山、东灵山 03–07 点云海概率预期更稳；仍请结合 Meteogram 与现场判断</td></tr>
+        <tr><td>标注贡献者</td><td>标注流程不变；高质量标注继续驱动 v7 重训</td></tr>
+        <tr><td>Admin / 维护者</td><td>可查看历史预测 vs 标注；可导出反馈数据做离线分析</td></tr>
+      </table>
+    </section>
+
+    <p class="text-sm text-slate-500">技术细节见仓库 <code>internal/RELEASE-2026-06-V7.md</code> · 上一版本模型说明仍可在 <a href="prediction-model.html#v6-history">预测模型 · v6 历史</a> 查阅。</p>
+  </main>
+</body>
+</html>

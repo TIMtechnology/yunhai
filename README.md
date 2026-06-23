@@ -35,7 +35,7 @@
 | 层级 | 说明 |
 |------|------|
 | **规则引擎** | 基于文献的模糊逻辑评分（850/700 hPa 垂直场、逆温、低云/能见度补偿、Type A/B 型态） |
-| **ML 模型** | 日出窗口 03–07 点由标注数据训练的 Logistic 回归接管概率（v2，22 维日特征） |
+| **ML 模型** | 日出窗口 03–07 点由标注数据训练的 Logistic 回归（**v7**，62 维 precursor + dawn 特征，点位专属 pkl） |
 | **底层观测** | 分层云量、垂直场剖面、云海型态、地面态等原始气象字段完整展示 |
 
 内置 **五女山、大黑山、黄山、庐山** 等精选景区观景点，也支持天地图 POI 搜索与地图拖拽自定义坐标。配套 **开放标注 / 审核 / ML 训练** 共建闭环（见下方 [共建计划](#-日出云海预测模型--共建计划)）。
@@ -60,6 +60,40 @@
 | 🏔️ **精选景区** | 预置观景点海拔、坐标、季节权重；支持全国 POI |
 | 📝 **开放标注** | 匿名贡献 ID、POI/社区点云海标注、审核后入训练集 |
 | 🔬 **标注回测** | 开放标注页、Historical Forecast 回测、Admin 审核与重训 API |
+| 📈 **预测反馈** | 用户访问预测时自动快照；次日 forecast vs 实况回测；标注页历史预测面板 |
+
+---
+
+## 🆕 2026-06 升级 · ML v7 + 预测反馈
+
+> 详细说明：[`internal/RELEASE-2026-06-V7.md`](internal/RELEASE-2026-06-V7.md) · 用户文档：[更新说明](https://yunhai.timkj.com/docs/release-notes.html)
+
+### LOOCV 提升（operational 协议）
+
+| 观景点 | v6 | **v7** | 变化 | 样本 |
+|--------|-----|--------|------|------|
+| 五女山 · 点将台 | 81.5% | **85.5%** | **+4.0 pp** | 55 |
+| 东灵山 · 峰顶 | — | **75.0%** | 首次 v7 上线 | 36 |
+
+v7 特征：**precursor 12h**（D-1 20:00 → D 07:00）+ v6 日出窗 43 维 = **62 维**；推理与训练对齐，对「前夜仍湿、日出已干」类 case 更敏感。
+
+### 预测反馈闭环
+
+```
+/api/predict → prediction_access_log（异步）
+       ↓
+reconcile_outcomes → forecast vs 实况 + diagnosis
+       ↓
+标注页 Admin「历史预测访问」· 导出 CSV/JSON
+```
+
+```bash
+# 回测最近 30 天标注日
+python3 scripts/reconcile_prediction_outcomes.py --days-back 30
+
+# 导出反馈数据
+python3 scripts/export_prediction_feedback.py --spot-id wunvshan --viewpoint-id dianjiangtai --month 2026-06
+```
 
 ---
 
@@ -129,10 +163,11 @@
 | | 日出质量独立标注（可见 / 遮挡 / 不可拍） | ✅ **已完成**（入库；**暂不入**云海 ML，待日出模型） |
 | **开放贡献与审核** | 匿名 Contributor ID、30 条/日限额、pending → approved 审核 | ✅ **已完成** |
 | | 标注页 Admin 可视化审核队列 UI | 🔶 **部分**（API 已有，`label.html?admin=1` 待增强） |
-| **社区点位专属模型** | 单点 accumulated ≥10 天 approved 后可训练/绑定专属 ML | 🔶 **部分**（融合权重已分 spot；独立 pkl 未实现） |
+| **社区点位专属模型** | 单点 accumulated ≥30 天 approved 后启用 spot 专属 ML pkl | ✅ **已完成**（五女山、东灵山 v7 已部署） |
 | **全国 POI 通用模型** | 汇总多地区 approved 样本，训练跨点位泛化 ML | 🔶 **部分**（全局 `--approved-only` 训练已有；POI 专项管线规划中） |
 | **精选落库** | approved ≥15 天 → 写入 `scenic-spots/*.json`，搜索可见 | ✅ **已完成**（Admin API） |
-| **定期重训** | 标注增量或周期触发自动重训 + LOOCV 门禁部署 | 🔶 **部分**（手动 `POST .../train`；cron 未接） |
+| **定期重训** | 标注增量或周期触发自动重训 + LOOCV 门禁部署 | 🔶 **部分**（手动 `POST .../train` + `hot-patch-prod.sh`；cron 未接） |
+| **预测反馈** | 访问快照、次日回测、标注页历史预测 vs 实况 | ✅ **已完成**（2026-06） |
 | **深链与收藏** | `/?spot=&vp=`、`/?lat=&lng=`、`/label.html?...` 直达预测/标注 | ✅ **已完成** |
 
 图例：**✅ 已完成** · **🔶 部分完成** · **⏳ 规划中**
@@ -190,7 +225,7 @@
 │  FastAPI · Uvicorn · httpx · Pydantic · scikit-learn · Redis    │
 │  Open-Meteo Forecast / Pressure Levels · GIBS Himawari · SQLite  │
 │  Pillow OG/分享图渲染 · DeepSeek/OpenAI 兼容 AI 解读              │
-│  模糊逻辑 v2（Archetype）· ML v2 · 标注样本库 · 行为分析          │
+│  模糊逻辑 v2（Archetype）· ML v7 · 标注样本库 · 预测反馈 · 行为分析          │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -230,6 +265,7 @@ cd frontend && npm install && npm run dev
 
 ```bash
 export CLOUDSEA_ML_ENABLED=true
+# 默认路径；实际按 spot 加载 spot_{spot}_{viewpoint}.pkl
 export CLOUDSEA_MODEL_PATH=../data/cloudsea/models/cloudsea_ml_v2.pkl
 ```
 
@@ -265,6 +301,8 @@ docker compose -f docker-compose.prod.yml up -d
 | `GET` | `/api/satellite/cloud` | Himawari 红外裁切 |
 | `GET` | `/api/internal/cloudsea/review-queue` | 待审标注（Admin Token） |
 | `POST` | `/api/internal/cloudsea/train` | 手动重训 ML（Admin Token） |
+| `GET` | `/api/internal/cloudsea/prediction-history` | 某日历史预测访问（Admin Token） |
+| `POST` | `/api/internal/cloudsea/reconcile` | 手动触发预测回测（Admin Token） |
 | `GET` | `/api/internal/backtest/predict` | 历史日回测（Admin Token） |
 
 Swagger：`http://localhost:8000/docs`
@@ -277,11 +315,18 @@ Swagger：`http://localhost:8000/docs`
 # 1. 回填标注日完整垂直场气象
 python3 scripts/backfill_meteo_hourly.py
 
-# 2. 训练 ML（仅 approved 标注）
-python3 scripts/train_cloudsea_model.py --approved-only
+# 2. 训练 ML v7（仅 approved 标注 · operational 气象）
+python3 scripts/train_cloudsea_model.py \
+  --db data/cloudsea/cloudsea.prod.db \
+  --spot-id wunvshan --viewpoint-id dianjiangtai \
+  --window v7 --mode operational --enhanced --db-only
 
 # 3. 模型输出
-# data/cloudsea/models/cloudsea_ml_v2.pkl
+# data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl
+# data/cloudsea/models/spot_donglingshan_fengding.pkl
+
+# 4. 生产热补丁（不修改 .env / compose）
+SKIP_TRAIN=1 bash scripts/hot-patch-prod.sh
 ```
 
 **开放标注页**：https://yunhai.timkj.com/label.html（无需 Token，浏览器自动生成贡献 ID）
@@ -299,7 +344,7 @@ yunhai/
 │   ├── adapters/             # Open-Meteo、Historical、Himawari WMS
 │   ├── engine/               # cloudsea_scorer · cloudsea_ml · cloudsea_features
 │   ├── routers/              # api · advisory · share · cloudsea · contribute · analytics
-│   └── services/             # predictor · meteo_profile · share_store · share_og_renderer
+│   └── services/             # predictor · prediction_feedback · meteo_profile · share
 ├── data/
 │   ├── scenic-spots/         # 景区 JSON
 │   ├── share-assets/         # 分享图背景与中文字体资源
@@ -317,10 +362,12 @@ yunhai/
 | 文档 | 链接 |
 |------|------|
 | 使用指南 | [/docs/index.html](https://yunhai.timkj.com/docs/index.html) |
+| **2026-06 更新说明** | [/docs/release-notes.html](https://yunhai.timkj.com/docs/release-notes.html) |
 | 数据来源 | [/docs/data-sources.html](https://yunhai.timkj.com/docs/data-sources.html) |
 | 预测模型 | [/docs/prediction-model.html](https://yunhai.timkj.com/docs/prediction-model.html) |
 | 系统架构 | [/docs/architecture.html](https://yunhai.timkj.com/docs/architecture.html) |
 | 界面设计 | [/docs/ui-design.html](https://yunhai.timkj.com/docs/ui-design.html) |
+| 升级说明（维护者） | [`internal/RELEASE-2026-06-V7.md`](internal/RELEASE-2026-06-V7.md) |
 
 源码副本：`frontend/public/docs/`
 
