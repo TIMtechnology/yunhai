@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 生产热补丁：仅 docker cp 进运行中容器 + restart，不碰 compose / env
+# 【应急】生产热补丁：docker cp 进运行中容器。正常发版请用 scripts/release-prod.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -45,6 +45,8 @@ tar czf /tmp/yunhai-backend-patch.tar.gz \
   backend/app/services/predictor.py \
   backend/app/services/meteo_backfill.py \
   backend/app/services/spot_loader.py \
+  backend/app/adapters/http_retry.py \
+  backend/app/services/llm_advisory.py \
   backend/app/services/contribute_rate_limit.py \
   backend/app/services/cache.py \
   backend/app/routers/contribute.py
@@ -73,6 +75,8 @@ for f in \
   backend/app/services/predictor.py \
   backend/app/services/meteo_backfill.py \
   backend/app/services/spot_loader.py \
+  backend/app/adapters/http_retry.py \
+  backend/app/services/llm_advisory.py \
   backend/app/services/contribute_rate_limit.py \
   backend/app/services/cache.py \
   backend/app/routers/contribute.py

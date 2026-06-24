@@ -351,9 +351,10 @@ python3 scripts/train_cloudsea_model.py \
 # data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl
 # data/cloudsea/models/spot_donglingshan_fengding.pkl
 
-# 4. 生产热补丁（不修改 .env / compose）
-cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次：填入 SSH 密钥与主机
-SKIP_TRAIN=1 bash scripts/hot-patch-prod.sh
+# 4. 生产标准发版（镜像内含前端 + V7.1 代码 + ML 模型）
+cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次
+SKIP_TRAIN=1 bash scripts/release-prod.sh
+# 详见 internal/DEPLOY.md · 应急才用 hot-patch-prod.sh
 ```
 
 **开放标注页**：https://yunhai.timkj.com/label.html（无需 Token，浏览器自动生成贡献 ID）

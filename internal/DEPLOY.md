@@ -1,74 +1,57 @@
 # 生产部署备忘
 
-> 敏感信息（服务器 IP、SSH 密钥路径）请写在 **`scripts/deploy.local.env`**（已 gitignore，勿提交）。  
-> 模板：`scripts/deploy.local.env.example`
+> 敏感信息（服务器 IP、SSH 密钥路径）请写在 **`scripts/deploy.local.env`**（已 gitignore）。
 
 ---
 
-## 1. 本地配置
+## 标准发版（推荐）
+
+每次版本发布应走 **镜像构建 + compose 重启**，镜像内已包含：
+
+- 前端静态资源（`npm run build`）
+- 后端完整代码（含 V7.1 规则 / ML / 预测反馈）
+- ML 模型 `spot_*.pkl`、社区精选 `curated-spots/*.json`
+
+容器启动时 **`docker-entrypoint.sh`** 会将 baked 资源同步到 `cloudsea_data` 卷（新 BUILD_ID 时强制覆盖模型）。
 
 ```bash
-cp scripts/deploy.local.env.example scripts/deploy.local.env
-# 编辑 deploy.local.env：
-#   YUNHAI_SSH_KEY=/path/to/private_key
-#   YUNHAI_HOST=root@your.server
+cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次
+
+# 完整发版（可选训练 → 构建镜像 → 上传 → 重启 → 冒烟）
+bash scripts/release-prod.sh
+
+# 已有模型、跳过训练
+SKIP_TRAIN=1 bash scripts/release-prod.sh
 ```
 
-可选变量：`YUNHAI_REMOTE_DIR`、`YUNHAI_CONTAINER`（见 example 文件）。
-
----
-
-## 2. SSH 正确用法
-
-```bash
-source scripts/deploy.local.env
-SSH="ssh -i $YUNHAI_SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
-
-# 连通性测试
-$SSH "$YUNHAI_HOST" 'echo ok && hostname && docker ps --format "{{.Names}}"'
-# 期望看到：yunhai-yunhai-1、yunhai-redis-1
-```
-
-### 常见连错
-
-| 错误写法 | 说明 |
-|----------|------|
-| SSH **不加** `-o IdentitiesOnly=yes` | 可能先试其他密钥，被服务器断开 |
-| 连到 `~/.ssh/config` 里别的 Host | 可能是另一台机器，不是 yunhai |
-
-可选：在 `~/.ssh/config` 增加别名（本地配置，不进 Git），`HostName` / `IdentityFile` 填真实值。
-
----
-
-## 3. 热补丁（推荐日常发版）
-
-```bash
-SKIP_TRAIN=1 bash scripts/hot-patch-prod.sh
-```
-
-仅 `docker cp` + restart，不覆盖 compose / env。
-
----
-
-## 4. 全量镜像发布
+分步：
 
 ```bash
 ./scripts/build-amd64.sh
 bash scripts/deploy-prod.sh yunhai-amd64.tar
+bash scripts/smoke-prod.sh
 ```
+
+**发版保证**：`deploy-prod.sh` **只**上传镜像 tar、`docker load`、`compose up -d yunhai`；**不会**上传或修改服务器上的 `docker-compose.prod.yml`、`.env` 及 `environment:` 中的任何密钥。
+
+**注意**：服务器 `docker-compose.prod.yml` 不应再写 `command: uvicorn ...`（可选，镜像 ENTRYPOINT 已含资源同步 + 启动）。如需调整 compose，请 SSH 手工编辑。
 
 ---
 
-## 5. 同步生产 DB 到本地
+## 热补丁（仅应急）
+
+`scripts/hot-patch-prod.sh` 仅用于 **来不及构建镜像** 时的临时修复；`docker compose up --force-recreate` 会 **还原为旧镜像代码**，热补丁会丢失。
+
+---
+
+## 本地配置
+
+见 `scripts/deploy.local.env.example`。
+
+---
+
+## 同步生产 DB
 
 ```bash
 bash scripts/sync_cloudsea_db_from_prod.sh
 ```
-
----
-
-## 6. 生产域名
-
-对外：https://yunhai.timkj.com（DNS 指向生产机，具体 IP 见 `deploy.local.env`）
-
-默认容器：`yunhai-yunhai-1` · 宿主机健康检查：`http://127.0.0.1:8088/health`

@@ -24,8 +24,9 @@ docker build --platform linux/amd64 \
   --build-arg PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple \
   --build-arg VITE_AMAP_KEY="${VITE_AMAP_KEY}" \
   --build-arg VITE_AMAP_SECURITY="${VITE_AMAP_SECURITY}" \
+  --build-arg BUILD_ID="${BUILD_ID:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M)}" \
   -t yunhai:latest .
 docker save yunhai:latest -o yunhai-amd64.tar
-echo "镜像已保存: yunhai-amd64.tar"
-echo "服务器加载: docker load -i yunhai-amd64.tar"
-echo "启动: docker compose -f docker-compose.prod.yml up -d"
+echo "镜像已保存: yunhai-amd64.tar ($(du -h yunhai-amd64.tar | cut -f1))"
+echo "标准发版: bash scripts/release-prod.sh"
+echo "或分步: bash scripts/deploy-prod.sh yunhai-amd64.tar && bash scripts/smoke-prod.sh"

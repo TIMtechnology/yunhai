@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from app.adapters.http_retry import post_json
 from app.config import settings
 from app.engine.cloudsea_ml import get_ml_status
 from app.services.cache import cache_get, cache_set
@@ -545,10 +546,15 @@ async def generate_daily_brief(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=settings.llm_advisory_timeout_sec) as client:
-            resp = await client.post(url, headers=headers, json=body)
-            resp.raise_for_status()
-            data = resp.json()
+        resp = await post_json(
+            url,
+            headers=headers,
+            json=body,
+            timeout=settings.llm_advisory_timeout_sec,
+            retries=3,
+        )
+        resp.raise_for_status()
+        data = resp.json()
         content = data["choices"][0]["message"]["content"]
     except Exception as exc:
         log.warning("llm advisory failed: %s", exc)

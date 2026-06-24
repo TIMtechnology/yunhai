@@ -23,10 +23,15 @@ services:
       - CLOUDSEA_ENABLED=true
       - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:-}
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
+      - CLOUDSEA_ML_ENABLED=true
+      - CLOUDSEA_MODEL_PATH=/app/data/cloudsea/models/cloudsea_ml_v6.pkl
     volumes:
       - cloudsea_data:/app/data/cloudsea
     depends_on:
       - redis
+    dns:
+      - 114.114.114.114
+      - 8.8.8.8
     restart: unless-stopped
 
 volumes:
