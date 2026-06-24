@@ -28,7 +28,7 @@ echo "安装 crontab（不触碰 docker-compose / .env）…"
 "${SSH[@]}" "$HOST" "set -e
 chmod +x '$SCRIPTS_DIR/run-scheduled-tasks.sh'
 MARK='# yunhai-scheduled-tasks'
-LINE='*/30 * * * * CLOUDSEA_DB_PATH=$DB_PATH CLOUDSEA_ENABLED=1 CLOUDSEA_AUTO_SNAPSHOT=1 CLOUDSEA_WATCH_ENABLED=1 $SCRIPTS_DIR/run-scheduled-tasks.sh >> $CRON_LOG 2>&1'
+LINE='*/30 * * * * YUNHAI_CONTAINER=${YUNHAI_CONTAINER:-yunhai-yunhai-1} $SCRIPTS_DIR/run-scheduled-tasks.sh >> $CRON_LOG 2>&1'
 ( crontab -l 2>/dev/null | grep -v \"\$MARK\" || true
   echo \"\$LINE \$MARK\"
 ) | crontab -
