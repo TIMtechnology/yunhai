@@ -16,3 +16,5 @@ yunhai-amd64.tar
 internal/config.local.json
 internal/PAPER-ABSTRACT.md
 internal/research-paper.html
+scripts/deploy.local.env
+internal/_prod_backtest_data.json

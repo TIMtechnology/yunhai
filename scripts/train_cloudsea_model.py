@@ -391,6 +391,57 @@ def print_loocv_details(
     print(f"错误 {wrong}/{len(y)}")
 
 
+def print_night_cloud_low_bias(
+    db_path: Path,
+    spot_id: str,
+    viewpoint_id: str,
+    *,
+    approved_only: bool = False,
+) -> None:
+    """operational 预报 vs 标注实况：night 段低云系统性偏差（v7 训练诊断）。"""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    clauses = ["spot_id=?", "viewpoint_id=?"]
+    params: list[object] = [spot_id, viewpoint_id]
+    if approved_only:
+        clauses.append("(review_status='approved' OR review_status IS NULL)")
+    labels = conn.execute(
+        f"SELECT date, status FROM cloudsea_labels WHERE {' AND '.join(clauses)} ORDER BY date",
+        params,
+    ).fetchall()
+    conn.close()
+
+    gaps: list[float] = []
+    print("\n--- night 低云预报偏差 (operational archive vs 实况) ---")
+    print(f"{'日期':<12} {'标注':<8} {'night_fc':>9} {'night_act':>9} {'gap':>6}")
+    for raw in labels:
+        day = raw["date"]
+        fc = load_forecast_archive_precursor(spot_id, viewpoint_id, day, db_path=db_path)
+        act = load_label_precursor_meteo(spot_id, viewpoint_id, day, db_path=db_path)
+        if not fc or not act:
+            continue
+        from app.engine.cloudsea_features import _segment_for_row, _segment_aggregate
+
+        fc_night = [r for r in fc if _segment_for_row(r, day) == "night"]
+        act_night = [r for r in act if _segment_for_row(r, day) == "night"]
+        if not fc_night or not act_night:
+            continue
+        fc_mean = _segment_aggregate(fc_night, elevation=804.0).get("cloud_low_mean")
+        act_mean = _segment_aggregate(act_night, elevation=804.0).get("cloud_low_mean")
+        if fc_mean is None or act_mean is None:
+            continue
+        gap = float(fc_mean) - float(act_mean)
+        gaps.append(gap)
+        print(
+            f"{day:<12} {raw['status']:<8} {fc_mean:9.1f} {act_mean:9.1f} {gap:+6.1f}"
+        )
+    if gaps:
+        print(
+            f"均值 gap={sum(gaps)/len(gaps):+.1f}pp  "
+            f"偏高日 {sum(1 for g in gaps if g > 3)}/{len(gaps)}"
+        )
+
+
 def train_group(
     db_path: Path,
     spot_id: str,
@@ -432,6 +483,14 @@ def train_group(
     if len(set(y)) < 2:
         print("跳过：正负样本不足")
         return None
+
+    if window == "v7" and meteo_mode == "operational":
+        print_night_cloud_low_bias(
+            db_path, spot_id, viewpoint_id, approved_only=approved_only
+        )
+
+    if min_recall is None and window == "v7":
+        min_recall = 0.68
 
     tuning_extra: dict | None = None
     if enhanced:

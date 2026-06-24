@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>更新说明 · 2026-06 ML v7 · 云海日出预测</title>
-  <meta name="description" content="2026-06 升级：ML v7 模型 LOOCV 提升、东灵山上线、预测访问反馈闭环。" />
+  <title>更新说明 · 云海日出预测</title>
+  <meta name="description" content="2026-06 ML v7.1 贴地雾校准、漏报修复与预测反馈闭环。" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/release-notes.html" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -20,7 +20,9 @@
     a { color: #0284c7; }
     code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
     .badge { display: inline-block; background: #dcfce7; color: #166534; font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .badge-old { background: #e0e7ff; color: #3730a3; }
     .tip { background: #eff6ff; border-left: 4px solid #38bdf8; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #1e40af; font-size: 14px; }
+    .warn { background: #fff7ed; border-left: 4px solid #fb923c; padding: 12px 16px; border-radius: 0 8px 8px 0; color: #9a3412; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -32,82 +34,65 @@
     <a href="architecture.html">架构</a>
     <a href="ui-design.html">界面设计</a>
     <a href="cloudsea-forecast.html">云海预测方法</a>
-    <a href="sunrise-cloudsea.html">日出云海</a>
-    <a href="how-to-read-meteogram.html">Meteogram</a>
-    <a href="cloudsea-conditions.html">形成条件</a>
     <a href="/" class="ml-auto text-sky-600">← 返回应用</a>
   </nav>
 
   <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
     <header>
-      <p class="text-sm text-sky-600 mb-2"><span class="badge">2026-06 已上线</span></p>
-      <h1 class="text-3xl font-bold mb-3">ML v7 升级 & 预测反馈闭环</h1>
-      <p class="text-slate-600">本次更新将线上云海 ML 从 <strong>v6（日出窗 43 维）</strong> 升级为 <strong>v7（precursor 12h + 62 维）</strong>，并为五女山、东灵山部署点位专属模型；同时上线「预测访问快照 → 次日回测」能力，供标注与模型迭代使用。</p>
+      <p class="text-sm text-sky-600 mb-2"><span class="badge">2026-06-24 已上线</span></p>
+      <h1 class="text-3xl font-bold mb-3">v7.1 · 贴地雾校准 & 漏报修复</h1>
+      <p class="text-slate-600">在 6 月初 <strong>ML v7</strong> 上线基础上，针对「高湿但无观赏云海」「NWP 低云=0 却有云海」等边界 case 优化规则与融合逻辑，并重训五女山模型。5–6 月标注回测方向一致率由 <strong>83% 提升至 88%</strong>。</p>
     </header>
 
     <section class="glass">
-      <h2 class="text-lg font-semibold text-violet-600 mb-3">LOOCV 准确率对比</h2>
-      <p class="text-sm text-slate-600 mb-4">留一日交叉验证（LOOCV）在<strong>已标注、无日出降水</strong>的有效样本上评估；v7 使用 operational 气象（更接近用户提前一晚查看预报的真实场景）。</p>
-      <table>
-        <tr>
-          <th>观景点</th>
-          <th>上一版 (v6)</th>
-          <th>当前 (v7)</th>
-          <th>变化</th>
-          <th>训练样本</th>
-        </tr>
-        <tr>
-          <td><strong>本溪五女山 · 点将台</strong></td>
-          <td>81.5%</td>
-          <td><strong>85.5%</strong></td>
-          <td class="text-emerald-700 font-semibold">+4.0 pp</td>
-          <td>55 日</td>
-        </tr>
-        <tr>
-          <td><strong>北京东灵山 · 峰顶</strong></td>
-          <td>—（未专项 v6）</td>
-          <td><strong>75.0%</strong></td>
-          <td>首次 v7 上线</td>
-          <td>36 日</td>
-        </tr>
-      </table>
-      <p class="mt-3 text-xs text-slate-500">五女山 v7 LOOCV AUC ≈ 0.884 · Brier ≈ 0.112。详见 <a href="prediction-model.html">预测模型说明</a>。</p>
-    </section>
-
-    <section class="glass">
-      <h2 class="text-lg font-semibold text-sky-600 mb-3">v7 模型改了什么？</h2>
+      <h2 class="text-lg font-semibold text-violet-600 mb-3">你会感受到什么变化？</h2>
       <ul class="list-disc list-inside text-sm text-slate-700 space-y-2">
-        <li><strong>更长的气象记忆窗</strong>：除日出 03–07 点外，纳入前一日 20–23 点与当日 0–2 点（precursor 12h），捕捉「前夜增湿 → 日出是否维持」的过程信号。</li>
-        <li><strong>62 维特征</strong>：保留 v6 日出窗 43 维，新增 evening / night 段均值与 night→dawn 趋势特征（如 <code>delta_rh_night_to_dawn</code>）。</li>
-        <li><strong>推理对齐训练</strong>：线上 ML 在 03–07 点展示时，同样读取 live forecast 的 precursor 窗构建特征，避免「训练用长窗、推理只用 4 小时」的偏差。</li>
-        <li><strong>点位专属模型</strong>：五女山、东灵山各有一份 <code>spot_*.pkl</code>，与规则引擎按点位权重融合。</li>
+        <li><strong>更少「假高概率」</strong>：清晨高湿、能见度差但并无层云时（贴地雾/霾），概率不再被抬到 60–70%。</li>
+        <li><strong>真云海日更稳</strong>：近库低能见度、饱和谷地云等 Type B 场景召回改善。</li>
+        <li><strong>日出后查看更可信</strong>：当天 7 点后再打开页面，日出窗内各时刻概率已冻结，不会因能见度修正突然跳变。</li>
+        <li><strong>Admin 标注页</strong>：历史预测访问面板支持双轨曲线、分段差异与诊断（若已开 admin）。</li>
       </ul>
     </section>
 
     <section class="glass">
-      <h2 class="text-lg font-semibold text-emerald-600 mb-3">预测反馈（维护者 / 标注员）</h2>
-      <p class="text-sm text-slate-600 mb-3">用户或标注员打开某日出日的预测时，系统会在后台记录当时的预报快照与概率（不阻塞页面）。日出日结束且已有现场标注后，可回测「当时预报 vs 实况」。</p>
-      <ul class="list-disc list-inside text-sm text-slate-700 space-y-1">
-        <li>Admin 标注页（<code>/label.html?admin=1</code>）新增 <strong>「历史预测访问」</strong> 面板</li>
-        <li>展示每次访问时间、P(云海)、提前量 lead(h)、对错标记与自动诊断摘要</li>
-        <li>数据从本次升级部署后起积累；可用于分析虚高 case、按提前量分层准确率</li>
-      </ul>
-      <div class="tip mt-4">
-        普通用户无感知变化；概率展示逻辑与因子面板不变，底层 ML 特征窗已升级。
-      </div>
-    </section>
-
-    <section class="glass">
-      <h2 class="text-lg font-semibold mb-3">对你意味着什么？</h2>
+      <h2 class="text-lg font-semibold text-emerald-600 mb-3">五女山回测（2026 年 5–6 月，阈值 55%）</h2>
       <table>
-        <tr><th>角色</th><th>变化</th></tr>
-        <tr><td>摄影 / 出行用户</td><td>五女山、东灵山 03–07 点云海概率预期更稳；仍请结合 Meteogram 与现场判断</td></tr>
-        <tr><td>标注贡献者</td><td>标注流程不变；高质量标注继续驱动 v7 重训</td></tr>
-        <tr><td>Admin / 维护者</td><td>可查看历史预测 vs 标注；可导出反馈数据做离线分析</td></tr>
+        <tr><th>指标</th><th>v7.0</th><th>v7.1</th></tr>
+        <tr><td>方向一致</td><td>83.3%</td><td><strong>87.5%</strong></td></tr>
+        <tr><td>漏报（有云海判成无）</td><td>7 天</td><td><strong>3 天</strong></td></tr>
+        <tr><td>误报（无云海判成有）</td><td>1 天</td><td>3 天</td></tr>
+      </table>
+      <p class="mt-3 text-xs text-slate-500">典型修复：6/24 虚高（P 70%→20%）、5/20 / 5/29 / 6/06 / 6/22 漏报。仍待优化：5/04 等 Type A 金标准型（NWP 报零低云）。</p>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">技术改动摘要</h2>
+      <table>
+        <tr><th>模块</th><th>改动</th></tr>
+        <tr><td>规则引擎</td><td>贴地雾判定 RH≥82%；Type A 春夏季湿度门槛放宽；饱和谷地云改 Type B</td></tr>
+        <tr><td>ML 融合</td><td>贴地雾场景降权 boost；Type A/B 规则分不被极低 ML 拖垮</td></tr>
+        <tr><td>v7.1 特征</td><td><code>ground_fog_proxy</code>、<code>type_a_proxy</code> 等；五女山 LOOCV 83.3%（66 样本）</td></tr>
+        <tr><td>产品</td><td>前体 evening 补全；日出窗结束后概率冻结</td></tr>
+        <tr><td>反馈</td><td>访问去重（同预报不重复存 meteo）；标注页自动 reconcile</td></tr>
       </table>
     </section>
 
-    <p class="text-sm text-slate-500">技术细节见仓库 <code>internal/RELEASE-2026-06-V7.md</code> · 上一版本模型说明仍可在 <a href="prediction-model.html#v6-history">预测模型 · v6 历史</a> 查阅。</p>
+    <section class="glass">
+      <h2 class="text-lg font-semibold mb-3"><span class="badge-old">2026-06 初版</span> ML v7 & 预测反馈</h2>
+      <p class="text-sm text-slate-600 mb-3">首次将线上 ML 升级为 v7（precursor 12h + 62 维特征），五女山 LOOCV 85.5%，东灵山 75.0%；上线预测访问快照与次日回测能力。</p>
+      <table>
+        <tr><th>观景点</th><th>v6</th><th>v7</th><th>样本</th></tr>
+        <tr><td>五女山 · 点将台</td><td>82.1%</td><td>85.5%</td><td>55 日</td></tr>
+        <tr><td>东灵山 · 峰顶</td><td>—</td><td>75.0%</td><td>36 日</td></tr>
+      </table>
+      <p class="mt-3 text-xs text-slate-500">v7.1 在五女山侧以规则+特征迭代为主，LOOCV 按新特征窗重算为 83.3%，换取更好的 FP/FN 平衡。</p>
+    </section>
+
+    <div class="warn">
+      <strong>说明：</strong>概率仍为预报辅助，不能替代现场判断。极端边界日（模式低云与实况严重不符）仍可能有偏差；欢迎通过标注页贡献现场结论以改进模型。
+    </div>
+
+    <p class="text-sm text-slate-500">维护者文档：<code>internal/RELEASE-2026-06-V7.1.md</code> · <code>internal/RELEASE-2026-06-V7.md</code></p>
   </main>
 </body>
 </html>

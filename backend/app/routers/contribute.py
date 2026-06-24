@@ -89,7 +89,7 @@ def _client_ip(request: Request) -> str:
     return ""
 
 
-async def _rate_limit(request: Request) -> None:
+async def _rate_limit_write(request: Request) -> None:
     contributor_id = request.headers.get("x-contributor-id", "").strip()
     bucket_key = contributor_id or _client_ip(request)
     try:
@@ -142,7 +142,6 @@ def _review_status_for(contributor_id: str, spot_id: str) -> str:
 @router.get("/cloudsea/stats")
 async def contribute_stats(
     contributor_id: str = Depends(get_contributor_id),
-    _: None = Depends(_rate_limit),
 ):
     return get_contributor_stats(contributor_id)
 
@@ -150,7 +149,6 @@ async def contribute_stats(
 @router.get("/locations/mine")
 async def my_locations(
     contributor_id: str = Depends(get_contributor_id),
-    _: None = Depends(_rate_limit),
 ):
     return {"locations": list_community_locations(contributor_id)}
 
@@ -193,7 +191,7 @@ async def public_location(location_id: str):
 async def register_location(
     body: RegisterLocationBody,
     contributor_id: str = Depends(get_contributor_id),
-    _: None = Depends(_rate_limit),
+    _: None = Depends(_rate_limit_write),
 ):
     try:
         assert_contributor_active(contributor_id)
@@ -217,7 +215,7 @@ async def patch_location(
     location_id: str,
     body: UpdateLocationBody,
     contributor_id: str = Depends(get_contributor_id),
-    _: None = Depends(_rate_limit),
+    _: None = Depends(_rate_limit_write),
 ):
     if body.name is None and body.lat is None and body.lng is None and body.elevation is None:
         raise HTTPException(status_code=400, detail="请至少提供 name、lat、lng 或 elevation 之一")
@@ -253,7 +251,6 @@ async def contribute_label_session(
     window_start: int = 3,
     window_end: int = 7,
 ):
-    await _rate_limit(request)
     try:
         assert_label_date_allowed(date)
     except ValueError as exc:
@@ -298,7 +295,6 @@ async def contribute_calendar(
     location_id: Optional[str] = None,
     month: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
 ):
-    await _rate_limit(request)
     if location_id:
         spot_id, viewpoint_id = label_keys_for_location_id(location_id)
     if not (spot_id and viewpoint_id):
@@ -315,7 +311,7 @@ async def contribute_save_label(
     request: Request,
     contributor_id: str = Depends(get_contributor_id),
 ):
-    await _rate_limit(request)
+    await _rate_limit_write(request)
     try:
         assert_contributor_active(contributor_id)
         assert_label_date_allowed(body.date)

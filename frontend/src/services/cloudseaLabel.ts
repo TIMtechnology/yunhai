@@ -44,7 +44,7 @@ export async function fetchSpots() {
   const resp = await fetch(`${API_BASE}/api/spots/search?q=&curated_only=true`)
   if (!resp.ok) throw new Error('加载景区失败')
   const data = await resp.json()
-  return data.results as Array<{ id: string; name: string }>
+  return data.results as Array<{ id: string; name: string; lat?: number; lng?: number; region?: string }>
 }
 
 export async function fetchSpotDetail(spotId: string) {
@@ -129,22 +129,68 @@ export interface PredictionHistory {
   label: CloudseaLabel | null
   access_count: number
   snapshot_count?: number
+  snapshot_ids?: number[]
   correct_count: number
   outcome_count: number
   entries: PredictionHistoryEntry[]
   actual_precursor: Array<Record<string, unknown>>
 }
 
+export interface PredictionCurvePoint {
+  time: string
+  label: string
+  forecast_rh?: number | null
+  actual_rh?: number | null
+  forecast_cloud_low?: number | null
+  actual_cloud_low?: number | null
+  forecast_wind?: number | null
+  actual_wind?: number | null
+}
+
+export interface PredictionSegmentDiff {
+  segment: string
+  label: string
+  rh_forecast?: number | null
+  rh_actual?: number | null
+  rh_delta?: number | null
+  cloud_low_forecast?: number | null
+  cloud_low_actual?: number | null
+  cloud_low_delta?: number | null
+  wind_forecast?: number | null
+  wind_actual?: number | null
+}
+
+export interface PredictionSnapshotDetail {
+  id: number
+  created_at: string
+  target_date: string
+  lead_hours_to_dawn?: number | null
+  peak_cloudsea_prob?: number | null
+  model_version?: string | null
+  direction_ok?: number | null
+  label_status?: string | null
+  diagnosis?: { tags?: string[]; summary?: string } | null
+  curve_points: PredictionCurvePoint[]
+  segments: PredictionSegmentDiff[]
+  hourly_errors?: Array<Record<string, unknown>>
+  reconciled?: boolean
+}
+
 export async function fetchPredictionHistory(
-  token: string,
   spotId: string,
   viewpointId: string,
   date: string,
 ): Promise<PredictionHistory> {
   const q = new URLSearchParams({ spot_id: spotId, viewpoint_id: viewpointId, date })
-  const resp = await fetch(`${API_BASE}/api/internal/cloudsea/prediction-history?${q}`, {
-    headers: headers(token),
-  })
+  const resp = await fetch(`${API_BASE}/api/prediction-feedback/history?${q}`)
+  if (!resp.ok) throw new Error(await resp.text())
+  return resp.json()
+}
+
+export async function fetchPredictionSnapshotDetail(
+  accessLogId: number,
+): Promise<PredictionSnapshotDetail> {
+  const resp = await fetch(`${API_BASE}/api/prediction-feedback/history/${accessLogId}`)
   if (!resp.ok) throw new Error(await resp.text())
   return resp.json()
 }

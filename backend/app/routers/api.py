@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 from typing import Optional
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Query, Request
 
 from app.adapters.gibs_wms import fetch_himawari_best_effort
 from app.adapters.nsmc_wms import (
@@ -241,3 +241,26 @@ async def satellite_cloud(
         "lookback_hours": lookback,
         "analysis": analysis,
     }
+
+
+@router.get("/prediction-feedback/history")
+async def prediction_feedback_history(
+    spot_id: str,
+    viewpoint_id: str,
+    date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+):
+    """标注页只读：某日历史预测访问与 forecast vs 实况摘要。"""
+    from app.services.prediction_feedback import get_prediction_history
+
+    return get_prediction_history(spot_id, viewpoint_id, date)
+
+
+@router.get("/prediction-feedback/history/{access_log_id}")
+async def prediction_feedback_history_detail(access_log_id: int):
+    """标注页只读：单次访问快照的双轨曲线与分段差异。"""
+    from app.services.prediction_feedback import get_prediction_snapshot_detail
+
+    row = get_prediction_snapshot_detail(access_log_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="访问记录未找到")
+    return row

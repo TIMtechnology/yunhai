@@ -60,10 +60,11 @@ def get_spot(spot_id: str) -> ScenicSpot | None:
 
 
 def _superseded_community_spot_ids() -> set[str]:
+    """仅当存在「正式景区」条目指向某 community_location_id 时，才隐藏该 id 的重复项。"""
     return {
         spot.community_location_id
         for spot in load_spots().values()
-        if spot.community_location_id
+        if spot.community_location_id and spot.community_location_id != spot.id
     }
 
 

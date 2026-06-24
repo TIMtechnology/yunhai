@@ -3,8 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SSH_KEY="${YUNHAI_SSH_KEY:-/Users/likun/ssh_2025}"
-HOST="${YUNHAI_HOST:-root@182.203.168.140}"
+# shellcheck source=lib/load-deploy-env.sh
+source "$(dirname "$0")/lib/load-deploy-env.sh"
+
 REMOTE_DIR="${YUNHAI_REMOTE_DIR:-/opt/yunhai}"
 TAR="${1:-yunhai-amd64.tar}"
 
@@ -13,8 +14,9 @@ if [[ ! -f "$TAR" ]]; then
   exit 1
 fi
 
-SCP=(scp -i "$SSH_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
-SSH=(ssh -i "$SSH_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+SCP=(scp -i "$YUNHAI_SSH_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+SSH=(ssh -i "$YUNHAI_SSH_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+HOST="$YUNHAI_HOST"
 
 echo "上传 $TAR → $HOST:$REMOTE_DIR/"
 "${SCP[@]}" "$TAR" "$HOST:$REMOTE_DIR/"

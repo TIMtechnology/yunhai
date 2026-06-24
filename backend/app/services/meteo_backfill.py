@@ -193,6 +193,42 @@ def load_label_precursor_meteo(
     return sorted(out, key=lambda r: str(r.get("time")))
 
 
+def supplement_precursor_rows(
+    spot_id: str,
+    viewpoint_id: str,
+    target_date: str,
+    live_rows: list[dict[str, Any]],
+    *,
+    db_path: Path | None = None,
+) -> list[dict[str, Any]]:
+    """用 DB 缓存/预报 archive 补全 live 预报缺失的 D-1 evening 等前体小时。"""
+    from app.config import settings
+    from app.services.cloudsea_store import load_forecast_archive_precursor
+
+    keys = set(precursor_hour_keys(target_date))
+    have = {str(r.get("time") or "") for r in live_rows}
+    missing = keys - have
+    if not missing:
+        return live_rows
+
+    path = db_path or Path(settings.cloudsea_db_path)
+    by_time: dict[str, dict[str, Any]] = {str(r.get("time") or ""): r for r in live_rows}
+
+    for row in load_forecast_archive_precursor(
+        spot_id, viewpoint_id, target_date, db_path=path
+    ):
+        ts = str(row.get("time") or "")
+        if ts in missing and ts not in by_time:
+            by_time[ts] = row
+
+    for row in load_label_precursor_meteo(spot_id, viewpoint_id, target_date, db_path=path):
+        ts = str(row.get("time") or "")
+        if ts in missing and ts not in by_time:
+            by_time[ts] = row
+
+    return sorted(by_time.values(), key=lambda r: str(r.get("time")))
+
+
 def _days_to_backfill(
     date_key: str,
     spot_id: str,

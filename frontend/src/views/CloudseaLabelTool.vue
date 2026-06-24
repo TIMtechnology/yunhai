@@ -31,6 +31,7 @@ import {
 } from '../services/cloudseaLabel'
 import type { PredictionHistory, ReviewQueueItem } from '../services/cloudseaLabel'
 import AdminReviewPanel from '../components/AdminReviewPanel.vue'
+import PredictionFeedbackPanel from '../components/PredictionFeedbackPanel.vue'
 
 const TOKEN_KEY = 'cloudsea_admin_token'
 
@@ -42,6 +43,9 @@ const locationMode = ref<'curated' | 'community'>('curated')
 const spots = ref<Array<{ id: string; name: string }>>([])
 const viewpoints = ref<Array<{ id: string; name: string }>>([])
 const myLocations = ref<CommunityLocation[]>([])
+const curatedCommunityLocations = ref<CommunityLocation[]>([])
+/** 当前选中但非本人拥有的点位（仅 UI 展示，不进「我的点位」） */
+const foreignLocation = ref<CommunityLocation | null>(null)
 const spotId = ref('wunvshan')
 const viewpointId = ref('dianjiangtai')
 const locationId = ref('')
@@ -70,6 +74,40 @@ const savingLocation = ref(false)
 const predictionHistory = ref<PredictionHistory | null>(null)
 let loadSessionSeq = 0
 let loadAccuracySeq = 0
+let loadSessionTimer: ReturnType<typeof setTimeout> | null = null
+
+function sessionSnapshot() {
+  return {
+    locationMode: locationMode.value,
+    spotId: spotId.value,
+    viewpointId: viewpointId.value,
+    locationId: locationId.value,
+    date: currentDate.value,
+    poiLat: poiLat.value,
+    poiLng: poiLng.value,
+  }
+}
+
+function snapshotMatches(snap: ReturnType<typeof sessionSnapshot>) {
+  return (
+    locationMode.value === snap.locationMode &&
+    spotId.value === snap.spotId &&
+    viewpointId.value === snap.viewpointId &&
+    locationId.value === snap.locationId &&
+    currentDate.value === snap.date &&
+    poiLat.value === snap.poiLat &&
+    poiLng.value === snap.poiLng
+  )
+}
+
+function scheduleLoadSession() {
+  if (!pageReady.value) return
+  if (loadSessionTimer) clearTimeout(loadSessionTimer)
+  loadSessionTimer = setTimeout(() => {
+    loadSessionTimer = null
+    void loadSession()
+  }, 180)
+}
 
 interface LabelKeys {
   spotId: string
@@ -84,13 +122,33 @@ const canEditLocation = computed(
     !!locationId.value &&
     myLocations.value.some((l) => l.id === locationId.value),
 )
-const communityOptions = computed(() =>
-  myLocations.value.map((l) => ({ label: `${l.name} (${l.id})`, value: l.id })),
-)
+
+function resolveCommunityLocationMeta(id: string): CommunityLocation | undefined {
+  return (
+    myLocations.value.find((l) => l.id === id) ||
+    curatedCommunityLocations.value.find((l) => l.id === id) ||
+    (foreignLocation.value?.id === id ? foreignLocation.value : undefined)
+  )
+}
+
+const communityOptions = computed(() => {
+  const mineIds = new Set(myLocations.value.map((l) => l.id))
+  const curated = curatedCommunityLocations.value
+    .filter((l) => !mineIds.has(l.id))
+    .map((l) => ({ label: `${l.name}（社区精选）`, value: l.id }))
+  const mine = myLocations.value.map((l) => ({ label: `${l.name}（我的）`, value: l.id }))
+  if (curated.length && mine.length) {
+    return [
+      { type: 'group' as const, label: '社区精选', key: 'curated', children: curated },
+      { type: 'group' as const, label: '我的点位', key: 'mine', children: mine },
+    ]
+  }
+  return [...curated, ...mine]
+})
 const spotOptions = computed(() => spots.value.map((s) => ({ label: s.name, value: s.id })))
 const locationTitle = computed(() => {
   if (locationMode.value === 'community' && locationId.value) {
-    return myLocations.value.find((l) => l.id === locationId.value)?.name || poiName.value || locationId.value
+    return resolveCommunityLocationMeta(locationId.value)?.name || poiName.value || locationId.value
   }
   if (poiLat.value != null && poiLng.value != null) return poiName.value || 'POI 点位'
   const spot = spots.value.find((s) => s.id === spotId.value)
@@ -196,17 +254,6 @@ function syncUrl() {
   history.replaceState(null, '', `${location.pathname}?${q.toString()}`)
 }
 
-function formatAccessTime(iso: string) {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-function outcomeMark(ok: number | null | undefined) {
-  if (ok == null) return '—'
-  return ok ? '✓' : '✗'
-}
-
 function shiftDate(days: number) {
   const d = new Date(`${currentDate.value}T12:00:00`)
   d.setDate(d.getDate() + days)
@@ -227,22 +274,42 @@ async function loadViewpoints() {
 
 async function loadMyLocations() {
   try {
-    const locs = await fetchMyLocations()
+    const [locs, spots] = await Promise.all([fetchMyLocations(), fetchSpots()])
     myLocations.value = locs
+    curatedCommunityLocations.value = spots
+      .filter((s) => s.id.startsWith('cs_'))
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        lat: s.lat ?? 0,
+        lng: s.lng ?? 0,
+        curated_spot_id: s.id,
+      }))
+    foreignLocation.value = null
     if (locationId.value && !locs.find((l) => l.id === locationId.value)) {
-      // URL 带入的点位可能属于其他贡献者，仍可标注
-      myLocations.value = [{ id: locationId.value, name: poiName.value || locationId.value, lat: poiLat.value || 0, lng: poiLng.value || 0 }, ...locs]
+      const curated = curatedCommunityLocations.value.find((l) => l.id === locationId.value)
+      if (!curated) {
+        // URL 带入的他人点位：可标注，但不归入「我的点位」
+        foreignLocation.value = {
+          id: locationId.value,
+          name: poiName.value || locationId.value,
+          lat: poiLat.value || 0,
+          lng: poiLng.value || 0,
+        }
+      }
     }
     syncLocationEditFields()
   } catch {
     myLocations.value = []
+    curatedCommunityLocations.value = []
+    foreignLocation.value = null
   }
 }
 
 function syncLocationEditFields() {
   if (!locationId.value) return
   const loc =
-    myLocations.value.find((l) => l.id === locationId.value) ||
+    resolveCommunityLocationMeta(locationId.value) ||
     (session.value?.location_id === locationId.value
       ? {
           id: locationId.value,
@@ -305,21 +372,11 @@ async function resolveLabelKeys(): Promise<LabelKeys> {
       locationId: locationId.value,
     }
   }
+  linkedCommunityId.value = ''
   if (locationMode.value === 'curated') {
     const linked = await fetchLocationByCuratedSpot(spotId.value)
-    if (linked) {
-      linkedCommunityId.value = linked.id
-      if (!myLocations.value.find((l) => l.id === linked.id)) {
-        myLocations.value = [linked, ...myLocations.value]
-      }
-      return {
-        spotId: 'community',
-        viewpointId: linked.id,
-        locationId: linked.id,
-      }
-    }
+    if (linked) linkedCommunityId.value = linked.id
   }
-  linkedCommunityId.value = ''
   return {
     spotId: spotId.value,
     viewpointId: viewpointId.value,
@@ -351,18 +408,37 @@ async function loadAccuracy(refresh = false) {
   }
 }
 
+async function loadPredictionHistoryForKeys(spotIdKey: string, viewpointIdKey: string) {
+  if (spotIdKey === 'community') {
+    predictionHistory.value = null
+    return
+  }
+  try {
+    predictionHistory.value = await fetchPredictionHistory(
+      spotIdKey,
+      viewpointIdKey,
+      currentDate.value,
+    )
+  } catch {
+    predictionHistory.value = null
+  }
+}
+
 async function loadSession() {
   const seq = ++loadSessionSeq
+  const snap = sessionSnapshot()
   loading.value = true
   try {
     if (adminMode.value && token.value) {
       const keys = await resolveLabelKeys()
+      if (seq !== loadSessionSeq || !snapshotMatches(snap)) return
       const adminSession = await fetchLabelSession(
         token.value,
         keys.spotId,
         keys.viewpointId,
         currentDate.value,
       )
+      if (seq !== loadSessionSeq || !snapshotMatches(snap)) return
       session.value = {
         mode: keys.spotId === 'community' ? 'community' : 'curated',
         spot_id: keys.spotId,
@@ -378,6 +454,7 @@ async function loadSession() {
       selectedSunriseQuality.value = (adminSession.label?.sunrise_quality as SunriseQuality) || null
       notes.value = adminSession.label?.notes || ''
       const cal = await fetchCalendar(token.value, keys.spotId, keys.viewpointId, month.value)
+      if (seq !== loadSessionSeq || !snapshotMatches(snap)) return
       calendar.value = Object.fromEntries(
         cal.labels.map((x) => [
           x.date,
@@ -390,51 +467,28 @@ async function loadSession() {
         ]),
       )
       if (keys.spotId !== 'community') {
-        try {
-          predictionHistory.value = await fetchPredictionHistory(
-            token.value,
-            keys.spotId,
-            keys.viewpointId,
-            currentDate.value,
-          )
-        } catch {
-          predictionHistory.value = null
-        }
+        await loadPredictionHistoryForKeys(keys.spotId, keys.viewpointId)
       } else {
         predictionHistory.value = null
       }
       return
     }
 
-    const keys = await resolveLabelKeys()
-    if (keys.locationId) {
-      const data = await fetchContributeLabelSession({
-        locationId: keys.locationId,
-        date: currentDate.value,
-      })
-      session.value = data
-      selectedStatus.value = (data.label?.status as LabelStatus) || null
-      selectedSunriseQuality.value = (data.label?.sunrise_quality as SunriseQuality) || null
-      notes.value = data.label?.notes || ''
-      stats.value = data.stats || null
-      if (data.location_id) locationId.value = data.location_id
-      syncLocationEditFields()
-      const entries = await fetchContributeCalendar({
-        month: month.value,
-        locationId: keys.locationId,
-      })
-      calendar.value = Object.fromEntries(entries.map((x) => [x.date, x]))
-      return
-    }
-
     const params = sessionParams()
-    const data = await fetchContributeLabelSession(params)
+    const data = await fetchContributeLabelSession({
+      ...params,
+      date: currentDate.value,
+    })
+    if (seq !== loadSessionSeq || !snapshotMatches(snap)) return
     session.value = data
     selectedStatus.value = (data.label?.status as LabelStatus) || null
     selectedSunriseQuality.value = (data.label?.sunrise_quality as SunriseQuality) || null
     notes.value = data.label?.notes || ''
     stats.value = data.stats || null
-    if (data.location_id) locationId.value = data.location_id
+    if (locationMode.value === 'community' && data.location_id && !snap.locationId) {
+      locationId.value = data.location_id
+    }
+    syncLocationEditFields()
 
     const entries = await fetchContributeCalendar({
       month: month.value,
@@ -442,7 +496,13 @@ async function loadSession() {
       spotId: data.spot_id,
       viewpointId: data.viewpoint_id,
     })
+    if (seq !== loadSessionSeq || !snapshotMatches(snap)) return
     calendar.value = Object.fromEntries(entries.map((x) => [x.date, x]))
+    if (data.spot_id && data.spot_id !== 'community') {
+      await loadPredictionHistoryForKeys(data.spot_id, data.viewpoint_id)
+    } else {
+      predictionHistory.value = null
+    }
   } catch (err) {
     if (seq === loadSessionSeq) message.error(String(err))
   } finally {
@@ -519,10 +579,12 @@ function openReviewItem(item: ReviewQueueItem) {
     switchToCommunity(item.location_id)
     poiName.value = item.location_name || item.community_name || ''
     if (!myLocations.value.find((l) => l.id === item.location_id)) {
-      myLocations.value = [
-        { id: item.location_id, name: poiName.value || item.location_id, lat: 0, lng: 0 } as CommunityLocation,
-        ...myLocations.value,
-      ]
+      foreignLocation.value = {
+        id: item.location_id,
+        name: poiName.value || item.location_id,
+        lat: 0,
+        lng: 0,
+      }
     }
   } else {
     switchToCurated()
@@ -559,20 +621,17 @@ function buildMonthDays() {
 
 watch([spotId], () => {
   if (!pageReady.value || locationMode.value !== 'curated') return
-  loadViewpoints()
+  void loadViewpoints()
   syncUrl()
-})
-watch([viewpointId, locationId, currentDate], () => {
-  if (!pageReady.value) return
-  syncUrl()
-})
-watch(month, () => {
-  if (!pageReady.value) return
-  loadSession()
 })
 watch([locationMode, spotId, viewpointId, locationId, currentDate, poiLat, poiLng], () => {
   if (!pageReady.value) return
-  loadSession()
+  syncUrl()
+  scheduleLoadSession()
+})
+watch(month, () => {
+  if (!pageReady.value) return
+  scheduleLoadSession()
 })
 watch([locationMode, spotId, viewpointId], () => {
   if (!pageReady.value || !adminMode.value) return
@@ -691,10 +750,13 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
             <n-select
               v-model:value="locationId"
               filterable
-              placeholder="选择已贡献的点位"
+              placeholder="选择社区精选或我的点位"
               :options="communityOptions"
-              style="width: 220px"
+              style="width: 280px"
             />
+            <div v-if="curatedCommunityLocations.length" class="mt-1 text-[10px] text-slate-500">
+              「社区精选」为其他人贡献并已同步的点位；「我的点位」仅本浏览器贡献过的坐标
+            </div>
           </div>
           <n-button tag="a" href="/" quaternary size="small">去主页选新 POI</n-button>
         </template>
@@ -843,53 +905,10 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               </div>
             </div>
 
-            <div
-              v-if="adminMode && predictionHistory && locationMode === 'curated'"
-              class="rounded-xl border border-slate-800 bg-slate-900/60 p-4"
-            >
-              <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <div class="font-semibold">历史预测访问</div>
-                <div class="text-xs text-slate-400">
-                  标注 {{ predictionHistory.label?.status || '未标注' }}
-                  · 访问 {{ predictionHistory.access_count }} 次
-                  <template v-if="predictionHistory.snapshot_count != null && predictionHistory.snapshot_count < predictionHistory.access_count">
-                    · {{ predictionHistory.snapshot_count }} 条预报快照
-                  </template>
-                  <template v-if="predictionHistory.outcome_count">
-                    · 正确 {{ predictionHistory.correct_count }}/{{ predictionHistory.outcome_count }}
-                  </template>
-                </div>
-              </div>
-              <div v-if="!predictionHistory.entries.length" class="text-xs text-slate-500">
-                暂无用户访问快照（上线后将随 /api/predict 自动积累）
-              </div>
-              <div v-else class="overflow-x-auto">
-                <table class="w-full text-xs">
-                  <thead class="text-slate-400">
-                    <tr>
-                      <th class="px-2 py-1 text-left">访问时间</th>
-                      <th class="px-2 py-1 text-right">P(云海)</th>
-                      <th class="px-2 py-1 text-right">lead(h)</th>
-                      <th class="px-2 py-1 text-center">结果</th>
-                      <th class="px-2 py-1 text-left">诊断</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="row in predictionHistory.entries"
-                      :key="row.id"
-                      class="border-t border-slate-800"
-                    >
-                      <td class="px-2 py-1">{{ formatAccessTime(row.created_at) }}<span v-if="row.same_forecast" class="ml-1 text-slate-500">同预报</span></td>
-                      <td class="px-2 py-1 text-right">{{ row.peak_cloudsea_prob ?? '—' }}%</td>
-                      <td class="px-2 py-1 text-right">{{ row.lead_hours_to_dawn?.toFixed(1) ?? '—' }}</td>
-                      <td class="px-2 py-1 text-center">{{ outcomeMark(row.direction_ok) }}</td>
-                      <td class="px-2 py-1 text-slate-400">{{ row.diagnosis?.summary || row.diagnosis?.tags?.join(', ') || '—' }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <PredictionFeedbackPanel
+              v-if="locationMode === 'curated' && session?.spot_id !== 'community'"
+              :history="predictionHistory"
+            />
 
             <div v-if="adminMode" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
               <div class="mb-2 flex items-center justify-between gap-2">

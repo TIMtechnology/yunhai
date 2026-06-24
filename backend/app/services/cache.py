@@ -85,3 +85,31 @@ def cache_set(key: str, value: Any, ttl: int | None = None) -> None:
         except Exception:
             pass
     _memory_cache[key] = (time.time() + ttl, value)
+
+
+def cache_delete(key: str) -> None:
+    client = _get_redis()
+    if client:
+        try:
+            client.delete(key)
+            return
+        except Exception:
+            pass
+    _memory_cache.pop(key, None)
+
+
+def cache_delete_pattern(pattern: str) -> int:
+    client = _get_redis()
+    if client:
+        try:
+            keys = list(client.scan_iter(match=pattern, count=200))
+            if keys:
+                client.delete(*keys)
+            return len(keys)
+        except Exception:
+            pass
+    prefix = pattern.rstrip("*")
+    doomed = [k for k in list(_memory_cache) if k.startswith(prefix)]
+    for k in doomed:
+        _memory_cache.pop(k, None)
+    return len(doomed)

@@ -16,7 +16,7 @@ from app.adapters.sector_meteo import (
 )
 from app.engine.solar import sunrise_azimuth_for_datetime
 from app.engine.viewing_mode import resolve_viewing_mode
-from app.engine.utils import parse_shanghai_time
+from app.engine.utils import grade_from_probability, parse_shanghai_time
 from app.services.meteo_cache import (
     astronomy_from_bundle,
     hour_rows_from_hourly,
@@ -36,7 +36,7 @@ from app.engine.cloudsea_ml import (
     resolve_ml_artifact,
     should_use_spot_ml,
 )
-from app.services.meteo_backfill import precursor_hour_keys
+from app.services.meteo_backfill import precursor_hour_keys, supplement_precursor_rows
 from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, cloudsea_plausibility_cap, score_cloudsea
 from app.engine.water_context import water_fog_signal_hour
 from app.engine.satellite_analyzer import analyze_ir_image
@@ -45,6 +45,7 @@ from app.engine.sunrise_scorer import score_sunrise_window
 from app.models.schemas import (
     BestWindow,
     DaySummary,
+    FactorDetail,
     HourPrediction,
     PredictRequest,
     PredictResponse,
@@ -56,6 +57,25 @@ from app.services.cache import cache_get, cache_set
 from app.services.spot_loader import get_spot
 
 TZ = ZoneInfo("Asia/Shanghai")
+SUNRISE_WINDOW_END_HOUR = 7
+
+
+def _sunrise_window_retrospective(
+    *,
+    now: datetime,
+    hour_time: datetime,
+    local_hour: int,
+) -> bool:
+    """目标日日出窗(03–07)已过去：禁止 vis 修正回弹（lead<0 / 08:00 后访问）。"""
+    if not (3 <= local_hour < SUNRISE_WINDOW_END_HOUR):
+        return False
+    now_local = now.astimezone(TZ)
+    hour_local = hour_time.astimezone(TZ)
+    if now_local.date() != hour_local.date():
+        return False
+    if now_local.hour >= SUNRISE_WINDOW_END_HOUR:
+        return True
+    return now_local > hour_local
 
 
 def _resolve_coord_sys(req: PredictRequest) -> str:
@@ -460,6 +480,13 @@ def build_predictions_from_hourly(
                     dews=dews,
                 )
             )
+        if req.spot_id and req.viewpoint_id:
+            rows = supplement_precursor_rows(
+                req.spot_id,
+                req.viewpoint_id,
+                day_key,
+                rows,
+            )
         return rows
 
     ml_artifact = resolve_ml_artifact(req.spot_id, req.viewpoint_id)
@@ -496,6 +523,10 @@ def build_predictions_from_hourly(
         day_key = t_str[:10]
         sunrise_at = astronomy.get(day_key, {}).get("sunrise")
         local_hour = t.astimezone(TZ).hour
+        retrospective = _sunrise_window_retrospective(
+            now=now, hour_time=t, local_hour=local_hour
+        )
+        frozen_probs: dict[str, int] = terrain_ctx.setdefault("sunrise_frozen_probs", {})
 
         cloud_base = estimate_cloud_base(temp, dew)
         cloud_top_est = estimate_cloud_top_m(cloud_base, low, mid)
@@ -551,6 +582,7 @@ def build_predictions_from_hourly(
             sector_meteo=(terrain_ctx.get("sector_meteo_by_time") or {}).get(t_str),
             summit_cloud_low=low,
             summit_rh=rh,
+            retrospective=retrospective,
         )
         if 3 <= local_hour < 7:
             prev_prob = terrain_ctx.get("peak_hour_cloudsea_prob")
@@ -609,6 +641,7 @@ def build_predictions_from_hourly(
             elev_max_5km=elev_max_5km,
             elevation=elevation,
             cloud_base=cloud_base,
+            water_fog_signal=wf_sig,
         )
 
         use_ml = (
@@ -649,7 +682,33 @@ def build_predictions_from_hourly(
                     visibility=vis,
                     rh=rh,
                     water_fog_signal=wf_sig,
+                    cloud_low=low,
+                    cloud_mid=mid,
+                    retrospective=retrospective,
+                    rule_archetype=archetype,
                 )
+
+        if retrospective and 3 <= local_hour < SUNRISE_WINDOW_END_HOUR:
+            if t_str in frozen_probs:
+                frozen_p = frozen_probs[t_str]
+                cloudsea = PredictionScore(
+                    probability=frozen_p,
+                    grade=grade_from_probability(frozen_p),
+                    factors={
+                        **cloudsea.factors,
+                        "retrospective_freeze": FactorDetail(
+                            score=1.0,
+                            weight=0.0,
+                            label="日出窗已结束",
+                            description="该时刻概率已冻结，避免能见度实况修正导致回弹",
+                            value=f"冻结 P={frozen_p}%",
+                            reference="product_v202606",
+                        ),
+                    },
+                    cloud_base_m=cloudsea.cloud_base_m,
+                )
+            else:
+                frozen_probs[t_str] = cloudsea.probability
 
         if not (use_ml and ml_day_cache.get(day_key) is not None):
             cloudsea = PredictionScore(

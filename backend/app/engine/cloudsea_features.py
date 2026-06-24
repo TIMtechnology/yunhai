@@ -510,6 +510,9 @@ V7_INCREMENTAL_NAMES = [
     "dawn_vs_night_type_b_delta",
     "doy_sin",
     "doy_cos",
+    "night_dawn_cloud_low_gap",
+    "ground_fog_proxy",
+    "type_a_proxy",
 ]
 
 V7_FEATURE_NAMES = list(DAY_FEATURE_NAMES) + V7_INCREMENTAL_NAMES
@@ -609,6 +612,11 @@ def _build_v7_incremental_features(
 
     d = date.fromisoformat(target_date) if target_date else date(2026, 5, 1)
     doy = float(d.timetuple().tm_yday)
+    dawn_rh850 = (
+        float(np.mean([float(r.get("rh_850") or 70) for r in segments["dawn"]]))
+        if segments["dawn"]
+        else 99.0
+    )
 
     out = {
         "evening_rh_mean": evening.get("rh_mean", 0.0),
@@ -630,6 +638,22 @@ def _build_v7_incremental_features(
         "dawn_vs_night_type_b_delta": dawn.get("type_b_count", 0.0) - night.get("type_b_count", 0.0),
         "doy_sin": float(np.sin(2 * np.pi * doy / 365.25)),
         "doy_cos": float(np.cos(2 * np.pi * doy / 365.25)),
+        "night_dawn_cloud_low_gap": night.get("cloud_low_mean", 0.0) - dawn.get("cloud_low_mean", 0.0),
+        "ground_fog_proxy": (
+            1.0
+            if dawn.get("rh_mean", 0.0) >= 82.0
+            and dawn.get("cloud_low_mean", 99.0) < 5.0
+            and dawn.get("vis_min", 99999.0) <= 500.0
+            else 0.0
+        ),
+        "type_a_proxy": (
+            1.0
+            if dawn.get("cloud_low_mean", 99.0) < 5.0
+            and dawn.get("vis_min", 0.0) >= 5000.0
+            and dawn_rh850 <= 55.0
+            and d.month in (4, 5, 6, 9, 10, 11)
+            else 0.0
+        ),
     }
     return {n: float(out.get(n, 0.0)) for n in V7_INCREMENTAL_NAMES}
 

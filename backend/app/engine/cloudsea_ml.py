@@ -13,6 +13,7 @@ from app.engine.cloudsea_features import (
     aggregate_precursor_features,
     aggregate_v7_features,
 )
+from app.engine.cloudsea_scorer import is_ground_fog_proxy
 from app.engine.ml_eligibility import build_ml_status, spot_model_path
 from app.engine.utils import grade_from_probability
 from app.models.schemas import FactorDetail, PredictionScore
@@ -130,9 +131,20 @@ def _apply_ml_fog_floor(
     visibility: float | None,
     rh: float | None,
     water_fog_signal: float | None = None,
+    cloud_low: float | None = None,
+    cloud_mid: float | None = None,
+    retrospective: bool = False,
 ) -> int:
     """规则强信号 + 谷地雾/近库水体雾：ML 不低于规则的一定比例。"""
     if fuzzy_prob < 45 or visibility is None or rh is None:
+        return ml_prob
+    if retrospective or is_ground_fog_proxy(
+        cloud_low=float(cloud_low or 0),
+        cloud_mid=float(cloud_mid or 0),
+        visibility=visibility,
+        rh=rh,
+        water_fog_signal=float(water_fog_signal or 0),
+    ):
         return ml_prob
     water_fog = (
         water_fog_signal is not None
@@ -176,16 +188,30 @@ def merge_ml_cloudsea_score(
     visibility: float | None = None,
     rh: float | None = None,
     water_fog_signal: float | None = None,
+    cloud_low: float | None = None,
+    cloud_mid: float | None = None,
+    retrospective: bool = False,
+    rule_archetype: str | None = None,
 ) -> PredictionScore:
     """ML 与规则融合：仅在本点位 ML 已启用时混合。"""
     fuzzy_prob = fuzzy.probability
     ml_prob = ml.probability
+    ground_fog = is_ground_fog_proxy(
+        cloud_low=float(cloud_low or 0),
+        cloud_mid=float(cloud_mid or 0),
+        visibility=visibility,
+        rh=float(rh or 0),
+        water_fog_signal=float(water_fog_signal or 0),
+    )
     ml_prob = _apply_ml_fog_floor(
         ml_prob,
         fuzzy_prob=fuzzy_prob,
         visibility=visibility,
         rh=rh,
         water_fog_signal=water_fog_signal,
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        retrospective=retrospective,
     )
     ml_weight = ml_calibration_weight(
         spot_id,
@@ -211,13 +237,19 @@ def merge_ml_cloudsea_score(
         and rh >= 85
         and fuzzy_prob >= 45
     )
-    valley_fog_boost = fog_boost or water_fog_boost
+    valley_fog_boost = (fog_boost or water_fog_boost) and not retrospective and not ground_fog
     if valley_fog_boost:
         # 谷地雾/近库水体雾：融合分不低于规则与 ML 的较高者的一定比例
         blended = max(blended, int(round(max(fuzzy_prob, ml_prob) * 0.85)))
+    elif ground_fog and not retrospective:
+        # 贴地雾：仅轻度抬升，避免 vis 修正后 P 虚高（6/24 类 case）
+        blended = min(blended, max(fuzzy_prob, int(round(ml_prob * 0.55))))
+    if rule_archetype in ("type_a", "type_b") and fuzzy_prob >= 45 and ml_prob <= 30:
+        # 规则已识别典型型态时，不让低 ML 过度拉低（5/20 type_b 等漏报）
+        blended = max(blended, int(round(fuzzy_prob * 0.95)))
     if plausibility_cap is not None:
         # 点位 ML 已用本地标注校准：融合结果不应被 NWP 干廓线 heuristic 压到低于 ML 估计
-        if ml_weight >= 0.60:
+        if ml_weight >= 0.60 and not ground_fog:
             plausibility_cap = max(plausibility_cap, ml_prob)
         elif valley_fog_boost:
             plausibility_cap = max(plausibility_cap, blended, fuzzy_prob)

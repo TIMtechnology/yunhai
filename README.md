@@ -60,7 +60,20 @@
 | 🏔️ **精选景区** | 预置观景点海拔、坐标、季节权重；支持全国 POI |
 | 📝 **开放标注** | 匿名贡献 ID、POI/社区点云海标注、审核后入训练集 |
 | 🔬 **标注回测** | 开放标注页、Historical Forecast 回测、Admin 审核与重训 API |
-| 📈 **预测反馈** | 用户访问预测时自动快照；次日 forecast vs 实况回测；标注页历史预测面板 |
+| 📈 **预测反馈** | 用户访问预测时自动快照；次日 forecast vs 实况回测；**标注页所有人可看**历史预测 vs 实况双轨对比 |
+
+---
+
+## 🆕 2026-06-24 补丁 · v7.1 贴地雾校准
+
+> 详细说明：[`internal/RELEASE-2026-06-V7.1.md`](internal/RELEASE-2026-06-V7.1.md) · 用户文档：[更新说明](https://yunhai.timkj.com/docs/release-notes.html)
+
+| 指标 | v7.0 | **v7.1** |
+|------|------|----------|
+| 五女山 5–6 月回测一致率 | 83.3% | **87.5%** |
+| 漏报 FN | 7 | **3** |
+
+要点：贴地雾 RH≥82 分型、Type A 季节放宽、日出后概率冻结、前体 evening 补全、五女山 v7.1 模型重训。
 
 ---
 
@@ -72,19 +85,30 @@
 
 | 观景点 | v6 | **v7** | 变化 | 样本 |
 |--------|-----|--------|------|------|
-| 五女山 · 点将台 | 81.5% | **85.5%** | **+4.0 pp** | 55 |
+| 五女山 · 点将台 | 82.1% | **85.5%** | **+3.4 pp** | 55 |
 | 东灵山 · 峰顶 | — | **75.0%** | 首次 v7 上线 | 36 |
 
 v7 特征：**precursor 12h**（D-1 20:00 → D 07:00）+ v6 日出窗 43 维 = **62 维**；推理与训练对齐，对「前夜仍湿、日出已干」类 case 更敏感。
 
 ### 预测反馈闭环
 
+每次用户访问 `/api/predict` 会异步写入 **prediction_access_log**（概率 P、lead、前体气象快照）。标注日 reconcile 后，可将当时预报与事后实况逐时对比。
+
+**标注页「历史预测访问」**（[yunhai.timkj.com/label.html](https://yunhai.timkj.com/label.html) · 预置观景点 · **无需 Admin Token**）：
+
+| 模块 | 说明 |
+|------|------|
+| 访问列表 | 每次访问的时间、P(云海)、距日出 lead(h)、对错 ✓/✗、诊断摘要 |
+| RH / 低云双轨图 | 虚线 = 访问时预报，实线 = 标注日实况（前夜→日出窗） |
+| 分段差异表 | 前夜(20–23) / 夜间(0–2) / 日出(3–7) 各段 RH、低云均值及 Δ |
+| 同预报去重 | 同一 forecast run 的重复访问合并展示，避免列表刷屏 |
+
 ```
 /api/predict → prediction_access_log（异步）
        ↓
 reconcile_outcomes → forecast vs 实况 + diagnosis
        ↓
-标注页 Admin「历史预测访问」· 导出 CSV/JSON
+标注页「历史预测访问」· Admin 导出 CSV/JSON
 ```
 
 ```bash
@@ -167,7 +191,7 @@ python3 scripts/export_prediction_feedback.py --spot-id wunvshan --viewpoint-id 
 | **全国 POI 通用模型** | 汇总多地区 approved 样本，训练跨点位泛化 ML | 🔶 **部分**（全局 `--approved-only` 训练已有；POI 专项管线规划中） |
 | **精选落库** | approved ≥15 天 → 写入 `scenic-spots/*.json`，搜索可见 | ✅ **已完成**（Admin API） |
 | **定期重训** | 标注增量或周期触发自动重训 + LOOCV 门禁部署 | 🔶 **部分**（手动 `POST .../train` + `hot-patch-prod.sh`；cron 未接） |
-| **预测反馈** | 访问快照、次日回测、标注页历史预测 vs 实况 | ✅ **已完成**（2026-06） |
+| **预测反馈** | 访问快照、次日回测、标注页历史预测 vs 实况（**全员可见**） | ✅ **已完成**（2026-06） |
 | **深链与收藏** | `/?spot=&vp=`、`/?lat=&lng=`、`/label.html?...` 直达预测/标注 | ✅ **已完成** |
 
 图例：**✅ 已完成** · **🔶 部分完成** · **⏳ 规划中**
@@ -297,6 +321,8 @@ docker compose -f docker-compose.prod.yml up -d
 | `GET` | `/api/share/{share_id}/image.png` | 竖版长分享图（动态渲染） |
 | `GET` | `/s/{share_id}` | 公开分享页 |
 | `GET` | `/api/contribute/cloudsea/*` | 开放标注（Header: `X-Contributor-Id`） |
+| `GET` | `/api/prediction-feedback/history` | 某日历史预测访问与 forecast vs 实况（公开只读） |
+| `GET` | `/api/prediction-feedback/history/{id}` | 单次快照双轨曲线与分段差异（公开只读） |
 | `PATCH` | `/api/contribute/locations/{id}` | 编辑我的社区点位名称/坐标/海拔 |
 | `GET` | `/api/satellite/cloud` | Himawari 红外裁切 |
 | `GET` | `/api/internal/cloudsea/review-queue` | 待审标注（Admin Token） |
@@ -326,6 +352,7 @@ python3 scripts/train_cloudsea_model.py \
 # data/cloudsea/models/spot_donglingshan_fengding.pkl
 
 # 4. 生产热补丁（不修改 .env / compose）
+cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次：填入 SSH 密钥与主机
 SKIP_TRAIN=1 bash scripts/hot-patch-prod.sh
 ```
 

@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "internal" / "_prod_backtest_data.json"
 OUT = ROOT / "internal" / "CLOUDSEA-PREDICTION-ANALYSIS.html"
+# 报告只引用公开域名；服务器 IP / SSH 见 scripts/deploy.local.env（勿写入仓库）
+PROD_PUBLIC_BASE = "https://yunhai.timkj.com"
 
 
 def bar_svg(value, max_v=100, color="#3b82f6", w=120, h=14):
@@ -108,7 +110,7 @@ def main():
 <body>
 
 <h1>云海预测概率偏低 · 深度分析报告</h1>
-<p><strong>生成时间：</strong>2026-05-29 · <strong>数据环境：生产服务器</strong>（182.203.168.140 / yunhai.timkj.com）</p>
+<p><strong>生成时间：</strong>2026-05-29 · <strong>数据环境：生产</strong>（<a href="{PROD_PUBLIC_BASE}">yunhai.timkj.com</a>）</p>
 
 <div class="meta">
   <strong>数据来源说明（重要）</strong><br/>

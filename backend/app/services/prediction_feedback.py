@@ -527,13 +527,18 @@ def get_prediction_history(
     spot_id: str,
     viewpoint_id: str,
     target_date: str,
+    *,
+    auto_reconcile: bool = True,
 ) -> dict[str, Any]:
+    label = get_label(spot_id, viewpoint_id, target_date, 3, 7)
+    if auto_reconcile and label:
+        reconcile_target_date(target_date, force=True)
+
     logs = list_prediction_access_logs(
         spot_id=spot_id,
         viewpoint_id=viewpoint_id,
         target_date=target_date,
     )
-    label = get_label(spot_id, viewpoint_id, target_date, 3, 7)
     actual_precursor = load_label_precursor_meteo(spot_id, viewpoint_id, target_date)
 
     entries: list[dict[str, Any]] = []
@@ -559,8 +564,94 @@ def get_prediction_history(
         "label": label,
         "access_count": len(entries),
         "snapshot_count": len(logs),
+        "snapshot_ids": [int(log["id"]) for log in logs],
         "correct_count": correct,
         "outcome_count": total_with_outcome,
         "entries": entries,
         "actual_precursor": actual_precursor,
+    }
+
+
+def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
+    """单次访问快照：precursor 双轨曲线 + 分段差异 + 诊断。"""
+    row = get_prediction_access_log(access_log_id)
+    if not row:
+        return None
+
+    spot_id = row.get("spot_id")
+    viewpoint_id = row.get("viewpoint_id")
+    target_date = str(row.get("target_date") or "")
+    try:
+        prediction = row.get("prediction") or json.loads(row.get("prediction_json") or "{}")
+    except json.JSONDecodeError:
+        prediction = {}
+    meteo = row.get("meteo_snapshot") or {}
+    forecast_rows = meteo.get("rows") or []
+
+    actual_rows: list[dict[str, Any]] = []
+    actual_meteo = row.get("actual_meteo")
+    if isinstance(actual_meteo, dict):
+        actual_rows = actual_meteo.get("precursor") or []
+    if not actual_rows and spot_id and viewpoint_id and target_date:
+        actual_rows = load_label_precursor_meteo(spot_id, viewpoint_id, target_date)
+
+    actual_by = {str(r.get("time")): r for r in actual_rows}
+    curve_points: list[dict[str, Any]] = []
+    for f in sorted(forecast_rows, key=lambda r: str(r.get("time"))):
+        ts = str(f.get("time") or "")
+        a = actual_by.get(ts)
+        curve_points.append(
+            {
+                "time": ts,
+                "label": ts[11:16] if "T" in ts else ts,
+                "forecast_rh": f.get("rh"),
+                "actual_rh": a.get("rh") if a else None,
+                "forecast_cloud_low": f.get("cloud_low"),
+                "actual_cloud_low": a.get("cloud_low") if a else None,
+                "forecast_wind": f.get("wind_speed"),
+                "actual_wind": a.get("wind_speed") if a else None,
+            }
+        )
+
+    forecast_error = row.get("forecast_error") or {}
+    seg_f = forecast_error.get("segments_forecast") or {}
+    seg_a = forecast_error.get("segments_actual") or {}
+    segment_labels = {"evening": "前夜(20–23)", "night": "夜间(0–2)", "dawn": "日出(3–7)"}
+    segments: list[dict[str, Any]] = []
+    for seg in ("evening", "night", "dawn"):
+        sf = seg_f.get(seg) or {}
+        sa = seg_a.get(seg) or {}
+        rh_f, rh_a = sf.get("rh_mean"), sa.get("rh_mean")
+        low_f, low_a = sf.get("cloud_low_mean"), sa.get("cloud_low_mean")
+        segments.append(
+            {
+                "segment": seg,
+                "label": segment_labels[seg],
+                "rh_forecast": rh_f,
+                "rh_actual": rh_a,
+                "rh_delta": round(float(rh_a) - float(rh_f), 1) if rh_f is not None and rh_a is not None else None,
+                "cloud_low_forecast": low_f,
+                "cloud_low_actual": low_a,
+                "cloud_low_delta": round(float(low_a) - float(low_f), 1) if low_f is not None and low_a is not None else None,
+                "wind_forecast": sf.get("wind_mean"),
+                "wind_actual": sa.get("wind_mean"),
+            }
+        )
+
+    hourly_errors = forecast_error.get("hourly") or []
+
+    return {
+        "id": access_log_id,
+        "created_at": row.get("created_at"),
+        "target_date": target_date,
+        "lead_hours_to_dawn": row.get("lead_hours_to_dawn"),
+        "peak_cloudsea_prob": prediction.get("peak_cloudsea_prob"),
+        "model_version": row.get("model_version"),
+        "direction_ok": row.get("direction_ok"),
+        "label_status": row.get("label_status"),
+        "diagnosis": row.get("diagnosis"),
+        "curve_points": curve_points,
+        "segments": segments,
+        "hourly_errors": hourly_errors[:24],
+        "reconciled": bool(row.get("reconciled_at")),
     }

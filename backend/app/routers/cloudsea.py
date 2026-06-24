@@ -361,9 +361,9 @@ async def cloudsea_prediction_history_detail(
     access_log_id: int,
     _: None = Depends(verify_cloudsea_token),
 ):
-    from app.services.cloudsea_store import get_prediction_access_log
+    from app.services.prediction_feedback import get_prediction_snapshot_detail
 
-    row = get_prediction_access_log(access_log_id)
+    row = get_prediction_snapshot_detail(access_log_id)
     if not row:
         raise HTTPException(status_code=404, detail="访问记录未找到")
     return row

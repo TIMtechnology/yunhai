@@ -23,6 +23,29 @@ REF_FANJINGSHAN = "10.13718/j.cnki.xdzk.2023.06.017"
 # 庐山：850 hPa 高湿区 + 山腰逆温
 REF_LUSHAN = "10.11676/qxxb2023.20220188"
 
+GROUND_FOG_VIS_MAX_M = 500.0
+GROUND_FOG_CLOUD_LOW_MAX = 5.0
+GROUND_FOG_RH_MIN = 82.0
+TYPE_A_SEASON_MONTHS = frozenset({4, 5, 6, 9, 10, 11})
+
+
+def is_ground_fog_proxy(
+    *,
+    cloud_low: float,
+    cloud_mid: float,
+    visibility: float | None,
+    rh: float,
+    water_fog_signal: float = 0.0,
+) -> bool:
+    """NWP 低云≈0 + 低能见度 + 高湿：贴地雾/霾，非观赏层云（如 6/24 五女山）。"""
+    if water_fog_signal >= 0.30 and rh < GROUND_FOG_RH_MIN:
+        return False
+    if visibility is None or visibility > GROUND_FOG_VIS_MAX_M:
+        return False
+    if cloud_low >= GROUND_FOG_CLOUD_LOW_MAX:
+        return False
+    return rh >= GROUND_FOG_RH_MIN
+
 
 def _score_rh_850(rh: float) -> float:
     return range_score(rh, 80, 95)
@@ -58,6 +81,7 @@ def _classify_cloudsea_archetype(
     viewing_mode: str = "valley_fill",
     observable: dict | None = None,
     water_fog_signal: float = 0.0,
+    month: int | None = None,
 ) -> tuple[str, str]:
     """五女山金标准日归纳 + 峰顶俯瞰 Type C。"""
     if (
@@ -86,6 +110,14 @@ def _classify_cloudsea_archetype(
             return "type_c", "峰顶俯瞰·日出扇区可观测云海"
     if cloud_mid >= 40 and rh >= 90 and visibility is not None and visibility <= 500:
         return "fog_exclude", "中层云偏高+近饱和湿度，雾/层云型"
+    if is_ground_fog_proxy(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        rh=rh,
+        water_fog_signal=water_fog_signal,
+    ):
+        return "fog_exclude", "NWP低云≈0+低能见度，贴地雾/霾非观赏云海"
     if (
         rh >= 93
         and visibility is not None
@@ -105,6 +137,14 @@ def _classify_cloudsea_archetype(
             )
         )
         if not peak_inversion:
+            if (
+                viewing_mode == "valley_fill"
+                and visibility is not None
+                and visibility <= 800
+                and rh >= 95
+                and cloud_mid <= 35
+            ):
+                return "type_b", "极湿谷地饱和云（模式低云偏高，5/20 类）"
             return "fog_exclude", "模式低云偏高+高湿，非山谷云海型"
     if (
         cloud_mid <= 10
@@ -114,7 +154,15 @@ def _classify_cloudsea_archetype(
         and rh_850 is not None
         and rh_850 <= 55
         and precip_recent <= 10
-        and _type_a_moisture_support(rh=rh, cloud_low=cloud_low, cloud_mid=cloud_mid, precip_recent=precip_recent)
+        and _type_a_moisture_support(
+            rh=rh,
+            cloud_low=cloud_low,
+            cloud_mid=cloud_mid,
+            precip_recent=precip_recent,
+            month=month,
+            visibility=visibility,
+            rh_850=rh_850,
+        )
         and rh_850 >= 42
         and not _strong_negative_inversion(t_850, t_925)
     ):
@@ -135,7 +183,7 @@ def _classify_cloudsea_archetype(
         and cloud_low <= 15
         and visibility is not None
         and visibility <= 500
-        and rh >= 78
+        and 78 <= rh <= 88
         and rh_850 is not None
         and rh_850 <= 75
     ):
@@ -179,12 +227,23 @@ def _type_a_moisture_support(
     cloud_low: float,
     cloud_mid: float,
     precip_recent: float,
+    month: int | None = None,
+    visibility: float | None = None,
+    rh_850: float | None = None,
 ) -> bool:
     """Type A 补偿仅在有近地面湿润或降水背景时启用，避免晴天空天误判。"""
     if precip_recent >= 0.5:
         return True
     if cloud_low >= 5 or cloud_mid >= 5:
         return True
+    if (
+        month in TYPE_A_SEASON_MONTHS
+        and visibility is not None
+        and visibility >= 5000
+        and rh_850 is not None
+        and rh_850 <= 55
+    ):
+        return rh >= 50
     return rh >= 68
 
 
@@ -204,6 +263,7 @@ def cloudsea_plausibility_cap(
     elev_max_5km: float | None = None,
     elevation: float | None = None,
     cloud_base: float | None = None,
+    water_fog_signal: float = 0.0,
 ) -> int:
     """基于当前观测场的云海概率硬上限（0–100），用于约束 ML 与规则融合结果。"""
     if viewing_mode == "peak_overlook" and observable_fraction is not None and observable_fraction >= 0.35:
@@ -217,6 +277,14 @@ def cloudsea_plausibility_cap(
             and rh_850 >= 62
         ):
             return 100
+    if is_ground_fog_proxy(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        rh=rh,
+        water_fog_signal=water_fog_signal,
+    ):
+        return 42
     # 五女山金标准型态（Type A/B）下，低 RH850 + 模式无云仍可能有观赏级云海，不做晴空干廓线上限
     if archetype in ("type_a", "type_b", "type_c"):
         return 100
@@ -286,6 +354,8 @@ def _infer_effective_low_cloud(
     elevation: float,
     rh: float,
     archetype: str = "neutral",
+    retrospective: bool = False,
+    water_fog_signal: float = 0.0,
 ) -> tuple[float, str]:
     """NWP 网格低云量常低估山顶/谷地层云；极低能见度+高海拔作补偿（Open-Meteo 自身矛盾）。"""
     if archetype == "type_a":
@@ -299,6 +369,16 @@ def _infer_effective_low_cloud(
         return cloud_low, ""
 
     vis_m = visibility
+    if is_ground_fog_proxy(
+        cloud_low=cloud_low,
+        cloud_mid=cloud_mid,
+        visibility=visibility,
+        rh=rh,
+        water_fog_signal=water_fog_signal,
+    ):
+        if retrospective:
+            return cloud_low, f"日出窗已结束，冻结 {vis_m:.0f}m 贴地雾判定"
+        return cloud_low, f"能见度 {vis_m:.0f}m·NWP低云{cloud_low:.0f}%·判为贴地雾"
     # 五女山等 valley_fill：NWP 低云=0 但贴地能见度差 + 高湿 → 谷雾/辐射雾代理
     if (
         500 <= elevation <= 1200
@@ -308,7 +388,7 @@ def _infer_effective_low_cloud(
     ):
         boost = 35.0
         if vis_m <= 500:
-            boost = 55.0
+            boost = 22.0 if cloud_low < GROUND_FOG_CLOUD_LOW_MAX else 55.0
         elif vis_m <= 1000:
             boost = 45.0
         if rh >= 80:
@@ -317,6 +397,8 @@ def _infer_effective_low_cloud(
     if rh >= 90:
         return cloud_low, ""
     if archetype == "type_b":
+        if cloud_low < GROUND_FOG_CLOUD_LOW_MAX:
+            return cloud_low, ""
         if vis_m <= 300:
             return max(cloud_low, 45.0), f"能见度 {vis_m:.0f}m，低能见度层云型"
         if vis_m <= 500:
@@ -466,6 +548,7 @@ def score_cloudsea(
     summit_cloud_low: float | None = None,
     summit_rh: float | None = None,
     water_fog_signal: float | None = None,
+    retrospective: bool = False,
 ) -> PredictionScore:
     if water_fog_signal is None:
         from app.engine.water_context import water_fog_signal_hour
@@ -513,6 +596,7 @@ def score_cloudsea(
         viewing_mode=viewing_mode,
         observable=obs_pre,
         water_fog_signal=water_fog_signal,
+        month=month,
     )
     effective_low, vis_proxy_note = _infer_effective_low_cloud(
         cloud_low=cloud_low,
@@ -521,6 +605,8 @@ def score_cloudsea(
         elevation=elevation,
         rh=rh,
         archetype=archetype,
+        retrospective=retrospective,
+        water_fog_signal=water_fog_signal,
     )
     cloud_base = estimate_cloud_base(temp, dewpoint)
     cloud_top = estimate_cloud_top_m(cloud_base, effective_low, cloud_mid)
@@ -747,7 +833,12 @@ def score_cloudsea(
             floor = max(floor, 0.66)
         weighted = max(weighted, floor)
     elif archetype == "type_b":
-        weighted = max(weighted, 0.48)
+        floor = 0.48
+        if rh >= 95 and visibility is not None and visibility <= 500:
+            floor = 0.60
+        elif rh >= 90 and visibility is not None and visibility <= 800:
+            floor = 0.55
+        weighted = max(weighted, floor)
     elif archetype == "type_c":
         base_floor = 0.52 + float(observable.get("observable_fraction") or 0) * 0.25
         if cloud_low >= 50 and rh_850 is not None and rh_850 >= 72:
