@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from datetime import date as date_cls, timedelta
 from pathlib import Path
@@ -16,11 +17,13 @@ from app.services.prediction_feedback import reconcile_target_date  # noqa: E402
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="回测 prediction_access_log")
+    parser.add_argument("--db", default=str(ROOT / "data" / "cloudsea" / "cloudsea.db"))
     parser.add_argument("--date", help="目标日出日 YYYY-MM-DD")
     parser.add_argument("--days-back", type=int, default=7, help="无 --date 时回测最近 N 天")
     parser.add_argument("--force", action="store_true", help="覆盖已有 outcome")
     args = parser.parse_args()
 
+    os.environ["CLOUDSEA_DB_PATH"] = str(Path(args.db).resolve())
     init_store()
     if args.date:
         dates = [args.date]

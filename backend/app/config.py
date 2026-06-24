@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     cloudsea_train_min_approved: int = 30
     cloudsea_ml_min_labels_per_spot: int = 30
     cloudsea_model_min_loocv: float = 0.70
+    cloudsea_watch_enabled: bool = True
+    cloudsea_watch_label_days: int = 7
+    cloudsea_watch_user_quiet_minutes: int = 60
+    cloudsea_watch_rh_delta_pp: float = 5.0
+    cloudsea_watch_cloud_low_delta_pp: float = 10.0
 
     # 大模型「当日出行解读」（OpenAI 兼容接口，如 DeepSeek / 通义 / OpenAI）
     llm_advisory_enabled: bool = False

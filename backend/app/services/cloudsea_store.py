@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
@@ -906,6 +906,52 @@ def list_access_log_ids_for_date(target_date: str) -> list[int]:
             (target_date,),
         ).fetchall()
     return [int(r["id"]) for r in rows]
+
+
+def list_watchlist_spots(*, label_days: int = 7) -> list[tuple[str, str]]:
+    """近 N 日有 approved 标注的点位，供气象 watcher 使用。"""
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo("Asia/Shanghai")
+    cutoff = (datetime.now(tz).date() - timedelta(days=max(label_days - 1, 0))).isoformat()
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT spot_id, viewpoint_id FROM cloudsea_labels
+            WHERE date >= ?
+              AND (review_status='approved' OR review_status IS NULL)
+            ORDER BY spot_id, viewpoint_id
+            """,
+            (cutoff,),
+        ).fetchall()
+    return [(str(r["spot_id"]), str(r["viewpoint_id"])) for r in rows]
+
+
+def has_recent_user_prediction_access(
+    spot_id: str,
+    viewpoint_id: str,
+    target_date: str,
+    *,
+    within_minutes: int = 60,
+    exclude_sources: tuple[str, ...] = ("scheduled", "scheduled_watch"),
+) -> bool:
+    """目标日近 N 分钟内是否有非 scheduled 的预测访问。"""
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo("Asia/Shanghai")
+    since = (datetime.now(tz) - timedelta(minutes=within_minutes)).isoformat(timespec="seconds")
+    placeholders = ",".join("?" for _ in exclude_sources)
+    sql = f"""
+        SELECT 1 FROM prediction_access_log
+        WHERE spot_id=? AND viewpoint_id=? AND target_date=?
+          AND created_at >= ?
+          AND (page_source IS NULL OR page_source NOT IN ({placeholders}))
+        LIMIT 1
+    """
+    params: list[Any] = [spot_id, viewpoint_id, target_date, since, *exclude_sources]
+    with _connect() as conn:
+        row = conn.execute(sql, params).fetchone()
+    return row is not None
 
 
 def upsert_prediction_access_outcome(

@@ -329,6 +329,7 @@ docker compose -f docker-compose.prod.yml up -d
 | `POST` | `/api/internal/cloudsea/train` | 手动重训 ML（Admin Token） |
 | `GET` | `/api/internal/cloudsea/prediction-history` | 某日历史预测访问（Admin Token） |
 | `POST` | `/api/internal/cloudsea/reconcile` | 手动触发预测回测（Admin Token） |
+| `POST` | `/api/internal/cloudsea/watch` | 手动触发气象 watcher（Admin Token） |
 | `GET` | `/api/internal/backtest/predict` | 历史日回测（Admin Token） |
 
 Swagger：`http://localhost:8000/docs`
@@ -355,6 +356,10 @@ python3 scripts/train_cloudsea_model.py \
 cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次
 SKIP_TRAIN=1 bash scripts/release-prod.sh
 # 详见 internal/DEPLOY.md · 应急才用 hot-patch-prod.sh
+
+# 5. 定时任务（气象 watcher + 预测回测，生产 crontab 见 internal/DEPLOY.md）
+bash scripts/run-scheduled-tasks.sh
+# 试跑：python3 scripts/watch_forecast_changes.py --dry-run --force
 ```
 
 **开放标注页**：https://yunhai.timkj.com/label.html（无需 Token，浏览器自动生成贡献 ID）

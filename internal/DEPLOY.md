@@ -55,3 +55,29 @@ bash scripts/smoke-prod.sh
 ```bash
 bash scripts/sync_cloudsea_db_from_prod.sh
 ```
+
+---
+
+## 定时任务（气象 watcher + 预测回测）
+
+在 **宿主机 crontab**（或独立 cron 容器）运行，不要塞进 uvicorn 进程：
+
+```bash
+chmod +x scripts/run-scheduled-tasks.sh
+
+# 每 30 分钟（活跃窗 18:00–07:59 内 watcher 才会真正跑 predict）
+*/30 * * * * CLOUDSEA_DB_PATH=/opt/yunhai/data/cloudsea/cloudsea.db /opt/yunhai/scripts/run-scheduled-tasks.sh >> /var/log/yunhai-cron.log 2>&1
+
+# 每日 06:10 额外 reconcile 近 7 日（run-scheduled-tasks 已含 3 日，可按需加大）
+10 6 * * * cd /opt/yunhai && python3 scripts/reconcile_prediction_outcomes.py --db /opt/yunhai/data/cloudsea/cloudsea.db --days-back 7
+```
+
+**逻辑**：
+
+| 脚本 | 作用 |
+|------|------|
+| `watch_forecast_changes.py` | 近 7 日有标注的点位；18:00–07:59 内预报变化且无用户访问 → `page_source=scheduled` 预测 |
+| `reconcile_prediction_outcomes.py` | 日出日结束后写 forecast vs 实况 outcome |
+| `POST /api/internal/cloudsea/watch` | Admin 手动触发一轮 watcher（`dry_run=1` 可试跑） |
+
+环境变量：`CLOUDSEA_WATCH_ENABLED`、`CLOUDSEA_WATCH_LABEL_DAYS`、`CLOUDSEA_WATCH_USER_QUIET_MINUTES`（见 `.env.example`）。

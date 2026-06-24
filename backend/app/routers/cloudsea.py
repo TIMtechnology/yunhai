@@ -380,6 +380,28 @@ async def cloudsea_reconcile_outcomes(
     return reconcile_target_date(date, force=force)
 
 
+@router.post("/api/internal/cloudsea/watch")
+async def cloudsea_run_forecast_watch(
+    label_days: int | None = Query(default=None, ge=1, le=30),
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
+    force: bool = False,
+    dry_run: bool = False,
+    _: None = Depends(verify_cloudsea_token),
+):
+    from app.services.forecast_watch import run_forecast_watch_cycle
+
+    if (spot_id and not viewpoint_id) or (viewpoint_id and not spot_id):
+        raise HTTPException(status_code=400, detail="spot_id 与 viewpoint_id 需同时提供")
+    return await run_forecast_watch_cycle(
+        label_days=label_days,
+        force=force,
+        dry_run=dry_run,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
+    )
+
+
 @router.get("/api/internal/cloudsea/export/feedback")
 async def cloudsea_export_feedback(
     spot_id: Optional[str] = None,

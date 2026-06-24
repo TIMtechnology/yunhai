@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import threading
-from datetime import datetime
+from datetime import date as date_cls, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -27,6 +27,8 @@ from app.services.meteo_backfill import load_label_day_meteo, load_label_precurs
 
 TZ = ZoneInfo("Asia/Shanghai")
 POSITIVE_THRESHOLD = 50
+PAGE_SOURCE_SCHEDULED = "scheduled"
+SCHEDULED_PAGE_SOURCES = frozenset({PAGE_SOURCE_SCHEDULED, "scheduled_watch"})
 
 
 def _lead_hours_to_dawn(issue_time: datetime, target_date: str) -> float:
@@ -61,6 +63,59 @@ def _compact_day_prediction(resp: PredictResponse, target_date: str) -> dict[str
         "window_hours": window_hours,
         "ml_status": resp.location.get("ml_status"),
     }
+
+
+def build_meteo_snapshot(hourly: dict[str, Any], target_date: str) -> dict[str, Any]:
+    return _build_meteo_snapshot(hourly, target_date)
+
+
+def meteo_snapshot_unchanged(
+    prev: dict[str, Any] | None,
+    current: dict[str, Any],
+) -> bool:
+    return _same_meteo_snapshot(prev, current)
+
+
+def meteo_change_significant(
+    prev: dict[str, Any] | None,
+    current: dict[str, Any],
+    target_date: str,
+    *,
+    rh_delta_pp: float = 5.0,
+    cloud_low_delta_pp: float = 10.0,
+) -> bool:
+    """precursor 窗 dawn 段 RH/低云变化是否超过阈值，或 night→dawn ΔRH 符号翻转。"""
+    if not prev:
+        return True
+    prev_rows = prev.get("rows") or []
+    cur_rows = current.get("rows") or []
+    if not prev_rows or not cur_rows:
+        return True
+
+    f_prev = _segment_stats(prev_rows, target_date, "dawn")
+    f_cur = _segment_stats(cur_rows, target_date, "dawn")
+    rh_prev, rh_cur = f_prev.get("rh_mean"), f_cur.get("rh_mean")
+    low_prev, low_cur = f_prev.get("cloud_low_mean"), f_cur.get("cloud_low_mean")
+    if rh_prev is not None and rh_cur is not None:
+        if abs(float(rh_cur) - float(rh_prev)) >= rh_delta_pp:
+            return True
+    if low_prev is not None and low_cur is not None:
+        if abs(float(low_cur) - float(low_prev)) >= cloud_low_delta_pp:
+            return True
+
+    def _night_dawn_delta(rows: list[dict], date_key: str) -> float | None:
+        night = _segment_stats(rows, date_key, "night")
+        dawn = _segment_stats(rows, date_key, "dawn")
+        if night.get("rh_mean") is None or dawn.get("rh_mean") is None:
+            return None
+        return float(dawn["rh_mean"]) - float(night["rh_mean"])
+
+    d_prev = _night_dawn_delta(prev_rows, target_date)
+    d_cur = _night_dawn_delta(cur_rows, target_date)
+    if d_prev is not None and d_cur is not None:
+        if (d_prev >= 0) != (d_cur >= 0):
+            return True
+    return False
 
 
 def _build_meteo_snapshot(hourly: dict[str, Any], target_date: str) -> dict[str, Any]:
@@ -557,6 +612,29 @@ def get_prediction_history(
 
     entries.sort(key=lambda e: str(e.get("created_at") or ""), reverse=True)
 
+    scheduled_count = sum(
+        1 for e in entries if str(e.get("page_source") or "") in SCHEDULED_PAGE_SOURCES
+    )
+    user_count = sum(
+        1 for e in entries if str(e.get("page_source") or "") not in SCHEDULED_PAGE_SOURCES
+    )
+    forecast_snapshot_count = len(logs)
+    today = datetime.now(TZ).date()
+    target_day = date_cls.fromisoformat(target_date)
+    needs_label_attention = label is None and bool(entries) and target_day <= today
+
+    banner: str | None = None
+    if scheduled_count > 0:
+        banner = (
+            f"系统已自动预测 {scheduled_count} 次"
+            f"（共 {forecast_snapshot_count} 条预报快照"
+            f"{f'，用户访问 {user_count} 次' if user_count else ''}）"
+        )
+        if needs_label_attention:
+            banner += "；请对照下方历史预测完成标注，便于修复规则/ML"
+    elif entries and needs_label_attention:
+        banner = "已有历史预测快照，建议完成本日标注并对照 forecast vs 实况"
+
     return {
         "spot_id": spot_id,
         "viewpoint_id": viewpoint_id,
@@ -569,6 +647,13 @@ def get_prediction_history(
         "outcome_count": total_with_outcome,
         "entries": entries,
         "actual_precursor": actual_precursor,
+        "scheduled_summary": {
+            "scheduled_count": scheduled_count,
+            "user_count": user_count,
+            "forecast_snapshot_count": forecast_snapshot_count,
+            "needs_label_attention": needs_label_attention,
+            "banner": banner,
+        },
     }
 
 

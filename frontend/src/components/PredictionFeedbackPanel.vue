@@ -27,6 +27,18 @@ function outcomeMark(ok: number | null | undefined) {
   return ok ? '✓' : '✗'
 }
 
+function isScheduledSource(source: string | null | undefined) {
+  return source === 'scheduled' || source === 'scheduled_watch'
+}
+
+function sourceLabel(source: string | null | undefined) {
+  if (!source) return ''
+  if (isScheduledSource(source)) return '系统'
+  if (source === 'label') return '标注'
+  if (source === 'main') return '主页'
+  return source
+}
+
 function resolveLogId(row: { log_id?: number; id: number | string }): number {
   if (row.log_id) return row.log_id
   const raw = String(row.id)
@@ -134,11 +146,26 @@ window.addEventListener('resize', onResize)
 
 <template>
   <div v-if="history" class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-4">
+    <div
+      v-if="history.scheduled_summary?.banner"
+      class="rounded-lg border px-3 py-2 text-xs"
+      :class="
+        history.scheduled_summary.needs_label_attention
+          ? 'border-amber-500/40 bg-amber-950/30 text-amber-100'
+          : 'border-sky-500/30 bg-sky-950/30 text-sky-100'
+      "
+    >
+      {{ history.scheduled_summary.banner }}
+    </div>
+
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div class="font-semibold">历史预测访问</div>
       <div class="text-xs text-slate-400">
         标注 {{ history.label?.status || '未标注' }}
         · 访问 {{ history.access_count }} 次
+        <template v-if="history.scheduled_summary?.scheduled_count">
+          · 系统 {{ history.scheduled_summary.scheduled_count }} 次
+        </template>
         <template v-if="history.snapshot_count != null && history.snapshot_count < history.access_count">
           · {{ history.snapshot_count }} 条预报快照
         </template>
@@ -149,7 +176,7 @@ window.addEventListener('resize', onResize)
     </div>
 
     <div v-if="!history.entries.length" class="text-xs text-slate-500">
-      暂无用户访问快照（上线后将随 /api/predict 自动积累）
+      暂无预测快照。启用定时 watcher 后，系统将在气象变化时自动积累；用户访问 /api/predict 也会写入。
     </div>
 
     <template v-else>
@@ -158,6 +185,7 @@ window.addEventListener('resize', onResize)
           <thead class="text-slate-400">
             <tr>
               <th class="px-2 py-1 text-left">访问时间</th>
+              <th class="px-2 py-1 text-left">来源</th>
               <th class="px-2 py-1 text-right">P(云海)</th>
               <th class="px-2 py-1 text-right">lead(h)</th>
               <th class="px-2 py-1 text-center">结果</th>
@@ -175,6 +203,15 @@ window.addEventListener('resize', onResize)
               <td class="px-2 py-1">
                 {{ formatAccessTime(row.created_at) }}
                 <span v-if="row.same_forecast" class="ml-1 text-slate-500">同预报</span>
+              </td>
+              <td class="px-2 py-1">
+                <span
+                  v-if="isScheduledSource(row.page_source)"
+                  class="rounded bg-sky-900/60 px-1.5 py-0.5 text-[10px] text-sky-200"
+                >
+                  {{ sourceLabel(row.page_source) }}
+                </span>
+                <span v-else class="text-slate-400">{{ sourceLabel(row.page_source) || '—' }}</span>
               </td>
               <td class="px-2 py-1 text-right">{{ row.peak_cloudsea_prob ?? '—' }}%</td>
               <td class="px-2 py-1 text-right">{{ row.lead_hours_to_dawn?.toFixed(1) ?? '—' }}</td>

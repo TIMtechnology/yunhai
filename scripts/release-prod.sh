@@ -35,5 +35,10 @@ bash scripts/deploy-prod.sh yunhai-amd64.tar
 echo "== 3. 冒烟测试 =="
 bash scripts/smoke-prod.sh
 
+if [[ "${INSTALL_CRON:-1}" == "1" ]]; then
+  echo "== 4. 安装生产定时任务（不修改 compose / env）==="
+  bash scripts/install-prod-cron.sh
+fi
+
 echo ""
 echo "标准发版完成。"

@@ -122,6 +122,14 @@ export interface PredictionHistoryEntry {
   diagnosis?: { tags?: string[]; summary?: string } | null
 }
 
+export interface PredictionScheduledSummary {
+  scheduled_count: number
+  user_count: number
+  forecast_snapshot_count: number
+  needs_label_attention: boolean
+  banner?: string | null
+}
+
 export interface PredictionHistory {
   spot_id: string
   viewpoint_id: string
@@ -134,6 +142,7 @@ export interface PredictionHistory {
   outcome_count: number
   entries: PredictionHistoryEntry[]
   actual_precursor: Array<Record<string, unknown>>
+  scheduled_summary?: PredictionScheduledSummary | null
 }
 
 export interface PredictionCurvePoint {
