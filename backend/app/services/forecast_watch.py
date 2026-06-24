@@ -77,6 +77,9 @@ async def maybe_run_scheduled_prediction(
         result["reason"] = str(exc)
         return result
 
+    # label_session 默认 hours=24 不够覆盖「前夜 18:00 跑明日日出」；与线上一致用 120h
+    req = req.model_copy(update={"hours": 120})
+
     hourly = await _fetch_hourly_for_spot(req)
     meteo_snapshot = build_meteo_snapshot(hourly, target_date)
     latest = get_latest_prediction_access_log(spot_id, viewpoint_id, target_date)
@@ -115,6 +118,7 @@ async def maybe_run_scheduled_prediction(
         req,
         page_source=PAGE_SOURCE_SCHEDULED,
         client_id=WATCH_CLIENT_ID,
+        snapshot_target_dates=[target_date],
     )
     result["action"] = "predicted"
     return result

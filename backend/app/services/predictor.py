@@ -850,6 +850,7 @@ async def run_prediction(
     *,
     page_source: str | None = None,
     client_id: str | None = None,
+    snapshot_target_dates: list[str] | None = None,
 ) -> PredictResponse:
     wlat, wlng = _weather_lat_lng(req)
     elevation = req.elevation
@@ -934,6 +935,7 @@ async def run_prediction(
         page_source=page_source,
         client_id=client_id,
         data_source="live_forecast",
+        snapshot_target_dates=snapshot_target_dates,
     )
     return resp
 

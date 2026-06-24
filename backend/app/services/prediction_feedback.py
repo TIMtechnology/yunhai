@@ -314,6 +314,7 @@ def log_prediction_access_sync(
     page_source: str | None = None,
     client_id: str | None = None,
     data_source: str = "live_forecast",
+    snapshot_target_dates: list[str] | None = None,
 ) -> None:
     if not settings.cloudsea_enabled or not settings.cloudsea_auto_snapshot:
         return
@@ -323,6 +324,11 @@ def log_prediction_access_sync(
     target_dates = sorted({d.date for d in resp.days if d.date})
     if not target_dates:
         target_dates = sorted({h.time[:10] for h in resp.hours if h.time})
+    if snapshot_target_dates:
+        allowed = set(snapshot_target_dates)
+        target_dates = [d for d in target_dates if d in allowed]
+        if not target_dates:
+            target_dates = sorted(snapshot_target_dates)
     model_version = _model_version(req.spot_id, req.viewpoint_id)
     created_at = issue_time.astimezone(TZ).isoformat(timespec="seconds")
 
