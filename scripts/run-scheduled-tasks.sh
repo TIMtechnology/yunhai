@@ -9,7 +9,7 @@ DB="${CLOUDSEA_DB_PATH:-$ROOT/data/cloudsea/cloudsea.db}"
 
 run_in_container() {
   echo "[$(date '+%F %T')] watch + reconcile (docker:$CONTAINER)"
-  docker exec \
+  docker exec -i \
     -e CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db \
     -e CLOUDSEA_ENABLED=1 \
     -e CLOUDSEA_AUTO_SNAPSHOT=1 \

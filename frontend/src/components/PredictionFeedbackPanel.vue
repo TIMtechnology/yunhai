@@ -13,8 +13,12 @@ const detail = ref<PredictionSnapshotDetail | null>(null)
 const detailLoading = ref(false)
 const rhChartRef = ref<HTMLElement | null>(null)
 const cloudChartRef = ref<HTMLElement | null>(null)
+const tempChartRef = ref<HTMLElement | null>(null)
+const spreadChartRef = ref<HTMLElement | null>(null)
 let rhChart: echarts.ECharts | null = null
 let cloudChart: echarts.ECharts | null = null
+let tempChart: echarts.ECharts | null = null
+let spreadChart: echarts.ECharts | null = null
 
 function formatAccessTime(iso: string) {
   const d = new Date(iso)
@@ -51,6 +55,25 @@ const defaultLogId = computed(() => {
   return resolveLogId(row)
 })
 
+const plainSummary = computed(() => {
+  const d = detail.value
+  if (!d?.segments?.length) return ''
+  const dawn = d.segments.find((s) => s.segment === 'dawn')
+  const parts: string[] = []
+  if (d.peak_cloudsea_prob != null) {
+    parts.push(`这次查看时系统给出云海概率 ${d.peak_cloudsea_prob}%`)
+  }
+  if (dawn?.rh_forecast != null && dawn.rh_actual != null && dawn.rh_delta != null) {
+    const dir = dawn.rh_delta > 2 ? '偏高' : dawn.rh_delta < -2 ? '偏低' : '接近'
+    parts.push(`日出段湿度预报${dir}（预报 ${dawn.rh_forecast}% → 实况 ${dawn.rh_actual}%）`)
+  } else if (dawn?.rh_forecast != null && dawn.rh_actual == null) {
+    parts.push('日出段实况湿度尚未回填，暂无法对比')
+  }
+  if (d.direction_ok === 1) parts.push('与您的标注方向一致')
+  if (d.direction_ok === 0) parts.push('与您的标注方向不一致，可重点看下方差异')
+  return parts.join('；')
+})
+
 async function loadDetail(logId: number) {
   selectedLogId.value = logId
   detailLoading.value = true
@@ -78,47 +101,86 @@ function lineSeries(name: string, data: Array<number | null>, color: string, das
   }
 }
 
+function renderDualChart(
+  el: HTMLElement | null,
+  existing: echarts.ECharts | null,
+  title: [string, string],
+  forecastData: Array<number | null>,
+  actualData: Array<number | null>,
+  colors: [string, string],
+  yAxis?: { min?: number; max?: number; name?: string },
+): echarts.ECharts | null {
+  if (!el) return existing
+  const chart = existing ?? echarts.init(el, undefined, { renderer: 'canvas' })
+  const x = (detail.value?.curve_points ?? []).map((p) => p.label)
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { left: 44, right: 12, top: 32, bottom: 28 },
+    tooltip: { trigger: 'axis' },
+    legend: { data: title, textStyle: { color: '#94a3b8', fontSize: 11 }, top: 0 },
+    xAxis: { type: 'category', data: x, axisLabel: { color: '#64748b', fontSize: 10 } },
+    yAxis: {
+      type: 'value',
+      min: yAxis?.min,
+      max: yAxis?.max,
+      name: yAxis?.name,
+      nameTextStyle: { color: '#64748b', fontSize: 10 },
+      axisLabel: { color: '#64748b', fontSize: 10 },
+    },
+    series: [
+      lineSeries(title[0], forecastData, colors[0], true),
+      lineSeries(title[1], actualData, colors[1]),
+    ],
+  })
+  return chart
+}
+
 function renderCharts() {
   const pts = detail.value?.curve_points ?? []
   if (!pts.length) return
-  const x = pts.map((p) => p.label)
-
-  if (rhChartRef.value) {
-    if (!rhChart) rhChart = echarts.init(rhChartRef.value, undefined, { renderer: 'canvas' })
-    rhChart.setOption({
-      backgroundColor: 'transparent',
-      grid: { left: 40, right: 12, top: 28, bottom: 28 },
-      tooltip: { trigger: 'axis' },
-      legend: { data: ['预报 RH', '实况 RH'], textStyle: { color: '#94a3b8', fontSize: 11 }, top: 0 },
-      xAxis: { type: 'category', data: x, axisLabel: { color: '#64748b', fontSize: 10 } },
-      yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#64748b', fontSize: 10 } },
-      series: [
-        lineSeries('预报 RH', pts.map((p) => (p.forecast_rh != null ? Number(p.forecast_rh) : null)), '#38bdf8', true),
-        lineSeries('实况 RH', pts.map((p) => (p.actual_rh != null ? Number(p.actual_rh) : null)), '#34d399'),
-      ],
-    })
-  }
-
-  if (cloudChartRef.value) {
-    if (!cloudChart) cloudChart = echarts.init(cloudChartRef.value, undefined, { renderer: 'canvas' })
-    cloudChart.setOption({
-      backgroundColor: 'transparent',
-      grid: { left: 40, right: 12, top: 28, bottom: 28 },
-      tooltip: { trigger: 'axis' },
-      legend: { data: ['预报低云', '实况低云'], textStyle: { color: '#94a3b8', fontSize: 11 }, top: 0 },
-      xAxis: { type: 'category', data: x, axisLabel: { color: '#64748b', fontSize: 10 } },
-      yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#64748b', fontSize: 10 } },
-      series: [
-        lineSeries('预报低云', pts.map((p) => (p.forecast_cloud_low != null ? Number(p.forecast_cloud_low) : null)), '#a78bfa', true),
-        lineSeries('实况低云', pts.map((p) => (p.actual_cloud_low != null ? Number(p.actual_cloud_low) : null)), '#fbbf24'),
-      ],
-    })
-  }
+  rhChart = renderDualChart(
+    rhChartRef.value,
+    rhChart,
+    ['预报湿度', '实况湿度'],
+    pts.map((p) => (p.forecast_rh != null ? Number(p.forecast_rh) : null)),
+    pts.map((p) => (p.actual_rh != null ? Number(p.actual_rh) : null)),
+    ['#38bdf8', '#34d399'],
+    { min: 0, max: 100 },
+  )
+  cloudChart = renderDualChart(
+    cloudChartRef.value,
+    cloudChart,
+    ['预报低云', '实况低云'],
+    pts.map((p) => (p.forecast_cloud_low != null ? Number(p.forecast_cloud_low) : null)),
+    pts.map((p) => (p.actual_cloud_low != null ? Number(p.actual_cloud_low) : null)),
+    ['#a78bfa', '#fbbf24'],
+    { min: 0, max: 100 },
+  )
+  tempChart = renderDualChart(
+    tempChartRef.value,
+    tempChart,
+    ['预报气温', '实况气温'],
+    pts.map((p) => (p.forecast_temp != null ? Number(p.forecast_temp) : null)),
+    pts.map((p) => (p.actual_temp != null ? Number(p.actual_temp) : null)),
+    ['#fb7185', '#f97316'],
+    { name: '°C' },
+  )
+  spreadChart = renderDualChart(
+    spreadChartRef.value,
+    spreadChart,
+    ['预报温差', '实况温差'],
+    pts.map((p) => (p.forecast_spread != null ? Number(p.forecast_spread) : null)),
+    pts.map((p) => (p.actual_spread != null ? Number(p.actual_spread) : null)),
+    ['#22d3ee', '#2dd4bf'],
+    { name: '°C', min: 0, max: 15 },
+  )
 }
 
 function onResize() {
   rhChart?.resize()
   cloudChart?.resize()
+  tempChart?.resize()
+  spreadChart?.resize()
 }
 
 watch(
@@ -139,6 +201,8 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   rhChart?.dispose()
   cloudChart?.dispose()
+  tempChart?.dispose()
+  spreadChart?.dispose()
 })
 
 window.addEventListener('resize', onResize)
@@ -158,6 +222,11 @@ window.addEventListener('resize', onResize)
       {{ history.scheduled_summary.banner }}
     </div>
 
+    <div class="rounded-lg border border-slate-700/60 bg-slate-950/40 px-3 py-2 text-xs text-slate-400 leading-relaxed">
+      <div class="font-medium text-slate-300 mb-1">怎么看这张图？</div>
+      虚线 = 您（或系统）查看<strong class="text-slate-300">当时</strong>能看到的天气预报；实线 = 日出结束后回填的<strong class="text-slate-300">真实气象</strong>。两者越接近，说明预报越准、预测越可信。
+    </div>
+
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div class="font-semibold">历史预测访问</div>
       <div class="text-xs text-slate-400">
@@ -166,9 +235,6 @@ window.addEventListener('resize', onResize)
         <template v-if="history.scheduled_summary?.scheduled_count">
           · 系统 {{ history.scheduled_summary.scheduled_count }} 次
         </template>
-        <template v-if="history.snapshot_count != null && history.snapshot_count < history.access_count">
-          · {{ history.snapshot_count }} 条预报快照
-        </template>
         <template v-if="history.outcome_count">
           · 正确 {{ history.correct_count }}/{{ history.outcome_count }}
         </template>
@@ -176,7 +242,7 @@ window.addEventListener('resize', onResize)
     </div>
 
     <div v-if="!history.entries.length" class="text-xs text-slate-500">
-      暂无预测快照。启用定时 watcher 后，系统将在气象变化时自动积累；用户访问 /api/predict 也会写入。
+      暂无预测快照。启用定时 watcher 后，系统将在气象变化时自动积累；用户访问预测页也会写入。
     </div>
 
     <template v-else>
@@ -228,9 +294,26 @@ window.addEventListener('resize', onResize)
             选中快照 #{{ detail.id }} · {{ formatAccessTime(detail.created_at) }}
             · P={{ detail.peak_cloudsea_prob ?? '—' }}%
             · 标注 {{ detail.label_status || '—' }}
-            <span v-if="detail.diagnosis?.tags?.length" class="ml-2 text-amber-300/90">
-              {{ detail.diagnosis.tags.join(' · ') }}
+          </div>
+
+          <div
+            v-if="detail.actual_meteo_status?.message"
+            class="rounded-lg border px-3 py-2 text-xs"
+            :class="{
+              'border-emerald-500/30 bg-emerald-950/20 text-emerald-100': detail.actual_meteo_status.level === 'ok',
+              'border-amber-500/40 bg-amber-950/30 text-amber-100':
+                detail.actual_meteo_status.level === 'pending' || detail.actual_meteo_status.level === 'partial',
+              'border-slate-600 bg-slate-900/60 text-slate-400': detail.actual_meteo_status.level === 'missing',
+            }"
+          >
+            {{ detail.actual_meteo_status.message }}
+            <span v-if="detail.actual_meteo_status.actual_hours != null" class="ml-1 opacity-80">
+              （实况 {{ detail.actual_meteo_status.actual_hours }}/{{ detail.actual_meteo_status.expected_hours }} 小时）
             </span>
+          </div>
+
+          <div v-if="plainSummary" class="rounded-lg border border-slate-700/80 bg-slate-950/50 px-3 py-2 text-xs text-slate-200">
+            {{ plainSummary }}
           </div>
           <div v-if="detail.diagnosis?.summary" class="rounded-lg border border-slate-700/80 bg-slate-950/50 px-3 py-2 text-xs text-slate-300">
             {{ detail.diagnosis.summary }}
@@ -238,17 +321,25 @@ window.addEventListener('resize', onResize)
 
           <div class="grid gap-3 lg:grid-cols-2">
             <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-2">
-              <div class="mb-1 text-[11px] text-slate-500">RH 演变（虚线=访问时刻预报 · 实线=事后实况）</div>
-              <div ref="rhChartRef" class="h-44 w-full" />
+              <div class="mb-1 text-[11px] text-slate-500">空气湿度 %（虚线=预报 · 实线=实况）</div>
+              <div ref="rhChartRef" class="h-40 w-full" />
             </div>
             <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-2">
               <div class="mb-1 text-[11px] text-slate-500">低云量 %（虚线=预报 · 实线=实况）</div>
-              <div ref="cloudChartRef" class="h-44 w-full" />
+              <div ref="cloudChartRef" class="h-40 w-full" />
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-2">
+              <div class="mb-1 text-[11px] text-slate-500">气温 °C（虚线=预报 · 实线=实况）</div>
+              <div ref="tempChartRef" class="h-40 w-full" />
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-2">
+              <div class="mb-1 text-[11px] text-slate-500">气温－露点（温差，°C；越小越接近饱和/易起雾）</div>
+              <div ref="spreadChartRef" class="h-40 w-full" />
             </div>
           </div>
 
           <div v-if="detail.segments?.length" class="overflow-x-auto">
-            <div class="mb-1 text-[11px] text-slate-500">分段差异（evening / night / dawn）</div>
+            <div class="mb-1 text-[11px] text-slate-500">分时段对比（前夜 / 夜间 / 日出）</div>
             <table class="w-full text-xs">
               <thead class="text-slate-400">
                 <tr>
@@ -256,9 +347,12 @@ window.addEventListener('resize', onResize)
                   <th class="px-2 py-1 text-right">RH 预报</th>
                   <th class="px-2 py-1 text-right">RH 实况</th>
                   <th class="px-2 py-1 text-right">ΔRH</th>
+                  <th class="px-2 py-1 text-right">气温 预报</th>
+                  <th class="px-2 py-1 text-right">气温 实况</th>
+                  <th class="px-2 py-1 text-right">温差 预报</th>
+                  <th class="px-2 py-1 text-right">温差 实况</th>
                   <th class="px-2 py-1 text-right">低云 预报</th>
                   <th class="px-2 py-1 text-right">低云 实况</th>
-                  <th class="px-2 py-1 text-right">Δ低云</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,11 +363,12 @@ window.addEventListener('resize', onResize)
                   <td class="px-2 py-1 text-right" :class="seg.rh_delta != null && seg.rh_delta < -3 ? 'text-red-300' : ''">
                     {{ seg.rh_delta != null ? (seg.rh_delta > 0 ? '+' : '') + seg.rh_delta : '—' }}
                   </td>
+                  <td class="px-2 py-1 text-right">{{ seg.temp_forecast ?? '—' }}</td>
+                  <td class="px-2 py-1 text-right">{{ seg.temp_actual ?? '—' }}</td>
+                  <td class="px-2 py-1 text-right">{{ seg.spread_forecast ?? '—' }}</td>
+                  <td class="px-2 py-1 text-right">{{ seg.spread_actual ?? '—' }}</td>
                   <td class="px-2 py-1 text-right">{{ seg.cloud_low_forecast ?? '—' }}%</td>
                   <td class="px-2 py-1 text-right">{{ seg.cloud_low_actual ?? '—' }}%</td>
-                  <td class="px-2 py-1 text-right" :class="seg.cloud_low_delta != null && seg.cloud_low_delta > 8 ? 'text-red-300' : ''">
-                    {{ seg.cloud_low_delta != null ? (seg.cloud_low_delta > 0 ? '+' : '') + seg.cloud_low_delta : '—' }}
-                  </td>
                 </tr>
               </tbody>
             </table>

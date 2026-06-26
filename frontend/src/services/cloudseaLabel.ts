@@ -148,12 +148,30 @@ export interface PredictionHistory {
 export interface PredictionCurvePoint {
   time: string
   label: string
+  segment?: string
   forecast_rh?: number | null
   actual_rh?: number | null
   forecast_cloud_low?: number | null
   actual_cloud_low?: number | null
   forecast_wind?: number | null
   actual_wind?: number | null
+  forecast_temp?: number | null
+  actual_temp?: number | null
+  forecast_dewpoint?: number | null
+  actual_dewpoint?: number | null
+  forecast_spread?: number | null
+  actual_spread?: number | null
+  forecast_precip?: number | null
+  actual_precip?: number | null
+}
+
+export interface PredictionActualMeteoStatus {
+  expected_hours: number
+  actual_hours: number
+  complete: boolean
+  missing_times?: string[]
+  level: 'ok' | 'pending' | 'partial' | 'missing'
+  message: string
 }
 
 export interface PredictionSegmentDiff {
@@ -165,6 +183,12 @@ export interface PredictionSegmentDiff {
   cloud_low_forecast?: number | null
   cloud_low_actual?: number | null
   cloud_low_delta?: number | null
+  temp_forecast?: number | null
+  temp_actual?: number | null
+  temp_delta?: number | null
+  spread_forecast?: number | null
+  spread_actual?: number | null
+  spread_delta?: number | null
   wind_forecast?: number | null
   wind_actual?: number | null
 }
@@ -181,6 +205,7 @@ export interface PredictionSnapshotDetail {
   diagnosis?: { tags?: string[]; summary?: string } | null
   curve_points: PredictionCurvePoint[]
   segments: PredictionSegmentDiff[]
+  actual_meteo_status?: PredictionActualMeteoStatus | null
   hourly_errors?: Array<Record<string, unknown>>
   reconciled?: boolean
 }

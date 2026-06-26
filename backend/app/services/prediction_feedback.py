@@ -409,14 +409,20 @@ def schedule_prediction_access_log(**kwargs: Any) -> None:
 def _segment_stats(rows: list[dict[str, Any]], target_date: str, segment: str) -> dict[str, float | None]:
     seg_rows = [r for r in rows if _segment_for_row(r, target_date) == segment]
     if not seg_rows:
-        return {"rh_mean": None, "cloud_low_mean": None, "wind_mean": None, "count": 0}
+        return {"rh_mean": None, "cloud_low_mean": None, "wind_mean": None, "temp_mean": None, "spread_mean": None, "count": 0}
     rh_vals = [float(r["rh"]) for r in seg_rows if r.get("rh") is not None]
     low_vals = [float(r["cloud_low"]) for r in seg_rows if r.get("cloud_low") is not None]
-    wind_vals = [float(r["wind_speed"]) for r in seg_rows if r.get("wind_speed") is not None]
+    wind_vals = [_row_wind(r) for r in seg_rows]
+    wind_vals = [v for v in wind_vals if v is not None]
+    temp_vals = [float(r["temp"]) for r in seg_rows if r.get("temp") is not None]
+    spread_vals = [_row_spread(r) for r in seg_rows]
+    spread_vals = [v for v in spread_vals if v is not None]
     return {
         "rh_mean": round(sum(rh_vals) / len(rh_vals), 2) if rh_vals else None,
         "cloud_low_mean": round(sum(low_vals) / len(low_vals), 2) if low_vals else None,
         "wind_mean": round(sum(wind_vals) / len(wind_vals), 2) if wind_vals else None,
+        "temp_mean": round(sum(temp_vals) / len(temp_vals), 2) if temp_vals else None,
+        "spread_mean": round(sum(spread_vals) / len(spread_vals), 2) if spread_vals else None,
         "count": len(seg_rows),
     }
 
@@ -513,6 +519,18 @@ def reconcile_access_log(access_log_id: int, *, force: bool = False) -> dict[str
         return None
 
     label = get_label(spot_id, viewpoint_id, target_date, 3, 7)
+    target_day = date_cls.fromisoformat(str(target_date))
+    if label and target_day < datetime.now(TZ).date():
+        from app.services.meteo_backfill import (
+            backfill_label_meteo,
+            precursor_window_meteo_complete,
+        )
+
+        if not precursor_window_meteo_complete(spot_id, viewpoint_id, str(target_date)):
+            try:
+                backfill_label_meteo(dict(label))
+            except Exception:
+                pass
     try:
         meteo_snapshot = row.get("meteo_snapshot") or json.loads(row.get("meteo_snapshot_json") or "{}")
     except json.JSONDecodeError:
@@ -663,6 +681,62 @@ def get_prediction_history(
     }
 
 
+def _row_wind(row: dict[str, Any] | None) -> float | None:
+    if not row:
+        return None
+    raw = row.get("wind_speed")
+    if raw is None:
+        raw = row.get("wind")
+    return float(raw) if raw is not None else None
+
+
+def _row_spread(row: dict[str, Any] | None) -> float | None:
+    if not row:
+        return None
+    temp, dew = row.get("temp"), row.get("dewpoint")
+    if temp is None or dew is None:
+        return None
+    return round(float(temp) - float(dew), 1)
+
+
+def _build_actual_meteo_status(
+    *,
+    target_date: str,
+    actual_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    from app.engine.cloudsea_features import meteo_row_complete
+    from app.services.meteo_backfill import precursor_hour_keys
+
+    expected = precursor_hour_keys(target_date)
+    complete_rows = [r for r in actual_rows if meteo_row_complete(r)]
+    have_times = {str(r.get("time")) for r in complete_rows}
+    missing = [k for k in expected if k not in have_times]
+    target_day = date_cls.fromisoformat(target_date)
+    today = datetime.now(TZ).date()
+
+    if len(missing) == 0:
+        message = "实况气象已完整，实线可与虚线对照"
+        level = "ok"
+    elif target_day >= today:
+        message = "日出日尚未结束，实况逐小时数据会在次日回填后显示完整实线"
+        level = "pending"
+    elif len(complete_rows) == 0:
+        message = "暂无实况气象（请确认该日已标注并运行气象回填）"
+        level = "missing"
+    else:
+        message = f"实况仅 {len(complete_rows)}/{len(expected)} 小时，夜间/日出段可能缺实线"
+        level = "partial"
+
+    return {
+        "expected_hours": len(expected),
+        "actual_hours": len(complete_rows),
+        "complete": len(missing) == 0,
+        "missing_times": missing[:6],
+        "level": level,
+        "message": message,
+    }
+
+
 def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
     """单次访问快照：precursor 双轨曲线 + 分段差异 + 诊断。"""
     row = get_prediction_access_log(access_log_id)
@@ -686,6 +760,13 @@ def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
     if not actual_rows and spot_id and viewpoint_id and target_date:
         actual_rows = load_label_precursor_meteo(spot_id, viewpoint_id, target_date)
 
+    actual_status = _build_actual_meteo_status(target_date=target_date, actual_rows=actual_rows)
+
+    def _metric(row: dict[str, Any] | None, key: str) -> float | None:
+        if not row or row.get(key) is None:
+            return None
+        return float(row[key])
+
     actual_by = {str(r.get("time")): r for r in actual_rows}
     curve_points: list[dict[str, Any]] = []
     for f in sorted(forecast_rows, key=lambda r: str(r.get("time"))):
@@ -695,12 +776,21 @@ def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
             {
                 "time": ts,
                 "label": ts[11:16] if "T" in ts else ts,
+                "segment": _segment_for_row(f, target_date),
                 "forecast_rh": f.get("rh"),
                 "actual_rh": a.get("rh") if a else None,
                 "forecast_cloud_low": f.get("cloud_low"),
                 "actual_cloud_low": a.get("cloud_low") if a else None,
-                "forecast_wind": f.get("wind_speed"),
-                "actual_wind": a.get("wind_speed") if a else None,
+                "forecast_wind": _row_wind(f),
+                "actual_wind": _row_wind(a),
+                "forecast_temp": _metric(f, "temp"),
+                "actual_temp": _metric(a, "temp"),
+                "forecast_dewpoint": _metric(f, "dewpoint"),
+                "actual_dewpoint": _metric(a, "dewpoint"),
+                "forecast_spread": _row_spread(f),
+                "actual_spread": _row_spread(a),
+                "forecast_precip": _metric(f, "precipitation") if f.get("precipitation") is not None else _metric(f, "precip"),
+                "actual_precip": _metric(a, "precipitation") if a and a.get("precipitation") is not None else _metric(a, "precip"),
             }
         )
 
@@ -714,6 +804,9 @@ def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
         sa = seg_a.get(seg) or {}
         rh_f, rh_a = sf.get("rh_mean"), sa.get("rh_mean")
         low_f, low_a = sf.get("cloud_low_mean"), sa.get("cloud_low_mean")
+        temp_f, temp_a = sf.get("temp_mean"), sa.get("temp_mean")
+        spread_f = sf.get("spread_mean")
+        spread_a = sa.get("spread_mean")
         segments.append(
             {
                 "segment": seg,
@@ -724,6 +817,12 @@ def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
                 "cloud_low_forecast": low_f,
                 "cloud_low_actual": low_a,
                 "cloud_low_delta": round(float(low_a) - float(low_f), 1) if low_f is not None and low_a is not None else None,
+                "temp_forecast": temp_f,
+                "temp_actual": temp_a,
+                "temp_delta": round(float(temp_a) - float(temp_f), 1) if temp_f is not None and temp_a is not None else None,
+                "spread_forecast": spread_f,
+                "spread_actual": spread_a,
+                "spread_delta": round(float(spread_a) - float(spread_f), 1) if spread_f is not None and spread_a is not None else None,
                 "wind_forecast": sf.get("wind_mean"),
                 "wind_actual": sa.get("wind_mean"),
             }
@@ -743,6 +842,7 @@ def get_prediction_snapshot_detail(access_log_id: int) -> dict[str, Any] | None:
         "diagnosis": row.get("diagnosis"),
         "curve_points": curve_points,
         "segments": segments,
+        "actual_meteo_status": actual_status,
         "hourly_errors": hourly_errors[:24],
         "reconciled": bool(row.get("reconciled_at")),
     }
