@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import math
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
 
-from app.adapters.open_meteo import FORECAST_URL, estimate_cloud_base
+from app.adapters.http_retry import get_json
+from app.adapters.open_meteo import FORECAST_URL, estimate_cloud_base, FORECAST_PRIMARY_TIMEOUT
 
 # 扇区仅需低层云量/温湿，不必拉全量气压层（显著减小响应体）
 SECTOR_HOURLY_VARS = [
@@ -83,10 +84,31 @@ async def _fetch_multi_forecast(
         "timezone": "Asia/Shanghai",
         **extra_params,
     }
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.get(url, params=params)
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        data = await get_json(url, params=params, timeout=FORECAST_PRIMARY_TIMEOUT, retries=1)
+    except (
+        httpx.ConnectError,
+        httpx.RemoteProtocolError,
+        httpx.ReadError,
+        httpx.ConnectTimeout,
+        httpx.ReadTimeout,
+        httpx.TimeoutException,
+    ):
+        if url == FORECAST_URL and "forecast_days" in extra_params:
+            from app.engine.utils import SHANGHAI_TZ
+
+            days = int(extra_params["forecast_days"])
+            start = datetime.now(SHANGHAI_TZ).date()
+            end = start + timedelta(days=max(days - 1, 0))
+            hist_params = {
+                **params,
+                "start_date": start.isoformat(),
+                "end_date": end.isoformat(),
+            }
+            hist_params.pop("forecast_days", None)
+            data = await get_json(HISTORICAL_FORECAST_URL, params=hist_params, timeout=20.0, retries=2)
+        else:
+            raise
     if isinstance(data, list):
         return data
     return [data]

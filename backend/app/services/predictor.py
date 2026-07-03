@@ -53,6 +53,7 @@ from app.models.schemas import (
     ScenarioPrediction,
     WeatherSnapshot,
 )
+from app.config import settings
 from app.services.cache import cache_get, cache_set
 from app.services.spot_loader import get_spot
 
@@ -359,6 +360,8 @@ def _build_day_summaries(
 
 
 async def _fetch_satellite_context(lat: float, lng: float, spot) -> dict | None:
+    if not settings.predict_satellite_enabled:
+        return None
     region = spot.cloud_region.model_dump() if spot and spot.cloud_region else None
     lng_span, lat_span = resolve_bbox_span(None, None, region)
     bbox = compute_bbox(lat, lng, lng_span, lat_span)
@@ -372,8 +375,11 @@ async def _fetch_satellite_context(lat: float, lng: float, spot) -> dict | None:
         return cached if cached else None
 
     try:
-        result = await fetch_himawari_best_effort(bbox, now, lookback_hours=12)
-    except Exception:
+        result = await asyncio.wait_for(
+            fetch_himawari_best_effort(bbox, now, lookback_hours=12),
+            timeout=settings.predict_satellite_timeout_sec,
+        )
+    except (asyncio.TimeoutError, Exception):
         cache_set(cache_key, {}, ttl=300)
         return None
     if not result:
@@ -845,6 +851,17 @@ def _build_response(
     )
 
 
+    return resp
+
+
+def _predict_cache_key(req: PredictRequest) -> str:
+    today = datetime.now(TZ).strftime("%Y-%m-%d")
+    spot = req.spot_id or "custom"
+    vp = req.viewpoint_id or f"{req.lat:.4f}:{req.lng:.4f}"
+    hours = req.hours or 120
+    return f"predict:v2:{spot}:{vp}:{hours}:{today}"
+
+
 async def run_prediction(
     req: PredictRequest,
     *,
@@ -852,6 +869,13 @@ async def run_prediction(
     client_id: str | None = None,
     snapshot_target_dates: list[str] | None = None,
 ) -> PredictResponse:
+    cache_key: str | None = None
+    if snapshot_target_dates is None:
+        cache_key = _predict_cache_key(req)
+        cached = cache_get(cache_key)
+        if cached:
+            return PredictResponse.model_validate(cached)
+
     wlat, wlng = _weather_lat_lng(req)
     elevation = req.elevation
     if elevation is None:
@@ -881,7 +905,6 @@ async def run_prediction(
     }
     hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
     astronomy = parse_daily_astronomy(forecast)
-    satellite_context = await _fetch_satellite_context(wlat, wlng, spot)
     viewing_mode, viewing_mode_note, _ = resolve_viewing_mode(
         spot_id=req.spot_id,
         viewpoint_id=req.viewpoint_id,
@@ -890,13 +913,16 @@ async def run_prediction(
     )
     terrain["viewing_mode"] = viewing_mode
 
-    await _ensure_sector_meteo_if_needed(
-        lat=wlat,
-        lng=wlng,
-        terrain=terrain,
-        viewing_mode=viewing_mode,
-        hourly_times=hourly.get("time", []),
-        forecast_days=5,
+    satellite_context, _ = await asyncio.gather(
+        _fetch_satellite_context(wlat, wlng, spot),
+        _ensure_sector_meteo_if_needed(
+            lat=wlat,
+            lng=wlng,
+            terrain=terrain,
+            viewing_mode=viewing_mode,
+            hourly_times=hourly.get("time", []),
+            forecast_days=5,
+        ),
     )
 
     results = build_predictions_from_hourly(
@@ -937,6 +963,12 @@ async def run_prediction(
         data_source="live_forecast",
         snapshot_target_dates=snapshot_target_dates,
     )
+    if cache_key:
+        cache_set(
+            cache_key,
+            resp.model_dump(mode="json"),
+            ttl=settings.predict_response_cache_ttl,
+        )
     return resp
 
 

@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     apimart_api_key: str = ""
     share_og_use_image2: bool = True
 
+    # 预测路径：卫星校正默认关闭（GIBS 境外链路慢）；整页响应缓存
+    predict_satellite_enabled: bool = False
+    predict_satellite_timeout_sec: float = 5.0
+    predict_response_cache_ttl: int = 1800
+
     class Config:
         env_file = ".env"
 

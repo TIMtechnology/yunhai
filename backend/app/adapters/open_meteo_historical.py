@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 
 import httpx
 
+from app.adapters.http_retry import get_json
 from app.adapters.open_meteo import HOURLY_VARS, parse_daily_astronomy
 from app.engine.utils import SHANGHAI_TZ, parse_shanghai_time
 from app.services.cache import cache_get, cache_set
@@ -34,10 +35,7 @@ async def fetch_historical_forecast(
         "daily": "sunrise,sunset",
         "timezone": "Asia/Shanghai",
     }
-    async with httpx.AsyncClient(timeout=45.0) as client:
-        resp = await client.get(HISTORICAL_FORECAST_URL, params=params)
-        resp.raise_for_status()
-        data = resp.json()
+    data = await get_json(HISTORICAL_FORECAST_URL, params=params, timeout=20.0, retries=2)
 
     cache_set(cache_key, data, ttl=86400 * 7)
     return data

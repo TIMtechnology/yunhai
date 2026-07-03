@@ -6,7 +6,29 @@ from typing import Any
 
 import httpx
 
-_RETRYABLE = (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout)
+_RETRYABLE = (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout, httpx.TimeoutException)
+
+
+async def get_json(
+    url: str,
+    *,
+    params: dict[str, str] | None = None,
+    timeout: float = 45.0,
+    retries: int = 2,
+) -> dict:
+    last_exc: Exception | None = None
+    for attempt in range(max(1, retries)):
+        try:
+            async with httpx.AsyncClient(timeout=timeout, http2=False) as client:
+                resp = await client.get(url, params=params)
+                resp.raise_for_status()
+                return resp.json()
+        except _RETRYABLE as exc:
+            last_exc = exc
+            if attempt + 1 < retries:
+                await asyncio.sleep(0.35 * (attempt + 1))
+    assert last_exc is not None
+    raise last_exc
 
 
 async def post_json(
