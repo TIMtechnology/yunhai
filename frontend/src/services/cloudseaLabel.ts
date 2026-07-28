@@ -293,11 +293,16 @@ export async function trainModelApi(token: string) {
   })
   if (!resp.ok) throw new Error(await resp.text())
   return resp.json() as Promise<{
-    loocv_accuracy?: number
+    status?: string
     deploy_recommended?: boolean
     reason?: string
+    holdout_balanced_accuracy?: number
+    holdout_recall?: number
+    holdout_brier?: number
+    model_version?: string
+    trained_days?: number
     output?: string
-    stdout?: string
+    evaluation_report?: string
   }>
 }
 

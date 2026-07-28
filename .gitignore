@@ -19,6 +19,7 @@ yunhai-*-amd64.tar
 **/*.sqlite
 **/*.sqlite-*
 data/cloudsea/models/*.pkl
+data/cloudsea/models/candidates/
 internal/config.local.json
 internal/PAPER-ABSTRACT.md
 internal/research-paper.html

@@ -35,7 +35,9 @@ class Settings(BaseSettings):
     cloudsea_auto_snapshot: bool = True
     cloudsea_ml_enabled: bool = False
     cloudsea_allow_legacy_pickle_models: bool = False
-    cloudsea_model_path: str = str(_PROJECT_ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.pkl")
+    cloudsea_model_path: str = str(
+        _PROJECT_ROOT / "data" / "cloudsea" / "models" / "cloudsea_ml_v2.json"
+    )
     cloudsea_contribute_enabled: bool = True
     cloudsea_daily_label_cap: int = 30
     cloudsea_max_locations_per_contributor: int = 10

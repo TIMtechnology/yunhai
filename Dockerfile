@@ -32,6 +32,7 @@ RUN pip install --no-cache-dir --require-hashes -r requirements.lock -i "${PIP_I
 
 COPY backend/app ./app
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
+COPY scripts/train_cloudsea_model.py scripts/train_operational_model.py /app/scripts/
 RUN groupadd --gid 10001 yunhai \
     && useradd --uid 10001 --gid yunhai --no-create-home --shell /usr/sbin/nologin yunhai \
     && chmod +x /app/docker-entrypoint.sh
@@ -39,6 +40,7 @@ RUN groupadd --gid 10001 yunhai \
 COPY data/scenic-spots ./data/scenic-spots
 COPY data/terrain ./data/terrain
 COPY data/cloudsea/curated-spots ./baked/curated-spots
+COPY data/cloudsea/models ./baked/models
 COPY --from=frontend-build /app/dist ./static
 
 ARG BUILD_ID=dev
@@ -52,7 +54,9 @@ ENV STATIC_DIR=/app/static
 ENV ANALYTICS_DB_PATH=/app/data/analytics/analytics.db
 ENV CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
 ENV CLOUDSEA_CURATED_SPOTS_DIR=/app/data/cloudsea/curated-spots
+ENV CLOUDSEA_MODEL_PATH=/app/baked/models/spot_wunvshan_dianjiangtai.json
 ENV CLOUDSEA_ML_ENABLED=false
+ENV CLOUDSEA_ALLOW_LEGACY_PICKLE_MODELS=false
 ENV SHARE_ASSETS_DIR=/app/data/share-assets
 ENV SHARE_CACHE_DIR=/app/data/share-cache
 ENV TZ=Asia/Shanghai

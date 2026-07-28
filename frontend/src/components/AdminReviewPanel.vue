@@ -23,7 +23,14 @@ const message = useMessage()
 const loading = ref(false)
 const training = ref(false)
 const items = ref<ReviewQueueItem[]>([])
-const trainResult = ref<{ loocv_accuracy?: number; deploy_recommended?: boolean; reason?: string } | null>(null)
+const trainResult = ref<{
+  status?: string
+  holdout_balanced_accuracy?: number
+  holdout_recall?: number
+  holdout_brier?: number
+  deploy_recommended?: boolean
+  reason?: string
+} | null>(null)
 
 const pendingCount = computed(() => items.value.length)
 
@@ -77,7 +84,9 @@ async function train() {
     const res = await trainModelApi(props.token)
     trainResult.value = res
     if (res.deploy_recommended) {
-      message.success(`训练完成 LOOCV ${((res.loocv_accuracy || 0) * 100).toFixed(1)}%，可部署新模型`)
+      message.success(
+        `候选通过时间外评估：平衡准确率 ${((res.holdout_balanced_accuracy || 0) * 100).toFixed(1)}%`,
+      )
     } else {
       message.warning(res.reason || '训练完成，但未达部署门槛')
     }
@@ -99,19 +108,26 @@ watch(() => props.token, loadQueue, { immediate: true })
   <div class="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4 space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <div class="font-semibold text-amber-100">Admin · 审核与训练</div>
+        <div class="font-semibold text-amber-100">Admin · 审核与候选模型</div>
         <div class="text-xs text-slate-400">待审 {{ pendingCount }} 条 · 通过后纳入 ML 训练集</div>
       </div>
       <div class="flex gap-2">
         <n-button size="small" :loading="loading" @click="loadQueue">刷新队列</n-button>
-        <n-button size="small" type="warning" :loading="training" @click="train">重训 ML</n-button>
+        <n-button size="small" type="warning" :loading="training" @click="train">生成受审候选</n-button>
       </div>
     </div>
 
     <div v-if="trainResult" class="rounded-lg bg-slate-900/60 p-3 text-xs text-slate-300">
-      LOOCV：{{ trainResult.loocv_accuracy != null ? (trainResult.loocv_accuracy * 100).toFixed(1) + '%' : '—' }}
-      · {{ trainResult.deploy_recommended ? '建议部署新 pkl' : trainResult.reason || '未达门槛' }}
-      <div class="mt-1 text-slate-500">部署需在服务器更新 CLOUDSEA_MODEL_PATH 并重启容器</div>
+      时间外平衡准确率：{{
+        trainResult.holdout_balanced_accuracy != null
+          ? (trainResult.holdout_balanced_accuracy * 100).toFixed(1) + '%'
+          : '—'
+      }}
+      · 召回率 {{
+        trainResult.holdout_recall != null ? (trainResult.holdout_recall * 100).toFixed(1) + '%' : '—'
+      }}
+      · Brier {{ trainResult.holdout_brier?.toFixed(3) ?? '—' }}
+      <div class="mt-1 text-slate-500">{{ trainResult.reason || '候选未达门禁' }}</div>
     </div>
 
     <div v-if="locationGroups.length" class="flex flex-wrap gap-2 text-xs">
@@ -152,7 +168,7 @@ watch(() => props.token, loadQueue, { immediate: true })
     </n-spin>
 
     <div class="text-[11px] text-slate-500 leading-relaxed">
-      社区点位标注免审核、首次保存即自动落库精选。「落库」手动按钮用于补写。重训按点位分别训练（≥30 有效日、排除降水日）；仅 LOOCV 达标且部署对应 pkl 后，该点 03–07 点才会启用 ML。
+      社区点位标注免审核、首次保存即自动落库精选。「落库」手动按钮用于补写。候选模型只使用决策时已发布的历史预报，并通过时间外验证；生产不热加载模型，候选须经代码审查后随不可变镜像发布。
     </div>
   </div>
 </template>

@@ -12,9 +12,16 @@ from app.engine.cloudsea_features import (
     aggregate_day_features,
     aggregate_precursor_features,
     aggregate_v7_features,
+    operational_meteo_row_complete,
 )
 from app.engine.cloudsea_scorer import is_ground_fog_proxy
 from app.engine.ml_eligibility import build_ml_status, spot_model_path
+from app.engine.operational_ml import (
+    ArtifactValidationError,
+    artifact_feature_contributions,
+    load_safe_artifact,
+    predict_artifact_probability,
+)
 from app.engine.utils import grade_from_probability
 from app.models.schemas import FactorDetail, PredictionScore
 
@@ -32,9 +39,14 @@ def _legacy_pickle_loading_enabled() -> bool:
 
 @lru_cache(maxsize=1)
 def load_default_artifact() -> dict | None:
-    if not _legacy_pickle_loading_enabled():
-        return None
     path = _default_model_path()
+    if path.suffix.lower() == ".json":
+        try:
+            return load_safe_artifact(path)
+        except ArtifactValidationError:
+            return None
+    if not _legacy_pickle_loading_enabled() or path.suffix.lower() not in (".pkl", ".pickle"):
+        return None
     if not path.is_file():
         return None
     with open(path, "rb") as f:
@@ -43,14 +55,24 @@ def load_default_artifact() -> dict | None:
 
 @lru_cache(maxsize=64)
 def load_spot_artifact(spot_id: str, viewpoint_id: str) -> dict | None:
-    if not _legacy_pickle_loading_enabled():
-        return None
     path = spot_model_path(spot_id, viewpoint_id)
     if path.is_file():
-        with open(path, "rb") as f:
-            return pickle.load(f)
+        try:
+            return load_safe_artifact(
+                path,
+                expected_spot_id=spot_id,
+                expected_viewpoint_id=viewpoint_id,
+            )
+        except ArtifactValidationError:
+            return None
     if spot_id == "wunvshan":
-        return load_default_artifact()
+        artifact = load_default_artifact()
+        if (
+            artifact
+            and artifact.get("spot_id") == spot_id
+            and artifact.get("viewpoint_id") == viewpoint_id
+        ):
+            return artifact
     return None
 
 
@@ -59,7 +81,7 @@ def ml_enabled() -> bool:
 
 
 def get_ml_status(spot_id: str | None, viewpoint_id: str | None) -> dict:
-    if not _legacy_pickle_loading_enabled():
+    if not spot_id or not viewpoint_id:
         return build_ml_status(
             spot_id,
             viewpoint_id,
@@ -67,32 +89,9 @@ def get_ml_status(spot_id: str | None, viewpoint_id: str | None) -> dict:
             model_trained_days=0,
         )
 
-    has_spot_model = False
-    model_trained_days = 0
-    if spot_id and viewpoint_id:
-        has_spot_model = spot_model_path(spot_id, viewpoint_id).is_file()
-        artifact = None
-        if has_spot_model:
-            try:
-                import pickle
-
-                with open(spot_model_path(spot_id, viewpoint_id), "rb") as f:
-                    artifact = pickle.load(f)
-            except Exception:
-                artifact = None
-        if spot_id == "wunvshan" and not has_spot_model:
-            default_path = _default_model_path()
-            has_spot_model = default_path.is_file()
-            if has_spot_model:
-                try:
-                    import pickle
-
-                    with open(default_path, "rb") as f:
-                        artifact = pickle.load(f)
-                except Exception:
-                    artifact = None
-        if artifact:
-            model_trained_days = int(artifact.get("n_days") or 0)
+    artifact = load_spot_artifact(spot_id, viewpoint_id)
+    has_spot_model = artifact is not None
+    model_trained_days = int(artifact.get("n_days") or 0) if artifact else 0
     return build_ml_status(
         spot_id,
         viewpoint_id,
@@ -440,6 +439,17 @@ def predict_day_cloudsea(
     if window == "v7":
         rows = precursor_rows if precursor_rows is not None else hour_rows
         date_key = target_date or str((rows[0] if rows else {}).get("time") or "")[:10]
+        if artifact.get("meteo_mode") == "operational_single_run":
+            from app.services.meteo_backfill import precursor_hour_keys
+
+            expected = set(precursor_hour_keys(date_key))
+            complete = {
+                str(row.get("time") or "")
+                for row in rows
+                if operational_meteo_row_complete(row)
+            }
+            if not expected.issubset(complete):
+                return None
         use_observable = any(n in feature_names for n in ("observable_fraction_mean",))
         day_feat = aggregate_v7_features(
             rows,
@@ -461,15 +471,21 @@ def predict_day_cloudsea(
             use_observable_field=use_observable,
         )
     model = artifact["model"]
-    x = np.array([[day_feat.get(n, 0.0) for n in infer_names]])
-    prob = float(model.predict_proba(x)[0, 1])
-    calibrator = artifact.get("calibrator")
-    if calibrator is not None:
-        from app.engine.ml_tuning import apply_calibrator
+    if isinstance(model, dict):
+        prob = predict_artifact_probability(artifact, day_feat)
+        explains = artifact_feature_contributions(artifact, day_feat)
+    else:
+        x = np.array([[day_feat.get(n, 0.0) for n in infer_names]])
+        prob = float(model.predict_proba(x)[0, 1])
+        calibrator = artifact.get("calibrator")
+        if calibrator is not None:
+            from app.engine.ml_tuning import apply_calibrator
 
-        prob = float(apply_calibrator(calibrator, np.array([prob]))[0])
+            prob = float(apply_calibrator(calibrator, np.array([prob]))[0])
+        explains = _explain(model, day_feat, infer_names)
     probability = int(round(prob * 100))
-    explains = _explain(model, day_feat, infer_names)
+    evaluation = artifact.get("evaluation") or {}
+    holdout_metrics = evaluation.get("metrics") or {}
 
     factors = {
         "ml_model": FactorDetail(
@@ -478,7 +494,7 @@ def predict_day_cloudsea(
             label="ML 云海模型",
             description=(
                 f"基于 {artifact.get('n_days', '?')} 日有效标注训练"
-                f"（LOOCV {artifact.get('loocv_accuracy', 0):.0%}）"
+                f"（时间外平衡准确率 {holdout_metrics.get('balanced_accuracy', 0):.0%}）"
             ),
             value=f"P={probability}%",
             reference=artifact.get("version", "cloudsea_ml"),

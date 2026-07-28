@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>预测模型 · 云海日出预测</title>
-  <meta name="description" content="规则引擎 + ML v7 混合预测：precursor 12h、62 维特征、点位 LOOCV 与 Archetype 型态说明。" />
+  <meta name="description" content="规则引擎 + 受审点位 ML：精确历史运行、precursor 12h、时间外验证与安全 JSON。" />
   <link rel="canonical" href="https://yunhai.timkj.com/docs/prediction-model.html" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -39,41 +39,37 @@
   </nav>
   <main class="mx-auto max-w-5xl px-6 py-10 space-y-8">
     <h1 class="text-3xl font-bold">预测模型说明</h1>
-    <p class="text-slate-600">本系统采用 <strong>规则引擎（fuzzy v2 + Archetype）</strong> 与 <strong>标注驱动 ML v7</strong> 的混合架构：日出窗口 03:00–07:00 由两者按点位权重融合给出云海概率，同时保留完整气象因子与底层观测。2026-06 起线上默认使用 v7 点位模型。详见 <a href="release-notes.html">更新说明</a>。</p>
+    <p class="text-slate-600">本系统采用 <strong>规则引擎（fuzzy v2 + Archetype）</strong> 与 <strong>受审点位 ML</strong> 的混合架构：日出窗口 03:00–07:00 由两者按点位权重融合给出云海概率，同时保留完整气象因子与底层观测。2026-07 起五女山点将台启用可审计 operational 模型；其他点位未通过门禁时继续使用规则引擎。</p>
 
     <div class="tip">
       <strong>三层因子展示：</strong>① 模型层（ML 概率、规则参考、融合权重）② 规则层（加权评分因子，驱动雷达图）③ 观测层（分层云量、垂直场、云海型态等，不参与加权，供专业解读）。
     </div>
 
     <section class="glass">
-      <h2 class="text-lg font-semibold text-violet-600 mb-3"><span class="badge">当前线上</span> ML v7 · precursor 混合预测</h2>
+      <h2 class="text-lg font-semibold text-violet-600 mb-3"><span class="badge">当前线上</span> Operational Logistic v1 · precursor 混合预测</h2>
       <table>
         <tr><th>项目</th><th>说明</th></tr>
-        <tr><td>启用时段</td><td>当地 03:00–07:00，且该观景点有效标注 ≥30 天且存在点位 <code>spot_*.pkl</code></td></tr>
-        <tr><td>算法</td><td>Logistic 回归 + StandardScaler + 概率校准，class_weight=balanced；增强训练（C/阈值/特征 L1）</td></tr>
-        <tr><td>训练样本</td><td>SQLite <code>cloudsea_labels</code>（full / partial / none）；日出窗有降水日排除</td></tr>
+        <tr><td>启用时段</td><td>当地 03:00–07:00；点位有效标注 ≥30 天，且只读 <code>spot_*.json</code> 通过来源、结构与质量门禁</td></tr>
+        <tr><td>算法</td><td>固定 C=0.1 的 Logistic 回归 + StandardScaler；仅用训练期时间顺序 OOF 预测做 Platt 概率校准与阈值选择</td></tr>
+        <tr><td>训练样本</td><td>五女山 72 个可重建标注日（22 有 / 50 无）；不使用事后实况替代当时预报</td></tr>
+        <tr><td>气象来源</td><td>决策截点 D-1 18:00 前已发布的 ECMWF IFS HRES 00Z <strong>Single Run</strong></td></tr>
         <tr><td>气象窗</td><td><strong>precursor 12h</strong>：D-1 20:00–23:00 + D 00:00–07:00（推理与训练对齐）</td></tr>
-        <tr><td>特征</td><td><strong>62 维</strong> = v6 日出窗 43 维 + evening/night/趋势 19 维（如 <code>delta_rh_night_to_dawn</code>）</td></tr>
-        <tr><td>LOOCV（operational）</td>
-          <td>
-            五女山点将台 <strong>85.5%</strong>（55 日，AUC 0.884）· 较 v6 <strong>+4.0 pp</strong><br/>
-            东灵山峰顶 <strong>75.0%</strong>（36 日，2026-06 首次 v7 上线）
-          </td>
-        </tr>
+        <tr><td>特征</td><td><strong>14 维</strong>跨年份稳定地面特征：分层云量、能见度、湿度、风、降水、前夜状态、跨段变化与季节项</td></tr>
+        <tr><td>时间外验证</td><td>最后 15 天完全隔离（5 有 / 10 无）：融合模型平衡准确率 <strong>65%</strong>、召回率 <strong>100%</strong>、Brier <strong>0.209</strong>；规则基线为 50%、60%、0.250</td></tr>
         <tr><td>融合权重</td><td>五女山默认 ML <strong>65%</strong>；其他内置景区 <strong>60%</strong>；近库水体雾或低能见度谷地雾时降至 <strong>40–50%</strong></td></tr>
-        <tr><td>模型文件</td><td><code>data/cloudsea/models/spot_{spot}_{viewpoint}.pkl</code></td></tr>
+        <tr><td>模型文件</td><td><code>data/cloudsea/models/spot_{spot}_{viewpoint}.json</code>；不反序列化 Pickle</td></tr>
       </table>
-      <p class="mt-3 text-xs text-slate-500">训练：<code>scripts/train_cloudsea_model.py --window v7 --mode operational --enhanced</code></p>
+      <p class="mt-3 text-xs text-slate-500">训练：<code>scripts/train_operational_model.py</code>；Admin 仅生成候选，生产模型随不可变镜像审查发布。</p>
     </section>
 
     <section class="glass">
-      <h2 class="text-lg font-semibold text-sky-600 mb-3">v7 相对 v6 为何更准？</h2>
-      <p class="text-sm text-slate-600 mb-3">v6 仅聚合日出 03–07 点场；v7 额外利用<strong>前夜湿度与低云演变</strong>，对「预报仍湿、实况已干」类虚高 case 更敏感：</p>
+      <h2 class="text-lg font-semibold text-sky-600 mb-3">为什么保留 precursor、但收敛到 14 维？</h2>
+      <p class="text-sm text-slate-600 mb-3">前夜湿度与低云演变仍然重要；但高空层在长期 Single Run 存档中并不完整，地形常量在单点模型中也没有区分力。当前版本只保留训练与线上都稳定可得的信号，降低 72 天小样本上的过拟合风险：</p>
       <table>
         <tr><th>信号</th><th>示例特征</th><th>作用</th></tr>
         <tr><td>傍晚段</td><td><code>evening_rh_mean</code>, <code>evening_cloud_low_mean</code></td><td>前夜水汽是否已经建立</td></tr>
-        <tr><td>夜间段</td><td><code>night_rh_mean</code>, <code>night_inversion_mean</code></td><td>夜间维持 / 消散趋势</td></tr>
-        <tr><td>跨段趋势</td><td><code>delta_rh_night_to_dawn</code>, <code>rh_monotonic_night</code></td><td>night→dawn 是否「预报升、实况降」</td></tr>
+        <tr><td>夜间段</td><td><code>night_rh_mean</code>, <code>night_cloud_low_mean</code></td><td>夜间维持 / 消散趋势</td></tr>
+        <tr><td>跨段趋势</td><td><code>delta_rh_night_to_dawn</code>, <code>delta_cloud_low_evening_to_dawn</code></td><td>night→dawn 水汽与层云变化</td></tr>
       </table>
     </section>
 

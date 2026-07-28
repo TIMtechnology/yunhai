@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 生产冒烟：验证健康、规则预测、安全响应头和匿名会话 Cookie
+# 生产冒烟：验证健康、ML 融合预测、安全响应头和匿名会话 Cookie
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -8,13 +8,17 @@ BASE="${SMOKE_BASE_URL:-https://yunhai.timkj.com}"
 echo "== 1. /health =="
 curl -sf "$BASE/health" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('status')=='ok', d; print('ok')"
 
-echo "== 2. 五女山规则预测 =="
+echo "== 2. 五女山 ML + 规则融合预测 =="
 curl -sf "$BASE/api/predict/wunvshan/viewpoint/dianjiangtai?hours=48" | python3 -c "
-import json,sys
+import json,os,sys
 d=json.load(sys.stdin)
 ml=d.get('location',{}).get('ml_status',{})
 print('ml_active', ml.get('ml_active'), 'mode', ml.get('mode'))
-assert not ml.get('ml_active'), ml
+expected=os.environ.get('SMOKE_EXPECT_ML_ACTIVE','true').lower() in ('1','true','yes')
+assert bool(ml.get('ml_active')) is expected, ml
+if expected:
+    assert ml.get('mode') == 'wunvshan_model', ml
+    assert ml.get('has_spot_model'), ml
 days=d.get('days') or []
 assert days, 'no days'
 print('predict ok, days', len(days))

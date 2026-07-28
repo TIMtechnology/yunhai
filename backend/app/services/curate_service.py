@@ -12,7 +12,10 @@ from app.models.schemas import ScenicSpot, Viewpoint
 from app.services.community_store import get_community_location
 from app.services.spot_loader import reload_spots
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_APP_ROOT = Path(__file__).resolve().parents[2]
+_PROJECT_ROOT = (
+    _APP_ROOT.parent if (_APP_ROOT.parent / "scripts").is_dir() else _APP_ROOT
+)
 
 
 def _slugify(name: str) -> str:
@@ -170,14 +173,33 @@ def run_model_training(
     *,
     db_path: Optional[str] = None,
     output_path: Optional[str] = None,
+    spot_id: str = "wunvshan",
+    viewpoint_id: str = "dianjiangtai",
 ) -> dict[str, Any]:
     db = db_path or settings.cloudsea_db_path
     db_parent = Path(db).resolve().parent
-    out = output_path or str(db_parent / "models" / "cloudsea_ml_v3.pkl")
+    safe_name = f"spot_{spot_id}_{viewpoint_id}".replace("/", "_")
+    out = output_path or str(db_parent / "models" / "candidates" / f"{safe_name}.json")
+    report = str(Path(out).with_suffix(".evaluation.json"))
     Path(out).parent.mkdir(parents=True, exist_ok=True)
-    script = _PROJECT_ROOT / "scripts" / "train_cloudsea_model.py"
+    script = _PROJECT_ROOT / "scripts" / "train_operational_model.py"
+    if not script.is_file():
+        raise RuntimeError("受审训练脚本未包含在当前镜像中，不能生成候选模型")
     proc = subprocess.run(
-        [sys.executable, str(script), "--db", db, "--output", out, "--approved-only"],
+        [
+            sys.executable,
+            str(script),
+            "--db",
+            db,
+            "--spot-id",
+            spot_id,
+            "--viewpoint-id",
+            viewpoint_id,
+            "--output",
+            out,
+            "--report",
+            report,
+        ],
         capture_output=True,
         text=True,
         timeout=600,
@@ -185,16 +207,26 @@ def run_model_training(
     )
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr or proc.stdout or "训练失败")
-    metrics: dict[str, Any] = {"stdout": proc.stdout[-4000:]}
-    for line in proc.stdout.splitlines():
-        if line.startswith("loocv_accuracy:"):
-            metrics["loocv_accuracy"] = float(line.split(":")[1].strip())
-        if "模型已保存" in line:
-            metrics["output"] = out
-    loocv = float(metrics.get("loocv_accuracy", 0))
-    if loocv < settings.cloudsea_model_min_loocv:
-        metrics["deploy_recommended"] = False
-        metrics["reason"] = f"LOOCV {loocv:.3f} 低于门槛 {settings.cloudsea_model_min_loocv}"
-    else:
-        metrics["deploy_recommended"] = True
-    return metrics
+    from app.engine.operational_ml import ArtifactValidationError, load_safe_artifact
+
+    try:
+        artifact = load_safe_artifact(
+            Path(out),
+            expected_spot_id=spot_id,
+            expected_viewpoint_id=viewpoint_id,
+        )
+    except ArtifactValidationError as exc:
+        raise RuntimeError(f"候选模型未通过安全与质量校验：{exc}") from exc
+    evaluation = artifact["evaluation"]
+    return {
+        "status": "candidate_ready",
+        "deploy_recommended": True,
+        "reason": "候选已通过时间外评估；生产采用不可变镜像，需代码审查并随新版本发布",
+        "holdout_balanced_accuracy": evaluation["metrics"]["balanced_accuracy"],
+        "holdout_recall": evaluation["metrics"]["recall"],
+        "holdout_brier": evaluation["metrics"]["brier"],
+        "model_version": artifact["version"],
+        "trained_days": artifact["n_days"],
+        "output": out,
+        "evaluation_report": report,
+    }

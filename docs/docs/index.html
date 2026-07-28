@@ -62,7 +62,7 @@
     </div>
 
     <div class="tip text-sm">
-      <strong>2026-06 更新：</strong>线上 ML 已升级至 <strong>v7</strong>（precursor 12h · 62 维特征）。五女山 LOOCV <strong>85.5%</strong>（较 v6 +4 pp）。详见 <a href="release-notes.html">更新说明</a>。
+      <strong>2026-07 更新：</strong>五女山上线可审计 operational ML（精确 ECMWF 00Z 历史运行 · 14 个稳定特征 · 安全 JSON）。最后 15 天时间外平衡准确率 <strong>65%</strong>，规则基线 <strong>50%</strong>。详见 <a href="release-notes.html">更新说明</a>。
     </div>
 
     <section class="glass p-6">
@@ -104,7 +104,7 @@
       <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
         <li>仅 <strong>approved</strong> 标注进入训练集</li>
         <li>单社区点 ≥1 天标注后自动「落库」为精选景区</li>
-        <li>当前线上为 <strong>ML v7</strong> 点位模型；重训后热补丁部署 pkl 即可生效</li>
+        <li>五女山当前启用受审点位模型；Admin 只生成候选，审查通过后随不可变镜像发布</li>
         <li>Admin 面板可对比「用户当时看到的预报」与现场标注结果</li>
       </ul>
     </section>
@@ -138,7 +138,7 @@
     <section class="grid md:grid-cols-2 gap-4">
       <div class="glass p-5">
         <h3 class="text-sky-600 font-semibold mb-2">云海概率</h3>
-        <p class="text-sm text-slate-600">日出窗口 03:00–07:00 由 <strong>规则引擎 + ML v7</strong> 按点位权重融合（五女山约 65% ML / 35% 规则；precursor 12h 特征；近库水体雾场景会降 ML 权重）。详见 <a href="prediction-model.html">预测模型</a> · <a href="release-notes.html">更新说明</a>。</p>
+        <p class="text-sm text-slate-600">日出窗口 03:00–07:00 在五女山由 <strong>规则引擎 + 受审 ML</strong> 按点位权重融合（约 65% ML / 35% 规则；precursor 12h 特征；近库水体雾场景会降 ML 权重）；其他点位未通过门禁时仅使用规则。详见 <a href="prediction-model.html">预测模型</a> · <a href="release-notes.html">更新说明</a>。</p>
       </div>
       <div class="glass p-5">
         <h3 class="text-orange-500 font-semibold mb-2">日出概率</h3>

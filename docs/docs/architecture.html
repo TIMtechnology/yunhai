@@ -94,11 +94,11 @@ Open-Meteo 主站不可达时 → Historical Forecast API 回退</pre>
       <h2>标注 · ML · 预测反馈闭环</h2>
       <pre>label.html 人工标注
     ↓
-cloudsea.db (SQLite 持久化卷)
+cloudsea.db 副本 + 精确 ECMWF Single Runs
     ↓
-backfill_meteo_hourly → train_cloudsea_model (--window v7)
+backfill_forecast_archive → train_operational_model
     ↓
-spot 模型 pkl → Docker 镜像 / 热补丁
+时间外门禁 + 安全 JSON → 受审不可变 Docker 镜像
     ↓
 线上 03–07 融合预测
     ↓
