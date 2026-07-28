@@ -37,7 +37,6 @@ def cache_status() -> dict[str, Any]:
     backend = "redis" if cache_ping() else "memory"
     return {
         "backend": backend,
-        "redis_url": settings.redis_url if backend == "redis" else None,
         "memory_entries": len(_memory_cache),
     }
 

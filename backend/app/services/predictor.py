@@ -55,10 +55,31 @@ from app.models.schemas import (
 )
 from app.config import settings
 from app.services.cache import cache_get, cache_set
-from app.services.spot_loader import get_spot
+from app.services.prediction_freeze import freeze_probability
+from app.services.spot_loader import get_spot, get_viewpoint
 
 TZ = ZoneInfo("Asia/Shanghai")
 SUNRISE_WINDOW_END_HOUR = 7
+
+
+def canonicalize_predict_request(req: PredictRequest) -> PredictRequest:
+    """Replace client-supplied curated location fields with the server-owned record."""
+    if not req.spot_id or not req.viewpoint_id:
+        return req
+
+    spot = get_spot(req.spot_id)
+    viewpoint = get_viewpoint(req.spot_id, req.viewpoint_id)
+    if not spot or not viewpoint:
+        raise ValueError("curated viewpoint not found")
+    return req.model_copy(
+        update={
+            "lat": viewpoint.lat,
+            "lng": viewpoint.lng,
+            "elevation": viewpoint.elevation,
+            "name": f"{spot.name} · {viewpoint.name}",
+            "coord_sys": spot.coord_sys,
+        }
+    )
 
 
 def _sunrise_window_retrospective(
@@ -532,8 +553,6 @@ def build_predictions_from_hourly(
         retrospective = _sunrise_window_retrospective(
             now=now, hour_time=t, local_hour=local_hour
         )
-        frozen_probs: dict[str, int] = terrain_ctx.setdefault("sunrise_frozen_probs", {})
-
         cloud_base = estimate_cloud_base(temp, dew)
         cloud_top_est = estimate_cloud_top_m(cloud_base, low, mid)
         sun_az = (
@@ -695,26 +714,32 @@ def build_predictions_from_hourly(
                 )
 
         if retrospective and 3 <= local_hour < SUNRISE_WINDOW_END_HOUR:
-            if t_str in frozen_probs:
-                frozen_p = frozen_probs[t_str]
-                cloudsea = PredictionScore(
-                    probability=frozen_p,
-                    grade=grade_from_probability(frozen_p),
-                    factors={
-                        **cloudsea.factors,
-                        "retrospective_freeze": FactorDetail(
-                            score=1.0,
-                            weight=0.0,
-                            label="日出窗已结束",
-                            description="该时刻概率已冻结，避免能见度实况修正导致回弹",
-                            value=f"冻结 P={frozen_p}%",
-                            reference="product_v202606",
-                        ),
-                    },
-                    cloud_base_m=cloudsea.cloud_base_m,
-                )
-            else:
-                frozen_probs[t_str] = cloudsea.probability
+            location_identity = (
+                f"{req.spot_id}:{req.viewpoint_id}"
+                if req.spot_id and req.viewpoint_id
+                else f"{wlat:.4f}:{wlng:.4f}"
+            )
+            frozen_p = freeze_probability(
+                location_identity,
+                t_str,
+                cloudsea.probability,
+            )
+            cloudsea = PredictionScore(
+                probability=frozen_p,
+                grade=grade_from_probability(frozen_p),
+                factors={
+                    **cloudsea.factors,
+                    "retrospective_freeze": FactorDetail(
+                        score=1.0,
+                        weight=0.0,
+                        label="日出窗已结束",
+                        description="该时刻概率已冻结，避免后续实况修正改写历史",
+                        value=f"冻结 P={frozen_p}%",
+                        reference="product_v202607",
+                    ),
+                },
+                cloud_base_m=cloudsea.cloud_base_m,
+            )
 
         if not (use_ml and ml_day_cache.get(day_key) is not None):
             cloudsea = PredictionScore(
@@ -850,18 +875,6 @@ def _build_response(
         forecast_meta=forecast_meta or {},
     )
 
-
-    return resp
-
-
-def _predict_cache_key(req: PredictRequest) -> str:
-    today = datetime.now(TZ).strftime("%Y-%m-%d")
-    spot = req.spot_id or "custom"
-    vp = req.viewpoint_id or f"{req.lat:.4f}:{req.lng:.4f}"
-    hours = req.hours or 120
-    return f"predict:v2:{spot}:{vp}:{hours}:{today}"
-
-
 async def run_prediction(
     req: PredictRequest,
     *,
@@ -869,12 +882,7 @@ async def run_prediction(
     client_id: str | None = None,
     snapshot_target_dates: list[str] | None = None,
 ) -> PredictResponse:
-    cache_key: str | None = None
-    if snapshot_target_dates is None:
-        cache_key = _predict_cache_key(req)
-        cached = cache_get(cache_key)
-        if cached:
-            return PredictResponse.model_validate(cached)
+    req = canonicalize_predict_request(req)
 
     wlat, wlng = _weather_lat_lng(req)
     elevation = req.elevation
@@ -963,12 +971,6 @@ async def run_prediction(
         data_source="live_forecast",
         snapshot_target_dates=snapshot_target_dates,
     )
-    if cache_key:
-        cache_set(
-            cache_key,
-            resp.model_dump(mode="json"),
-            ttl=settings.predict_response_cache_ttl,
-        )
     return resp
 
 
@@ -1235,4 +1237,3 @@ async def backtest_sunrise_peak(
     ttl = 600 if target_date >= today else 86400 * 7
     cache_set(cache_key, out, ttl=ttl)
     return out
-

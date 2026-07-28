@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+import hashlib
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -22,7 +23,8 @@ def _snapshot_key(sid: str) -> str:
 
 
 def _rate_key(ip: str) -> str:
-    return f"share:rate:{_now().strftime('%Y%m%d')}:{ip}"
+    digest = hashlib.sha256(ip.encode("utf-8")).hexdigest()[:24]
+    return f"share:rate:{_now().strftime('%Y%m%d')}:{digest}"
 
 
 def public_url(path: str) -> str:

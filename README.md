@@ -268,7 +268,7 @@ python3 scripts/export_prediction_feedback.py --spot-id wunvshan --viewpoint-id 
 git clone https://github.com/TIMtechnology/yunhai.git
 cd yunhai
 cp frontend/.env.example frontend/.env.local
-# 编辑 frontend/.env.local，填入 VITE_TIANDITU_KEY
+# 编辑 frontend/.env.local，填入 VITE_AMAP_KEY 与 VITE_AMAP_SECURITY
 ```
 
 ### 2. 本地开发
@@ -285,13 +285,16 @@ cd frontend && npm install && npm run dev
 # http://localhost:5173
 ```
 
-### 3. 启用云海 ML（可选）
+### 3. 评估云海 ML（实验性）
 
 ```bash
+# 只用于本地评估；生产默认规则引擎
 export CLOUDSEA_ML_ENABLED=true
-# 默认路径；实际按 spot 加载 spot_{spot}_{viewpoint}.pkl
-export CLOUDSEA_MODEL_PATH=../data/cloudsea/models/cloudsea_ml_v2.pkl
+# 实际按 spot 加载未纳入 Git 的 spot_{spot}_{viewpoint}.pkl
+export CLOUDSEA_MODEL_PATH=../data/cloudsea/models/cloudsea_candidate.pkl
 ```
+
+模型不得由发布脚本临时训练。候选模型必须使用 `operational` 气象输入，并通过时间外/月度验证、样本量与特征复杂度审查后，才能在单独的受审版本中晋级；当前生产保持 `CLOUDSEA_ML_ENABLED=false`。
 
 ### 4. Docker
 
@@ -320,7 +323,8 @@ docker compose -f docker-compose.prod.yml up -d
 | `GET` | `/api/share/{share_id}/og.png` | 横版 OG 预览图（动态渲染） |
 | `GET` | `/api/share/{share_id}/image.png` | 竖版长分享图（动态渲染） |
 | `GET` | `/s/{share_id}` | 公开分享页 |
-| `GET` | `/api/contribute/cloudsea/*` | 开放标注（Header: `X-Contributor-Id`） |
+| `POST` | `/api/contribute/session` | 创建服务端签名的匿名贡献会话（HttpOnly Cookie） |
+| `GET` | `/api/contribute/cloudsea/*` | 开放标注（匿名会话 Cookie） |
 | `GET` | `/api/prediction-feedback/history` | 某日历史预测访问与 forecast vs 实况（公开只读） |
 | `GET` | `/api/prediction-feedback/history/{id}` | 单次快照双轨曲线与分段差异（公开只读） |
 | `PATCH` | `/api/contribute/locations/{id}` | 编辑我的社区点位名称/坐标/海拔 |
@@ -352,17 +356,16 @@ python3 scripts/train_cloudsea_model.py \
 # data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl
 # data/cloudsea/models/spot_donglingshan_fengding.pkl
 
-# 4. 生产标准发版（镜像内含前端 + V7.1 代码 + ML 模型）
+# 4. 生产标准发版（规则引擎；含测试、审计、备份与自动回滚）
 cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次
-SKIP_TRAIN=1 bash scripts/release-prod.sh
-# 详见 internal/DEPLOY.md · 应急才用 hot-patch-prod.sh
+bash scripts/release-prod.sh
 
 # 5. 定时任务（气象 watcher + 预测回测，生产 crontab 见 internal/DEPLOY.md）
 bash scripts/run-scheduled-tasks.sh
 # 试跑：python3 scripts/watch_forecast_changes.py --dry-run --force
 ```
 
-**开放标注页**：https://yunhai.timkj.com/label.html（无需 Token，浏览器自动生成贡献 ID）
+**开放标注页**：https://yunhai.timkj.com/label.html（无需账号，服务端签发匿名会话 Cookie）
 
 **Admin**：审核 / 落库 / 重训见 [共建计划](#-日出云海预测模型--共建计划) · 操作细节 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
 

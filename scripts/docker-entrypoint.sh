@@ -7,27 +7,13 @@ DATA=/app/data/cloudsea
 STAMP_FILE="$DATA/.image_build_id"
 IMAGE_ID="$(cat /app/BUILD_ID 2>/dev/null || echo unknown)"
 
-mkdir -p "$DATA/models" "$DATA/curated-spots"
+mkdir -p "$DATA/curated-spots" /app/data/analytics /app/data/share-cache /app/data/share-assets
+chown -R yunhai:yunhai "$DATA" /app/data/analytics /app/data/share-cache /app/data/share-assets
 
 force_sync=0
 if [ ! -f "$STAMP_FILE" ] || [ "$(cat "$STAMP_FILE" 2>/dev/null || true)" != "$IMAGE_ID" ]; then
   force_sync=1
 fi
-
-sync_pkls() {
-  src_dir=$1
-  dest_dir=$2
-  [ -d "$src_dir" ] || return 0
-  mkdir -p "$dest_dir"
-  for f in "$src_dir"/*.pkl; do
-    [ -f "$f" ] || continue
-    dest="$dest_dir/$(basename "$f")"
-    if [ "$force_sync" = 1 ] || [ ! -f "$dest" ] || [ "$f" -nt "$dest" ]; then
-      cp "$f" "$dest"
-      echo "[entrypoint] model → $dest"
-    fi
-  done
-}
 
 sync_json_dir() {
   src_dir=$1
@@ -46,10 +32,10 @@ sync_json_dir() {
   done
 }
 
-sync_pkls "$BAKED/models" "$DATA/models"
 sync_json_dir "$BAKED/curated-spots" "$DATA/curated-spots"
 
 printf '%s' "$IMAGE_ID" > "$STAMP_FILE"
+chown -R yunhai:yunhai "$DATA"
 echo "[entrypoint] BUILD_ID=$IMAGE_ID force_sync=$force_sync"
 
-exec uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers "${UVICORN_WORKERS:-2}"
+exec gosu yunhai:yunhai uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers "${UVICORN_WORKERS:-2}"

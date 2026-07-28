@@ -1,38 +1,31 @@
 #!/usr/bin/env bash
-# 标准生产发版：构建镜像 → 上传 → compose 重启 → 冒烟测试
+# 标准生产发版：门禁 → 构建镜像 → 备份/上传 → compose 重启 → 冒烟测试
 # 用法：bash scripts/release-prod.sh
-#       SKIP_TRAIN=1 bash scripts/release-prod.sh   # 跳过训练，使用已有 .pkl
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "== 0. 可选：训练 ML v7 点位模型 =="
-if [[ "${SKIP_TRAIN:-0}" != "1" ]]; then
-  python3 scripts/train_cloudsea_model.py \
-    --db data/cloudsea/cloudsea.prod.db \
-    --spot-id wunvshan --viewpoint-id dianjiangtai \
-    --window v7 --mode oracle --enhanced --db-only
-  python3 scripts/train_cloudsea_model.py \
-    --db data/cloudsea/cloudsea.prod.db \
-    --spot-id donglingshan --viewpoint-id fengding \
-    --window v7 --mode oracle --enhanced --db-only
-else
-  echo "SKIP_TRAIN=1，使用 data/cloudsea/models/ 现有 .pkl"
+if [[ "$(git branch --show-current)" != "main" ]]; then
+  echo "错误: 生产发布只能从 main 分支执行" >&2
+  exit 1
+fi
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "错误: 工作区不干净，拒绝生产发布" >&2
+  exit 1
 fi
 
-for f in data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl data/cloudsea/models/spot_donglingshan_fengding.pkl; do
-  if [[ ! -f "$f" ]]; then
-    echo "错误: 缺少模型 $f（去掉 SKIP_TRAIN 或手动训练）" >&2
-    exit 1
-  fi
-done
+BUILD_ID="$(git rev-parse --short=12 HEAD)"
+TAR="yunhai-${BUILD_ID}-amd64.tar"
 
-echo "== 1. 构建 amd64 镜像 =="
-bash scripts/build-amd64.sh
+echo "== 0. 发布门禁 =="
+bash scripts/validate-release.sh
 
-echo "== 2. 部署到生产 =="
-bash scripts/deploy-prod.sh yunhai-amd64.tar
+echo "== 1. 构建 amd64 镜像 ${BUILD_ID} =="
+BUILD_ID="$BUILD_ID" OUTPUT_TAR="$TAR" bash scripts/build-amd64.sh
 
-echo "== 3. 冒烟测试 =="
+echo "== 2. 备份并部署到生产 =="
+bash scripts/deploy-prod.sh "$TAR"
+
+echo "== 3. 生产冒烟 =="
 bash scripts/smoke-prod.sh
 
 if [[ "${INSTALL_CRON:-1}" == "1" ]]; then

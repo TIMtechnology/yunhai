@@ -6,6 +6,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONTAINER="${YUNHAI_CONTAINER:-yunhai-yunhai-1}"
 DB="${CLOUDSEA_DB_PATH:-$ROOT/data/cloudsea/cloudsea.db}"
+LOCK_FILE="${YUNHAI_SCHEDULE_LOCK:-/tmp/yunhai-scheduled-tasks.lock}"
+
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$LOCK_FILE"
+  if ! flock -n 9; then
+    echo "[$(date '+%F %T')] another scheduled run is active; skip"
+    exit 0
+  fi
+fi
 
 run_in_container() {
   echo "[$(date '+%F %T')] watch + reconcile (docker:$CONTAINER)"

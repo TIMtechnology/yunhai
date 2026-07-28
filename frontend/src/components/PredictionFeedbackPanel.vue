@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import { init, type ECharts } from '../lib/echarts'
 import type { PredictionHistory, PredictionSnapshotDetail } from '../services/cloudseaLabel'
 import { fetchPredictionSnapshotDetail } from '../services/cloudseaLabel'
 
@@ -15,10 +15,10 @@ const rhChartRef = ref<HTMLElement | null>(null)
 const cloudChartRef = ref<HTMLElement | null>(null)
 const tempChartRef = ref<HTMLElement | null>(null)
 const spreadChartRef = ref<HTMLElement | null>(null)
-let rhChart: echarts.ECharts | null = null
-let cloudChart: echarts.ECharts | null = null
-let tempChart: echarts.ECharts | null = null
-let spreadChart: echarts.ECharts | null = null
+let rhChart: ECharts | null = null
+let cloudChart: ECharts | null = null
+let tempChart: ECharts | null = null
+let spreadChart: ECharts | null = null
 
 function formatAccessTime(iso: string) {
   const d = new Date(iso)
@@ -103,15 +103,15 @@ function lineSeries(name: string, data: Array<number | null>, color: string, das
 
 function renderDualChart(
   el: HTMLElement | null,
-  existing: echarts.ECharts | null,
+  existing: ECharts | null,
   title: [string, string],
   forecastData: Array<number | null>,
   actualData: Array<number | null>,
   colors: [string, string],
   yAxis?: { min?: number; max?: number; name?: string },
-): echarts.ECharts | null {
+): ECharts | null {
   if (!el) return existing
-  const chart = existing ?? echarts.init(el, undefined, { renderer: 'canvas' })
+  const chart = existing ?? init(el, undefined, { renderer: 'canvas' })
   const x = (detail.value?.curve_points ?? []).map((p) => p.label)
   chart.setOption({
     backgroundColor: 'transparent',

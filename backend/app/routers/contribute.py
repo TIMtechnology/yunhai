@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal, Optional
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -25,10 +25,15 @@ from app.services.community_store import (
     list_community_locations,
     resolve_or_create_location,
     update_community_location,
-    validate_contributor_id,
     validate_sunrise_quality,
 )
 from app.services.contribute_rate_limit import check_contribute_rate_limit
+from app.services.contributor_session import (
+    COOKIE_NAME,
+    issue_contributor_session,
+    verify_contributor_session,
+)
+from app.services.client_ip import client_ip_from_request
 from app.services.label_session import build_label_session_payload
 
 router = APIRouter(prefix="/api/contribute", tags=["contribute"])
@@ -42,28 +47,28 @@ class ContributeLabelBody(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     elevation: Optional[float] = None
-    name: Optional[str] = None
+    name: Optional[str] = Field(default=None, min_length=1, max_length=80)
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     status: str = Field(..., pattern=r"^(none|partial|full)$")
-    window_start: int = 3
-    window_end: int = 7
-    notes: str = ""
+    window_start: int = Field(default=3, ge=0, le=23)
+    window_end: int = Field(default=7, ge=1, le=24)
+    notes: str = Field(default="", max_length=1000)
     sunrise_quality: Optional[Literal["visible", "blocked", "unshootable"]] = None
 
 
 class UpdateLocationBody(BaseModel):
-    name: Optional[str] = None
-    lat: Optional[float] = None
-    lng: Optional[float] = None
-    elevation: Optional[float] = None
+    name: Optional[str] = Field(default=None, min_length=1, max_length=80)
+    lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    lng: Optional[float] = Field(default=None, ge=-180, le=180)
+    elevation: Optional[float] = Field(default=None, ge=-500, le=9000)
 
 
 class RegisterLocationBody(BaseModel):
-    name: str
-    lat: float
-    lng: float
-    elevation: Optional[float] = None
-    source: str = "poi"
+    name: str = Field(..., min_length=1, max_length=80)
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+    elevation: Optional[float] = Field(default=None, ge=-500, le=9000)
+    source: str = Field(default="poi", pattern=r"^(poi|map|manual)$")
 
 
 def _require_contribute_enabled() -> None:
@@ -71,27 +76,49 @@ def _require_contribute_enabled() -> None:
         raise HTTPException(status_code=404, detail="Not found")
 
 
-def get_contributor_id(x_contributor_id: str = Header(default="", alias="X-Contributor-Id")) -> str:
+def get_contributor_id(request: Request) -> str:
     _require_contribute_enabled()
     try:
-        validate_contributor_id(x_contributor_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return x_contributor_id
+        contributor_id = verify_contributor_session(request.cookies.get(COOKIE_NAME, ""))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=401, detail="贡献者会话无效，请刷新后重试") from exc
+    return contributor_id
+
+
+@router.post("/session")
+async def contributor_session(request: Request, response: Response):
+    _require_contribute_enabled()
+    token = request.cookies.get(COOKIE_NAME, "")
+    contributor_id: str | None = None
+    if token:
+        try:
+            contributor_id = verify_contributor_session(token)
+        except (RuntimeError, ValueError):
+            contributor_id = None
+    if contributor_id is None:
+        try:
+            contributor_id, token = issue_contributor_session()
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail="贡献服务会话配置不可用") from exc
+        response.set_cookie(
+            COOKIE_NAME,
+            token,
+            max_age=max(int(settings.contributor_session_days), 1) * 86400,
+            httponly=True,
+            secure=settings.contributor_cookie_secure,
+            samesite="lax",
+            path="/api/contribute",
+        )
+    return {"contributor_id": contributor_id}
 
 
 def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    if request.client:
-        return request.client.host
-    return ""
+    return client_ip_from_request(request, settings.trusted_proxy_cidrs)
 
 
 async def _rate_limit_write(request: Request) -> None:
-    contributor_id = request.headers.get("x-contributor-id", "").strip()
-    bucket_key = contributor_id or _client_ip(request)
+    contributor_id = get_contributor_id(request)
+    bucket_key = f"{contributor_id}:{_client_ip(request)}"
     try:
         check_contribute_rate_limit(bucket_key)
     except PermissionError as exc:
@@ -357,6 +384,7 @@ async def contribute_save_label(
         location_name=location_name,
         review_status=review_status,
         sunrise_quality=body.sunrise_quality,
+        actor_contributor_id=contributor_id,
     )
     curated = None
     if location_id and review_status == "approved":

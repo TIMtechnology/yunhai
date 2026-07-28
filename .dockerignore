@@ -4,8 +4,16 @@
 **/node_modules
 **/__pycache__
 **/*.pyc
-.env
+**/.env
+**/.env.*
 .DS_Store
 frontend/dist
 backend/.venv
 agent-transcripts
+scripts/deploy.local.env
+**/*.db
+**/*.db-*
+**/*.sqlite
+**/*.sqlite-*
+data/cloudsea/models
+*.tar

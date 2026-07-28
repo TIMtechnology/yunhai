@@ -693,7 +693,13 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
         <div class="flex flex-wrap items-end gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
           <div>
             <div class="mb-1 text-xs text-slate-400">Admin Token</div>
-            <n-input v-model:value="token" type="password" placeholder="X-Cloudsea-Token" style="width: 260px" />
+            <n-input
+              v-model:value="token"
+              type="password"
+              placeholder="X-Cloudsea-Token"
+              style="width: 260px"
+              :input-props="{ name: 'cloudsea-admin-token' }"
+            />
           </div>
           <n-button @click="saveToken">保存 Token</n-button>
           <div class="text-xs text-amber-400">Admin 模式：审核社区贡献、重训模型、管理精选落库</div>
@@ -707,6 +713,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
           <div class="mb-1 text-xs text-slate-400">点位类型</div>
           <n-radio-group
             :value="locationMode"
+            name="location-mode"
             size="small"
             @update:value="onLocationModeChange"
           >
@@ -724,6 +731,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               placeholder="选择景区"
               :options="spotOptions"
               style="width: 200px"
+              :input-props="{ name: 'spot-id' }"
             />
           </div>
           <div>
@@ -734,6 +742,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               placeholder="选择观景点"
               :options="viewpointOptions"
               style="width: 180px"
+              :input-props="{ name: 'viewpoint-id' }"
             />
           </div>
         </template>
@@ -753,6 +762,7 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
               placeholder="选择社区精选或我的点位"
               :options="communityOptions"
               style="width: 280px"
+              :input-props="{ name: 'community-location-id' }"
             />
             <div v-if="curatedCommunityLocations.length" class="mt-1 text-[10px] text-slate-500">
               「社区精选」为其他人贡献并已同步的点位；「我的点位」仅本浏览器贡献过的坐标
@@ -771,19 +781,39 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
           <div class="flex flex-wrap items-end gap-2">
             <div>
               <div class="mb-1 text-[10px] text-slate-500">名称</div>
-              <n-input v-model:value="editLocName" style="width: 160px" />
+              <n-input
+                v-model:value="editLocName"
+                style="width: 160px"
+                :input-props="{ name: 'location-name' }"
+              />
             </div>
             <div>
               <div class="mb-1 text-[10px] text-slate-500">纬度</div>
-              <n-input-number v-model:value="editLocLat" :step="0.0001" style="width: 130px" />
+              <n-input-number
+                v-model:value="editLocLat"
+                :step="0.0001"
+                style="width: 130px"
+                :input-props="{ name: 'location-latitude' }"
+              />
             </div>
             <div>
               <div class="mb-1 text-[10px] text-slate-500">经度</div>
-              <n-input-number v-model:value="editLocLng" :step="0.0001" style="width: 130px" />
+              <n-input-number
+                v-model:value="editLocLng"
+                :step="0.0001"
+                style="width: 130px"
+                :input-props="{ name: 'location-longitude' }"
+              />
             </div>
             <div>
               <div class="mb-1 text-[10px] text-slate-500">海拔 m</div>
-              <n-input-number v-model:value="editLocElev" :step="1" clearable style="width: 110px" />
+              <n-input-number
+                v-model:value="editLocElev"
+                :step="1"
+                clearable
+                style="width: 110px"
+                :input-props="{ name: 'location-elevation' }"
+              />
             </div>
             <n-button type="primary" size="small" :loading="savingLocation" @click="saveLocationEdit">
               保存点位
@@ -793,7 +823,12 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
 
         <div class="flex items-center gap-2">
           <n-button @click="shiftDate(-1)">◀</n-button>
-          <n-date-picker v-model:formatted-value="currentDate" value-format="yyyy-MM-dd" type="date" />
+          <n-date-picker
+            v-model:formatted-value="currentDate"
+            value-format="yyyy-MM-dd"
+            type="date"
+            :input-props="{ name: 'label-date' }"
+          />
           <n-button @click="shiftDate(1)">▶</n-button>
         </div>
 
@@ -865,7 +900,14 @@ onMounted(() => window.addEventListener('keydown', onKeydown))
                   </div>
                 </div>
               </div>
-              <n-input v-model:value="notes" type="textarea" placeholder="备注（可选）" :rows="2" class="mb-4" />
+              <n-input
+                v-model:value="notes"
+                type="textarea"
+                placeholder="备注（可选）"
+                :rows="2"
+                class="mb-4"
+                :input-props="{ name: 'observation-notes' }"
+              />
               <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead class="text-slate-400">

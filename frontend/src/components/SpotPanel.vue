@@ -51,6 +51,7 @@ const hasSearchResults = computed(
         placeholder="搜索景区或 POI，如：云台山、大黑山"
         clearable
         size="small"
+        :input-props="{ name: 'spot-search' }"
       />
       <div class="mt-1.5 text-[10px] text-slate-500">
         支持高德 POI 与精选观景点；POI 结果带绿色「高德」标签

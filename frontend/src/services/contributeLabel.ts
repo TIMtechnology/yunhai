@@ -1,4 +1,4 @@
-import { contributorHeaders } from './contributor'
+import { contributorHeaders, ensureContributorSession } from './contributor'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
@@ -111,16 +111,20 @@ async function parseError(resp: Response): Promise<string> {
 }
 
 export async function fetchContributorStats(): Promise<ContributorStats> {
+  await ensureContributorSession()
   const resp = await fetch(`${API_BASE}/api/contribute/cloudsea/stats`, {
     headers: contributorHeaders(),
+    credentials: 'include',
   })
   if (!resp.ok) throw new Error(await parseError(resp))
   return resp.json()
 }
 
 export async function fetchMyLocations(): Promise<CommunityLocation[]> {
+  await ensureContributorSession()
   const resp = await fetch(`${API_BASE}/api/contribute/locations/mine`, {
     headers: contributorHeaders(),
+    credentials: 'include',
   })
   if (!resp.ok) throw new Error(await parseError(resp))
   const data = await resp.json()
@@ -144,9 +148,11 @@ export async function updateCommunityLocation(
   locationId: string,
   body: { name?: string; lat?: number; lng?: number; elevation?: number | null },
 ): Promise<CommunityLocation> {
+  await ensureContributorSession()
   const resp = await fetch(`${API_BASE}/api/contribute/locations/${locationId}`, {
     method: 'PATCH',
     headers: contributorHeaders(),
+    credentials: 'include',
     body: JSON.stringify(body),
   })
   if (!resp.ok) throw new Error(await parseError(resp))
@@ -164,6 +170,7 @@ export async function fetchContributeLabelSession(params: {
   elevation?: number
   date: string
 }): Promise<LabelSession> {
+  await ensureContributorSession()
   const q = new URLSearchParams({ date: params.date })
   if (params.locationId) q.set('location_id', params.locationId)
   else if (params.lat != null && params.lng != null) {
@@ -177,6 +184,7 @@ export async function fetchContributeLabelSession(params: {
   }
   const resp = await fetch(`${API_BASE}/api/contribute/cloudsea/label-session?${q}`, {
     headers: contributorHeaders(),
+    credentials: 'include',
   })
   if (!resp.ok) throw new Error(await parseError(resp))
   return resp.json()
@@ -195,9 +203,11 @@ export async function saveContributeLabel(body: {
   sunrise_quality?: SunriseQuality | null
   notes?: string
 }) {
+  await ensureContributorSession()
   const resp = await fetch(`${API_BASE}/api/contribute/cloudsea/labels`, {
     method: 'POST',
     headers: contributorHeaders(),
+    credentials: 'include',
     body: JSON.stringify(body),
   })
   if (!resp.ok) throw new Error(await parseError(resp))
@@ -210,6 +220,7 @@ export async function fetchContributeCalendar(params: {
   locationId?: string
   month: string
 }): Promise<CalendarEntry[]> {
+  await ensureContributorSession()
   const q = new URLSearchParams({ month: params.month })
   if (params.locationId) q.set('location_id', params.locationId)
   else if (params.spotId && params.viewpointId) {
@@ -218,6 +229,7 @@ export async function fetchContributeCalendar(params: {
   }
   const resp = await fetch(`${API_BASE}/api/contribute/cloudsea/calendar?${q}`, {
     headers: contributorHeaders(),
+    credentials: 'include',
   })
   if (!resp.ok) throw new Error(await parseError(resp))
   const data = await resp.json()

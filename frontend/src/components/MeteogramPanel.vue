@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import { init, type ECharts } from '../lib/echarts'
 import { useAppStore } from '../stores/app'
 import { fetchMeteoProfile, type MeteoProfileResponse } from '../services/api'
 
@@ -10,7 +10,7 @@ const loading = ref(false)
 const error = ref('')
 const profile = ref<MeteoProfileResponse | null>(null)
 const chartRef = ref<HTMLElement | null>(null)
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
 
 const day = computed(() => store.selectedDay)
 const loc = computed(() => store.prediction?.location)
@@ -51,7 +51,7 @@ function windArrow(deg?: number) {
 
 function renderChart() {
   if (!chartRef.value || !store.dayHours.length) return
-  if (!chart) chart = echarts.init(chartRef.value, undefined, { renderer: 'canvas' })
+  if (!chart) chart = init(chartRef.value, undefined, { renderer: 'canvas' })
 
   const hours = store.dayHours
   const x = labels.value

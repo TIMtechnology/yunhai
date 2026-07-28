@@ -17,6 +17,10 @@ if [[ -z "${VITE_AMAP_KEY}" ]] || [[ -z "${VITE_AMAP_SECURITY}" ]]; then
   exit 1
 fi
 
+BUILD_ID="${BUILD_ID:-$(git rev-parse --short=12 HEAD 2>/dev/null || date +%Y%m%d%H%M)}"
+IMAGE_TAG="yunhai:${BUILD_ID}"
+OUTPUT_TAR="${OUTPUT_TAR:-yunhai-${BUILD_ID}-amd64.tar}"
+
 docker build --platform linux/amd64 \
   --build-arg NODE_IMAGE=docker.1ms.run/library/node:20-alpine \
   --build-arg PYTHON_IMAGE=docker.1ms.run/library/python:3.12-slim \
@@ -24,9 +28,11 @@ docker build --platform linux/amd64 \
   --build-arg PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple \
   --build-arg VITE_AMAP_KEY="${VITE_AMAP_KEY}" \
   --build-arg VITE_AMAP_SECURITY="${VITE_AMAP_SECURITY}" \
-  --build-arg BUILD_ID="${BUILD_ID:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M)}" \
+  --build-arg BUILD_ID="${BUILD_ID}" \
+  -t "${IMAGE_TAG}" \
   -t yunhai:latest .
-docker save yunhai:latest -o yunhai-amd64.tar
-echo "镜像已保存: yunhai-amd64.tar ($(du -h yunhai-amd64.tar | cut -f1))"
+docker save "${IMAGE_TAG}" yunhai:latest -o "${OUTPUT_TAR}"
+echo "镜像已保存: ${OUTPUT_TAR} ($(du -h "${OUTPUT_TAR}" | cut -f1))"
+echo "不可变镜像标签: ${IMAGE_TAG}"
 echo "标准发版: bash scripts/release-prod.sh"
-echo "或分步: bash scripts/deploy-prod.sh yunhai-amd64.tar && bash scripts/smoke-prod.sh"
+echo "或分步: bash scripts/deploy-prod.sh ${OUTPUT_TAR} && bash scripts/smoke-prod.sh"
