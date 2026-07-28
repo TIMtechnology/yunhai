@@ -16,10 +16,17 @@ class Settings(BaseSettings):
     scenic_spots_dir: str = str(_PROJECT_ROOT / "data" / "scenic-spots")
     static_dir: str = ""
     cors_origins: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    allowed_hosts: List[str] = [
+        "localhost",
+        "127.0.0.1",
+        "testserver",
+        "yunhai.timkj.com",
+    ]
     analytics_enabled: bool = False
     analytics_admin_token: str = ""
     analytics_retention_days: int = 90
     analytics_db_path: str = str(_PROJECT_ROOT / "data" / "analytics" / "analytics.db")
+    analytics_ip_salt: str = ""
     cloudsea_enabled: bool = False
     cloudsea_admin_token: str = ""
     cloudsea_db_path: str = str(_PROJECT_ROOT / "data" / "cloudsea" / "cloudsea.db")
@@ -36,6 +43,17 @@ class Settings(BaseSettings):
     contributor_session_secret: str = ""
     contributor_session_days: int = 365
     contributor_cookie_secure: bool = False
+    trusted_proxy_cidrs: List[str] = [
+        "127.0.0.0/8",
+        "::1/128",
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+    ]
+    max_request_body_bytes: int = 2 * 1024 * 1024
+    api_rate_limit_per_minute: int = 180
+    expensive_rate_limit_per_minute: int = 30
+    contributor_session_rate_limit_per_hour: int = 10
     cloudsea_curated_spots_dir: str = ""
     cloudsea_train_min_approved: int = 30
     cloudsea_ml_min_labels_per_spot: int = 30

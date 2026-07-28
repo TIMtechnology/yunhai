@@ -33,6 +33,7 @@ from app.services.contributor_session import (
     issue_contributor_session,
     verify_contributor_session,
 )
+from app.services.client_ip import client_ip_from_request
 from app.services.label_session import build_label_session_payload
 
 router = APIRouter(prefix="/api/contribute", tags=["contribute"])
@@ -112,12 +113,7 @@ async def contributor_session(request: Request, response: Response):
 
 
 def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    if request.client:
-        return request.client.host
-    return ""
+    return client_ip_from_request(request, settings.trusted_proxy_cidrs)
 
 
 async def _rate_limit_write(request: Request) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import secrets
 from collections import defaultdict
 from typing import Any, Optional
 
@@ -47,7 +48,10 @@ def _require_analytics_enabled() -> None:
 
 def verify_admin_token(x_analytics_token: str = Header(default="")) -> None:
     _require_analytics_enabled()
-    if not settings.analytics_admin_token or x_analytics_token != settings.analytics_admin_token:
+    if not settings.analytics_admin_token or not secrets.compare_digest(
+        x_analytics_token,
+        settings.analytics_admin_token,
+    ):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 

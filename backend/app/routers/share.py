@@ -1,33 +1,37 @@
 from __future__ import annotations
 
-import json
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
+from app.models.schemas import PredictResponse
 from app.services.share_og_renderer import render_share_image, render_share_og
 from app.services.share_store import create_share_snapshot, get_share_snapshot
+from app.services.client_ip import client_ip_from_request
+from app.config import settings
 
 router = APIRouter(tags=["share"])
 
 
 class ShareSnapshotRequest(BaseModel):
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
-    prediction: dict
+    prediction: PredictResponse
     include_ai: bool = False
-    ai_brief: str | None = None
-    privacy: str = "hide_coords"
+    ai_brief: str | None = Field(default=None, max_length=2000)
+    privacy: Literal["hide_coords", "show_coords"] = "hide_coords"
 
 
 @router.post("/api/share/snapshot")
 async def create_snapshot(body: ShareSnapshotRequest, request: Request):
-    if not body.prediction.get("hours"):
+    prediction = body.prediction.model_dump(mode="json")
+    if not prediction.get("hours"):
         raise HTTPException(status_code=400, detail="prediction 缺少 hours")
-    ip = request.client.host if request.client else "unknown"
+    ip = client_ip_from_request(request, settings.trusted_proxy_cidrs)
     try:
         snap = create_share_snapshot(
-            prediction=body.prediction,
+            prediction=prediction,
             date_key=body.date,
             include_ai=body.include_ai,
             ai_brief=body.ai_brief,
@@ -75,6 +79,7 @@ def _escape(s: object) -> str:
         .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace('"', "&quot;")
+        .replace("'", "&#x27;")
     )
 
 
@@ -88,9 +93,25 @@ async def share_page(share_id: str):
     scores = snap.get("scores") or {}
     title = f"{loc.get('display_name') or '云海日出'} {target.get('date') or ''} {scores.get('verdict') or ''}".strip()
     desc = f"云海 {scores.get('cloudsea_prob_pct') or '—'}% · 日出 {scores.get('sunrise_prob_pct') or '—'}% · 综合 {scores.get('combined_score') or '—'}"
-    snap_json = json.dumps(snap, ensure_ascii=False)
     image_url = f"/api/share/{share_id}/image.png"
-    return f"""<!doctype html>
+    evidence = snap.get("evidence") or {}
+    rows_html = "".join(
+        "<tr>"
+        f"<td>{_escape(row.get('time'))}</td>"
+        f"<td>{_escape(row.get('cloudsea_pct', '—'))}%</td>"
+        f"<td>{_escape(row.get('sunrise_pct', '—'))}%</td>"
+        f"<td>{_escape(row.get('temp_c', '—'))}℃</td>"
+        f"<td>{_escape(row.get('rh_pct', '—'))}%</td>"
+        f"<td>{_escape(row.get('vis_km', '—'))}km</td>"
+        "</tr>"
+        for row in (evidence.get("hourly_evidence_table") or [])[:24]
+        if isinstance(row, dict)
+    )
+    hints_html = "".join(
+        f"<li>{_escape(hint)}</li>"
+        for hint in (evidence.get("meteo_analysis_hints") or [])[:12]
+    )
+    html = f"""<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -128,22 +149,15 @@ async def share_page(share_id: str):
     </section>
     <section class="card">
       <h2>依据</h2>
-      <table><thead><tr><th>时间</th><th>云海</th><th>日出</th><th>气温</th><th>湿度</th><th>能见度</th></tr></thead><tbody id="rows"></tbody></table>
+      <table><thead><tr><th>时间</th><th>云海</th><th>日出</th><th>气温</th><th>湿度</th><th>能见度</th></tr></thead><tbody>{rows_html}</tbody></table>
     </section>
     <section class="card">
       <h2>气象机理</h2>
-      <ul id="hints"></ul>
+      <ul>{hints_html}</ul>
       <p style="color:#94a3b8">AI 辅助解读，数值预测以系统为准，观赏受天气突变影响。</p>
       <p><a href="{_escape(image_url)}" target="_blank">打开分享图（可长按保存/转发）</a> · <a href="/">打开完整预测</a></p>
     </section>
   </main>
-  <script>
-  const snap = {snap_json};
-  const rows = (snap.evidence && snap.evidence.hourly_evidence_table || []).map(r =>
-    `<tr><td>${{r.time||''}}</td><td>${{r.cloudsea_pct??'—'}}%</td><td>${{r.sunrise_pct??'—'}}%</td><td>${{r.temp_c??'—'}}℃</td><td>${{r.rh_pct??'—'}}%</td><td>${{r.vis_km??'—'}}km</td></tr>`
-  ).join('');
-  document.getElementById('rows').innerHTML = rows;
-  document.getElementById('hints').innerHTML = (snap.evidence && snap.evidence.meteo_analysis_hints || []).map(h => `<li>${{h}}</li>`).join('');
-  </script>
 </body>
 </html>"""
+    return HTMLResponse(content=html)

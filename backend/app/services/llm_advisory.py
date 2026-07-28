@@ -561,7 +561,7 @@ async def generate_daily_brief(
         return {
             "enabled": True,
             "date": date_key,
-            "error": str(exc),
+            "error": "upstream_unavailable",
             "message": "大模型请求失败，请稍后重试",
             "context": context,
         }

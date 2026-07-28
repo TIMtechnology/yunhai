@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import secrets
 
 from datetime import date as date_cls
 from typing import Optional
@@ -67,12 +68,12 @@ def _admin_token() -> str:
 def verify_cloudsea_token(x_cloudsea_token: str = Header(default="")) -> None:
     _require_cloudsea_enabled()
     token = _admin_token()
-    if not token or x_cloudsea_token != token:
+    if not token or not secrets.compare_digest(x_cloudsea_token, token):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 def _cors_headers(origin: str | None) -> dict[str, str]:
-    if origin and (origin in DASHBOARD_ORIGINS or origin.endswith("yunhai.timkj.com")):
+    if origin and (origin in DASHBOARD_ORIGINS or origin in settings.cors_origins):
         return {
             "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Headers": "X-Cloudsea-Token, X-Contributor-Id, Content-Type",
@@ -353,7 +354,7 @@ async def cloudsea_prediction_history(
 ):
     from app.services.prediction_feedback import get_prediction_history
 
-    return get_prediction_history(spot_id, viewpoint_id, date)
+    return get_prediction_history(spot_id, viewpoint_id, date, auto_reconcile=True)
 
 
 @router.get("/api/internal/cloudsea/prediction-history/{access_log_id}")

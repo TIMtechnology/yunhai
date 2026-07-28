@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import settings
+from app.services.privacy import pseudonymize_ip
 
 _lock = threading.Lock()
 _conn: sqlite3.Connection | None = None
@@ -99,7 +100,7 @@ def insert_event(
             (
                 row_ts,
                 event_type,
-                ip,
+                pseudonymize_ip(ip),
                 referer,
                 channel,
                 browser,

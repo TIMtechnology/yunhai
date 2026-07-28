@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CloudRegion(BaseModel):
@@ -125,14 +125,16 @@ class BestWindow(BaseModel):
 
 
 class PredictRequest(BaseModel):
-    lat: float
-    lng: float
-    elevation: Optional[float] = None
-    name: str = "自定义位置"
-    spot_id: Optional[str] = None
-    viewpoint_id: Optional[str] = None
-    hours: int = 120
-    coord_sys: str = "GCJ-02"
+    model_config = ConfigDict(extra="forbid")
+
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+    elevation: Optional[float] = Field(default=None, ge=-500, le=9000)
+    name: str = Field(default="自定义位置", min_length=1, max_length=200)
+    spot_id: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    viewpoint_id: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    hours: int = Field(default=120, ge=1, le=120)
+    coord_sys: str = Field(default="GCJ-02", pattern=r"^(GCJ-02|WGS84)$")
 
 
 class PredictResponse(BaseModel):

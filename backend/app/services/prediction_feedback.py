@@ -607,7 +607,7 @@ def get_prediction_history(
     viewpoint_id: str,
     target_date: str,
     *,
-    auto_reconcile: bool = True,
+    auto_reconcile: bool = False,
 ) -> dict[str, Any]:
     label = get_label(spot_id, viewpoint_id, target_date, 3, 7)
     if auto_reconcile and label:
@@ -679,6 +679,27 @@ def get_prediction_history(
             "banner": banner,
         },
     }
+
+
+def get_public_prediction_history(
+    spot_id: str,
+    viewpoint_id: str,
+    target_date: str,
+) -> dict[str, Any]:
+    result = get_prediction_history(
+        spot_id,
+        viewpoint_id,
+        target_date,
+        auto_reconcile=False,
+    )
+    label = result.get("label")
+    if isinstance(label, dict):
+        result["label"] = {
+            key: label.get(key)
+            for key in ("status", "review_status", "sunrise_quality")
+            if label.get(key) is not None
+        }
+    return result
 
 
 def _row_wind(row: dict[str, Any] | None) -> float | None:
