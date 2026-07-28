@@ -35,4 +35,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self' data:; "
             "connect-src 'self' https://*.amap.com https://restapi.amap.com",
         )
+        if response.status_code == 200:
+            if request.url.path.startswith("/assets/"):
+                response.headers.setdefault(
+                    "Cache-Control",
+                    "public, max-age=31536000, immutable",
+                )
+            elif request.url.path in {"/", "/index.html", "/label.html"}:
+                response.headers.setdefault("Cache-Control", "no-cache")
         return response
