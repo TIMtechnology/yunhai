@@ -1,38 +1,45 @@
 #!/usr/bin/env bash
-# 生产冒烟：验证 health、ML、V7.1 代码特征（经 SSH 在容器内检查）
+# 生产冒烟：验证健康、规则预测、安全响应头和匿名会话 Cookie
 set -euo pipefail
 cd "$(dirname "$0")/.."
-# shellcheck source=lib/load-deploy-env.sh
-source "$(dirname "$0")/lib/load-deploy-env.sh"
 
 BASE="${SMOKE_BASE_URL:-https://yunhai.timkj.com}"
-SSH=(ssh -i "$YUNHAI_SSH_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
 
 echo "== 1. /health =="
 curl -sf "$BASE/health" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('status')=='ok', d; print('ok')"
 
-echo "== 2. 五女山 ML + 日出窗概率 =="
+echo "== 2. 五女山规则预测 =="
 curl -sf "$BASE/api/predict/wunvshan/viewpoint/dianjiangtai?hours=48" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
 ml=d.get('location',{}).get('ml_status',{})
 print('ml_active', ml.get('ml_active'), 'mode', ml.get('mode'))
-assert ml.get('ml_active'), ml.get('message')
+assert not ml.get('ml_active'), ml
 days=d.get('days') or []
 assert days, 'no days'
 print('predict ok, days', len(days))
 "
 
-echo "== 3. 容器内 V7.1 代码特征 =="
-"${SSH[@]}" "$YUNHAI_HOST" "docker exec ${YUNHAI_CONTAINER:-yunhai-yunhai-1} sh -c '
-  test \$(grep -c is_ground_fog_proxy /app/app/engine/cloudsea_scorer.py) -ge 1
-  test \$(grep -c supplement_precursor_rows /app/app/services/predictor.py) -ge 1
-  test \$(grep -c ground_fog_proxy /app/app/engine/cloudsea_features.py) -ge 1
-  wc -l /app/app/engine/cloudsea_scorer.py /app/app/services/predictor.py
-  python3 -c \"import pickle; p=pickle.load(open(\\\"/app/data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl\\\",\\\"rb\\\")); fn=p.get(\\\"feature_names\\\",[]); assert \\\"ground_fog_proxy\\\" in fn; print(\\\"model v7.1 features\\\", len(fn))\"
-'"
+echo "== 3. 安全响应头 =="
+curl -sS -D - -o /dev/null "$BASE/health" | python3 -c "
+import sys
+h=sys.stdin.read().lower()
+assert 'strict-transport-security:' in h, h
+assert 'content-security-policy:' in h, h
+assert 'x-content-type-options: nosniff' in h, h
+print('security headers ok')
+"
 
-echo "== 4. 社区精选 cs_* =="
+echo "== 4. 匿名贡献会话 Cookie =="
+curl -sS -D - -o /dev/null -X POST "$BASE/api/contribute/session" | python3 -c "
+import sys
+h=sys.stdin.read().lower()
+cookie=next((line for line in h.splitlines() if line.startswith('set-cookie:')), '')
+assert 'httponly' in cookie and 'secure' in cookie and 'samesite=lax' in cookie, cookie
+print('contributor cookie ok')
+"
+
+echo "== 5. 社区精选 cs_* =="
 curl -sf "$BASE/api/spots/search?q=&curated_only=true" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)

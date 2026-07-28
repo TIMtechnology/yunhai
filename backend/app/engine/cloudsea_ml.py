@@ -23,8 +23,17 @@ def _default_model_path() -> Path:
     return Path(settings.cloudsea_model_path)
 
 
+def _legacy_pickle_loading_enabled() -> bool:
+    return (
+        settings.cloudsea_ml_enabled
+        and settings.cloudsea_allow_legacy_pickle_models
+    )
+
+
 @lru_cache(maxsize=1)
 def load_default_artifact() -> dict | None:
+    if not _legacy_pickle_loading_enabled():
+        return None
     path = _default_model_path()
     if not path.is_file():
         return None
@@ -34,6 +43,8 @@ def load_default_artifact() -> dict | None:
 
 @lru_cache(maxsize=64)
 def load_spot_artifact(spot_id: str, viewpoint_id: str) -> dict | None:
+    if not _legacy_pickle_loading_enabled():
+        return None
     path = spot_model_path(spot_id, viewpoint_id)
     if path.is_file():
         with open(path, "rb") as f:
@@ -48,6 +59,14 @@ def ml_enabled() -> bool:
 
 
 def get_ml_status(spot_id: str | None, viewpoint_id: str | None) -> dict:
+    if not _legacy_pickle_loading_enabled():
+        return build_ml_status(
+            spot_id,
+            viewpoint_id,
+            has_spot_model=False,
+            model_trained_days=0,
+        )
+
     has_spot_model = False
     model_trained_days = 0
     if spot_id and viewpoint_id:

@@ -383,25 +383,17 @@ def _model_calibration_note(spot_id: str | None, viewpoint_id: str | None) -> di
         "total_labels": status.get("total_labels"),
         "message": status.get("message"),
     }
-    if status.get("has_spot_model"):
-        try:
-            import pickle
-            from pathlib import Path
+    if status.get("ml_active"):
+        from app.engine.cloudsea_ml import resolve_ml_artifact
 
-            from app.engine.ml_eligibility import spot_model_path
-
-            path = spot_model_path(spot_id, viewpoint_id)
-            if path.is_file():
-                with open(path, "rb") as f:
-                    art = pickle.load(f)
-                note["model_version"] = art.get("version")
-                note["loocv_accuracy"] = art.get("loocv_accuracy")
-                note["loocv_f1"] = art.get("loocv_f1")
-                note["n_training_days"] = art.get("n_days")
-                note["decision_threshold"] = art.get("decision_threshold")
-                note["tuning_c"] = art.get("tuning_c")
-        except Exception as exc:
-            note["artifact_error"] = str(exc)
+        art = resolve_ml_artifact(spot_id, viewpoint_id)
+        if art:
+            note["model_version"] = art.get("version")
+            note["loocv_accuracy"] = art.get("loocv_accuracy")
+            note["loocv_f1"] = art.get("loocv_f1")
+            note["n_training_days"] = art.get("n_days")
+            note["decision_threshold"] = art.get("decision_threshold")
+            note["tuning_c"] = art.get("tuning_c")
     return note
 
 

@@ -27,27 +27,38 @@ ARG BUILD_ID
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt -i "${PIP_INDEX}"
+COPY backend/requirements.lock .
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock -i "${PIP_INDEX}" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends gosu \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY backend/app ./app
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN groupadd --gid 10001 yunhai \
+    && useradd --uid 10001 --gid yunhai --no-create-home --shell /usr/sbin/nologin yunhai \
+    && chmod +x /app/docker-entrypoint.sh
 
 COPY data/scenic-spots ./data/scenic-spots
 COPY data/terrain ./data/terrain
-COPY data/cloudsea/models/spot_*.pkl ./baked/models/
 COPY data/cloudsea/curated-spots ./baked/curated-spots
 COPY --from=frontend-build /app/dist ./static
 
-RUN printf '%s\n' "${BUILD_ID}" > /app/BUILD_ID
+RUN mkdir -p /app/data/analytics /app/data/cloudsea /app/data/share-cache /app/data/share-assets \
+    && chown -R yunhai:yunhai /app/data \
+    && printf '%s\n' "${BUILD_ID}" > /app/BUILD_ID
 
 ENV SCENIC_SPOTS_DIR=/app/data/scenic-spots
 ENV TERRAIN_SNAPSHOTS_DIR=/app/data/terrain
 ENV STATIC_DIR=/app/static
 ENV TZ=Asia/Shanghai
 ENV UVICORN_WORKERS=2
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)" || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

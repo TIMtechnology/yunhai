@@ -2,7 +2,7 @@
 # 内含 LLM / 分享等密钥与挂载；禁止 cp 覆盖！发布请用 scripts/deploy-prod.sh
 services:
   redis:
-    image: docker.1ms.run/library/redis:7-alpine
+    image: docker.1ms.run/library/redis:8-alpine
     restart: unless-stopped
     command: redis-server --appendonly yes
     healthcheck:
@@ -17,7 +17,7 @@ services:
     image: yunhai:latest
     command: []  # 使用镜像 ENTRYPOINT（docker-entrypoint.sh → uvicorn）
     ports:
-      - "8088:8080"
+      - "127.0.0.1:8088:8080"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
@@ -34,8 +34,7 @@ services:
       - CLOUDSEA_ENABLED=true
       - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:?set in server environment}
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
-      - CLOUDSEA_ML_ENABLED=true
-      - CLOUDSEA_MODEL_PATH=/app/data/cloudsea/models/cloudsea_ml_v6.pkl
+      - CLOUDSEA_ML_ENABLED=false
       - CLOUDSEA_CONTRIBUTE_ENABLED=true
       - CLOUDSEA_COMMUNITY_AUTO_APPROVE=false
       - CLOUDSEA_CURATE_MIN_LABELS=3
@@ -52,6 +51,8 @@ services:
     volumes:
       - analytics_data:/app/data/analytics
       - cloudsea_data:/app/data/cloudsea
+      - share_assets_data:/app/data/share-assets
+      - share_cache_data:/app/data/share-cache
       # DEM 快照内嵌镜像 data/terrain，勿挂载空卷覆盖
       # 精选景区 JSON 使用镜像内嵌数据；勿挂载空目录，否则会覆盖导致 /api/spots/* 全部 404
       # 精选落库（curate）写入需配合部署脚本同步，见 scripts/sync-scenic-spots.sh
@@ -62,8 +63,19 @@ services:
       - 114.114.114.114
       - 8.8.8.8
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+    mem_limit: 2g
+    cpus: 2.0
 
 volumes:
   redis_data:
   analytics_data:
   cloudsea_data:
+  share_assets_data:
+  share_cache_data:

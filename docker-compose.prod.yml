@@ -1,7 +1,7 @@
 # 生产部署：单应用镜像 + Redis 缓存（Redis 仅容器内网，不暴露宿主机端口）
 services:
   redis:
-    image: docker.1ms.run/library/redis:7-alpine
+    image: docker.1ms.run/library/redis:8-alpine
     platform: linux/amd64
     restart: unless-stopped
     volumes:
@@ -10,30 +10,45 @@ services:
   yunhai:
     build:
       context: .
-      platform: linux/amd64
     image: yunhai:latest
     platform: linux/amd64
     ports:
-      - "8088:8080"
+      - "127.0.0.1:8088:8080"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - SCENIC_SPOTS_DIR=/app/data/scenic-spots
       - STATIC_DIR=/app/static
       - TZ=Asia/Shanghai
       - CLOUDSEA_ENABLED=true
-      - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:-}
+      - CORS_ORIGINS=["https://yunhai.timkj.com"]
+      - ALLOWED_HOSTS=["yunhai.timkj.com","localhost","127.0.0.1"]
+      - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:?set CLOUDSEA_ADMIN_TOKEN}
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
-      - CLOUDSEA_ML_ENABLED=true
-      - CLOUDSEA_MODEL_PATH=/app/data/cloudsea/models/cloudsea_ml_v6.pkl
+      - CLOUDSEA_ML_ENABLED=false
+      - CONTRIBUTOR_SESSION_SECRET=${CONTRIBUTOR_SESSION_SECRET:?set CONTRIBUTOR_SESSION_SECRET}
+      - CONTRIBUTOR_COOKIE_SECURE=true
     volumes:
+      - analytics_data:/app/data/analytics
       - cloudsea_data:/app/data/cloudsea
+      - share_assets_data:/app/data/share-assets
+      - share_cache_data:/app/data/share-cache
     depends_on:
       - redis
     dns:
       - 114.114.114.114
       - 8.8.8.8
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
 
 volumes:
   redis_data:
+  analytics_data:
   cloudsea_data:
+  share_assets_data:
+  share_cache_data:
