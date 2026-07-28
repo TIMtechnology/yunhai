@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -24,13 +25,29 @@ from app.services.terrain_store import preload_snapshots_to_cache
 _docs_url = None if settings.analytics_enabled else "/docs"
 _redoc_url = None if settings.analytics_enabled else "/redoc"
 _openapi_url = None if settings.analytics_enabled else "/openapi.json"
+_startup_baked_count = 0
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    global _startup_baked_count
+    load_spots()
+    _startup_baked_count = preload_snapshots_to_cache()
+    cache_ping()
+    if settings.analytics_enabled:
+        init_store()
+        purge_expired()
+    if settings.cloudsea_enabled:
+        init_cloudsea_store()
+    yield
 
 app = FastAPI(
     title="云海日出预测 API",
-    version="1.0.0",
+    version="2.0.0",
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     openapi_url=_openapi_url,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -62,22 +79,6 @@ app.include_router(share_router)
 app.include_router(analytics_router)
 app.include_router(cloudsea_router)
 app.include_router(contribute_router)
-
-_startup_baked_count = 0
-
-
-@app.on_event("startup")
-async def startup():
-    global _startup_baked_count
-    load_spots()
-    _startup_baked_count = preload_snapshots_to_cache()
-    cache_ping()
-    if settings.analytics_enabled:
-        init_store()
-        purge_expired()
-    if settings.cloudsea_enabled:
-        init_cloudsea_store()
-
 
 @app.get("/health")
 async def health():

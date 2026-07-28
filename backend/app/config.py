@@ -3,12 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
     tianditu_key: str = ""
     redis_url: str = "redis://localhost:6379/0"
     cache_ttl_seconds: int = 1800
@@ -82,13 +84,9 @@ class Settings(BaseSettings):
     apimart_api_key: str = ""
     share_og_use_image2: bool = True
 
-    # 预测路径：卫星校正默认关闭（GIBS 境外链路慢）；整页响应缓存
+    # 预测路径：卫星校正默认关闭（GIBS 境外链路慢）
     predict_satellite_enabled: bool = False
     predict_satellite_timeout_sec: float = 5.0
-    predict_response_cache_ttl: int = 1800
-
-    class Config:
-        env_file = ".env"
 
 
 settings = Settings()
