@@ -37,7 +37,10 @@ def test_security_headers_are_present() -> None:
     assert response.headers["strict-transport-security"].startswith("max-age=")
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
-    assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
+    csp = response.headers["content-security-policy"]
+    assert "frame-ancestors 'none'" in csp
+    assert "worker-src 'self' blob:" in csp
+    assert "'unsafe-eval'" not in csp
 
 
 def test_untrusted_host_is_rejected() -> None:

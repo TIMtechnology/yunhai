@@ -23,9 +23,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Content-Security-Policy",
             "default-src 'self'; "
             "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://webapi.amap.com https://*.amap.com; "
+            "script-src 'self' 'unsafe-inline' https://webapi.amap.com https://*.amap.com; "
+            "worker-src 'self' blob:; "
             "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: blob: https:; "
+            "img-src 'self' data: blob: https: http://webapi.amap.com; "
             "font-src 'self' data:; "
             "connect-src 'self' https://*.amap.com https://restapi.amap.com",
         )
