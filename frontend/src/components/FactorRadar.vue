@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import { init, type ECharts } from '../lib/echarts'
 import type { FactorDetail } from '../services/api'
 import { CLOUDSEA_COLOR, SUNRISE_COLOR } from '../config'
 
@@ -15,7 +15,7 @@ const props = withDefaults(
 )
 
 const chartRef = ref<HTMLElement | null>(null)
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
 
 const factors = computed(() => {
   const source = props.mode === 'cloudsea' ? props.cloudseaFactors : props.sunriseFactors
@@ -28,7 +28,7 @@ const factors = computed(() => {
 
 function render() {
   if (!chartRef.value) return
-  if (!chart) chart = echarts.init(chartRef.value, undefined, { renderer: 'canvas' })
+  if (!chart) chart = init(chartRef.value, undefined, { renderer: 'canvas' })
 
   const entries = Object.values(factors.value)
   chart.setOption({

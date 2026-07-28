@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import * as echarts from 'echarts'
+import { init, type ECharts } from '../lib/echarts'
 import { useAppStore } from '../stores/app'
 import { CLOUDSEA_COLOR, SUNRISE_COLOR } from '../config'
 
 const store = useAppStore()
 const chartRef = ref<HTMLElement | null>(null)
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
 
 const hourLabels = computed(() =>
   store.dayHours.map((h) => {
@@ -23,7 +23,7 @@ function formatDayTab(day: (typeof store.days)[0]) {
 
 function renderChart() {
   if (!chartRef.value || !store.dayHours.length) return
-  if (!chart) chart = echarts.init(chartRef.value, undefined, { renderer: 'canvas' })
+  if (!chart) chart = init(chartRef.value, undefined, { renderer: 'canvas' })
 
   const selected = store.dayLocalIndex
   const sunriseIdx = store.dayHours.findIndex((h) => h.is_sunrise_window)
