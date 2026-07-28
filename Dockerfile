@@ -51,6 +51,12 @@ RUN mkdir -p /app/data/analytics /app/data/cloudsea /app/data/share-cache /app/d
 ENV SCENIC_SPOTS_DIR=/app/data/scenic-spots
 ENV TERRAIN_SNAPSHOTS_DIR=/app/data/terrain
 ENV STATIC_DIR=/app/static
+ENV ANALYTICS_DB_PATH=/app/data/analytics/analytics.db
+ENV CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
+ENV CLOUDSEA_CURATED_SPOTS_DIR=/app/data/cloudsea/curated-spots
+ENV CLOUDSEA_ML_ENABLED=false
+ENV SHARE_ASSETS_DIR=/app/data/share-assets
+ENV SHARE_CACHE_DIR=/app/data/share-cache
 ENV TZ=Asia/Shanghai
 ENV UVICORN_WORKERS=2
 ENV PYTHONDONTWRITEBYTECODE=1
