@@ -85,27 +85,27 @@ async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
     primary = asyncio.create_task(_fetch_forecast_primary(lat, lng, days))
     historical = asyncio.create_task(_fetch_forecast_historical_window(lat, lng, days))
     data: dict | None = None
+    pending: set[asyncio.Task] = {primary, historical}
     try:
-        done, pending = await asyncio.wait(
-            {primary, historical},
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-        for task in pending:
-            task.cancel()
-        for task in done:
-            try:
-                data = task.result()
-                if data:
+        while pending and data is None:
+            done, pending = await asyncio.wait(
+                pending,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in done:
+                try:
+                    candidate = task.result()
+                except Exception:
+                    continue
+                if candidate:
+                    data = candidate
                     break
-            except Exception:
-                continue
-        if data is None:
-            data = await historical
     finally:
-        if not primary.done():
-            primary.cancel()
-        if not historical.done():
-            historical.cancel()
+        unfinished = [task for task in (primary, historical) if not task.done()]
+        for task in unfinished:
+            task.cancel()
+        if unfinished:
+            await asyncio.gather(*unfinished, return_exceptions=True)
 
     if data is None:
         stale = cache_get(stale_key)
@@ -145,11 +145,8 @@ async def fetch_elevation(lat: float, lng: float) -> float:
     if cached is not None:
         return float(cached)
 
-    try:
-        elevs = await fetch_elevations_batch([lat], [lng])
-        elevation = elevs[0]
-    except Exception:
-        elevation = 0.0
+    elevs = await fetch_elevations_batch([lat], [lng])
+    elevation = elevs[0]
     cache_set(cache_key, elevation, ttl=86400)
     return elevation
 
@@ -226,11 +223,18 @@ async def fetch_elevations_batch(lats: list[float], lngs: list[float]) -> list[f
                     continue
                 try:
                     data = await fetch_historical_forecast(p[0], p[1], start, start)
-                    val = float(data.get("elevation") or 0.0)
+                    raw_elevation = data.get("elevation")
+                    if raw_elevation is None:
+                        continue
+                    val = float(raw_elevation)
                 except Exception:
-                    val = 0.0
+                    continue
                 cached_map[p] = val
                 cache_set(f"elev:{p[0]:.5f}:{p[1]:.5f}", val, ttl=86400 * 7)
+
+    unresolved = [p for p in pairs if p not in cached_map]
+    if unresolved:
+        raise httpx.TimeoutException("elevation fetch failed")
 
     return [cached_map[p] for p in pairs]
 

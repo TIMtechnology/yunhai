@@ -20,7 +20,7 @@ from app.adapters.tianditu_poi import search_poi
 from app.adapters.dem import get_terrain_context
 from app.models.schemas import PredictRequest, PredictResponse, TerrainContextResponse
 from app.services.meteo_profile import build_meteo_profile
-from app.services.predictor import run_prediction
+from app.services.predictor import canonicalize_predict_request, run_prediction
 from app.services.spot_loader import get_spot, get_viewpoint, search_spots
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -86,11 +86,20 @@ async def viewpoint_detail(spot_id: str, viewpoint_id: str):
 @router.post("/predict", response_model=PredictResponse)
 async def predict(body: PredictRequest, request: Request):
     ctx = _predict_log_context(request)
+    try:
+        body = canonicalize_predict_request(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="景区或观景点未找到") from exc
     return await run_prediction(body, **ctx)
 
 
 @router.get("/predict/{spot_id}/viewpoint/{viewpoint_id}", response_model=PredictResponse)
-async def predict_viewpoint(spot_id: str, viewpoint_id: str, request: Request, hours: int = 120):
+async def predict_viewpoint(
+    spot_id: str,
+    viewpoint_id: str,
+    request: Request,
+    hours: int = Query(default=120, ge=1, le=120),
+):
     vp = get_viewpoint(spot_id, viewpoint_id)
     if not vp:
         raise HTTPException(status_code=404, detail="观景点未找到")

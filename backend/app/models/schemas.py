@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CloudRegion(BaseModel):
@@ -135,6 +135,12 @@ class PredictRequest(BaseModel):
     viewpoint_id: Optional[str] = Field(default=None, min_length=1, max_length=100)
     hours: int = Field(default=120, ge=1, le=120)
     coord_sys: str = Field(default="GCJ-02", pattern=r"^(GCJ-02|WGS84)$")
+
+    @model_validator(mode="after")
+    def require_complete_curated_location(self) -> "PredictRequest":
+        if bool(self.spot_id) != bool(self.viewpoint_id):
+            raise ValueError("spot_id and viewpoint_id must be provided together")
+        return self
 
 
 class PredictResponse(BaseModel):
