@@ -180,6 +180,7 @@ def upsert_label(
     contributor_id: Optional[str] = None,
     review_status: str = "approved",
     sunrise_quality: Optional[str] = None,
+    actor_contributor_id: Optional[str] = None,
 ) -> dict[str, Any]:
     now = _now_iso()
     with _connect() as conn:
@@ -192,6 +193,10 @@ def upsert_label(
             (spot_id, viewpoint_id, date_key, window_start, window_end),
         ).fetchone()
         existing = dict(existing_row) if existing_row else None
+        if actor_contributor_id and existing:
+            owner_id = existing.get("contributor_id")
+            if not owner_id or owner_id != actor_contributor_id:
+                raise PermissionError("无权覆盖其他贡献者或管理员的标注")
         prev_status = existing.get("review_status") if existing else None
         becoming_approved = review_status == "approved" and prev_status != "approved"
         conn.execute(
@@ -1066,4 +1071,3 @@ def export_prediction_feedback(
         return {"content_type": "text/csv", "body": buf.getvalue()}
 
     return {"count": len(records), "records": records}
-

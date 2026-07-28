@@ -31,8 +31,11 @@ class Settings(BaseSettings):
     cloudsea_max_locations_per_contributor: int = 10
     cloudsea_dedup_radius_m: float = 500.0
     cloudsea_auto_approve_trusted: bool = False
-    cloudsea_community_auto_approve: bool = True
-    cloudsea_curate_min_labels: int = 1
+    cloudsea_community_auto_approve: bool = False
+    cloudsea_curate_min_labels: int = 3
+    contributor_session_secret: str = ""
+    contributor_session_days: int = 365
+    contributor_cookie_secure: bool = False
     cloudsea_curated_spots_dir: str = ""
     cloudsea_train_min_approved: int = 30
     cloudsea_ml_min_labels_per_spot: int = 30
