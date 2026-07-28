@@ -15,5 +15,7 @@ scripts/deploy.local.env
 **/*.db-*
 **/*.sqlite
 **/*.sqlite-*
-data/cloudsea/models
+data/cloudsea/models/*.pkl
+data/cloudsea/models/*.pickle
+data/cloudsea/models/candidates
 *.tar

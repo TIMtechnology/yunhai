@@ -72,8 +72,11 @@ async def bake_viewpoint(spot_id: str, viewpoint_id: str, *, lat: float, lng: fl
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spot-id", help="仅烘焙指定 spot")
+    parser.add_argument("--viewpoint-id", help="仅烘焙指定 viewpoint（需同时指定 --spot-id）")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.viewpoint_id and not args.spot_id:
+        parser.error("--viewpoint-id 需同时指定 --spot-id")
 
     spots = load_spots()
     tasks: list[tuple[str, str, float, float, float]] = []
@@ -81,6 +84,8 @@ async def main() -> None:
         if args.spot_id and spot.id != args.spot_id:
             continue
         for vp in spot.viewpoints:
+            if args.viewpoint_id and vp.id != args.viewpoint_id:
+                continue
             tasks.append((spot.id, vp.id, vp.lat, vp.lng, vp.elevation))
 
     if not tasks:

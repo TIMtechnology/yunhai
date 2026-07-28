@@ -507,7 +507,11 @@ def build_predictions_from_hourly(
                     dews=dews,
                 )
             )
-        if req.spot_id and req.viewpoint_id:
+        safe_operational_model = (
+            ml_artifact is not None
+            and ml_artifact.get("meteo_mode") == "operational_single_run"
+        )
+        if req.spot_id and req.viewpoint_id and not safe_operational_model:
             rows = supplement_precursor_rows(
                 req.spot_id,
                 req.viewpoint_id,

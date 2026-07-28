@@ -19,7 +19,7 @@ def min_labels_for_ml() -> int:
 
 def spot_model_filename(spot_id: str, viewpoint_id: str) -> str:
     safe = f"{spot_id}_{viewpoint_id}".replace("/", "_")
-    return f"spot_{safe}.pkl"
+    return f"spot_{safe}.json"
 
 
 def spot_model_path(spot_id: str, viewpoint_id: str, *, models_dir: Path | None = None) -> Path:
@@ -194,14 +194,21 @@ def build_ml_status(
     eligible = counts["eligible_labels"]
     trained_days = model_trained_days or 0
     model_ready = has_spot_model and max(eligible, trained_days) >= min_labels
+    model_active = model_ready and settings.cloudsea_ml_enabled
 
-    if model_ready:
+    if model_active:
         if spot_id == "wunvshan":
             mode = "wunvshan_model"
             message = f"本点位有效标注 {eligible} 天，已启用 ML + 规则融合（五女山模型）"
         else:
             mode = "spot_model"
             message = f"本点位有效标注 {eligible} 天，已启用该点位专属 ML + 规则融合"
+    elif model_ready:
+        mode = "rule_only"
+        message = (
+            f"本点位已有通过时间外评估的模型（训练 {trained_days} 天），"
+            "但生产 ML 开关尚未启用；03–07 点暂仅使用规则引擎"
+        )
     else:
         mode = "rule_only"
         if eligible < min_labels:
@@ -222,7 +229,7 @@ def build_ml_status(
             )
 
     return {
-        "ml_active": model_ready and settings.cloudsea_ml_enabled,
+        "ml_active": model_active,
         "mode": mode,
         "min_labels": min_labels,
         "eligible_labels": eligible,

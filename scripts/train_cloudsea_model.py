@@ -42,6 +42,7 @@ from app.engine.cloudsea_features import (  # noqa: E402
     filter_dawn_rows,
     label_to_target,
     meteo_row_complete,
+    operational_meteo_row_complete,
 )
 from app.adapters.dem import get_terrain_context_sync  # noqa: E402
 from app.engine.viewing_mode import resolve_viewing_mode  # noqa: E402
@@ -128,7 +129,8 @@ def load_meteo_rows(
             )
     else:
         hour_rows = load_label_sunrise_meteo(spot_id, viewpoint_id, day, db_path=db_path)
-    if hour_rows and all(meteo_row_complete(r) for r in hour_rows):
+    complete = operational_meteo_row_complete if mode == "operational" else meteo_row_complete
+    if hour_rows and all(complete(r) for r in hour_rows):
         return hour_rows
     if db_only:
         return []
@@ -206,7 +208,12 @@ def load_dataset(
             reason = "DB 无缓存" if db_only else "no meteo"
             print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: {reason}")
             continue
-        if not all(meteo_row_complete(r) for r in hour_rows):
+        complete = (
+            operational_meteo_row_complete
+            if mode == "operational"
+            else meteo_row_complete
+        )
+        if not all(complete(r) for r in hour_rows):
             print(f"skip {day} {label['spot_id']}/{label['viewpoint_id']}: incomplete meteo")
             continue
         dawn_rows = (
@@ -278,6 +285,7 @@ def load_dataset(
                 "status": label["status"],
                 "lat": lat,
                 "lng": lng,
+                "elevation": elev,
                 "spot_id": label["spot_id"],
                 "viewpoint_id": label["viewpoint_id"],
                 "viewing_mode": (terrain or {}).get("viewing_mode"),

@@ -114,6 +114,16 @@ DAY_FEATURE_NAMES_V3 = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES
 DAY_FEATURE_NAMES = DAY_FEATURE_NAMES + TERRAIN_FEATURE_NAMES + OBSERVABLE_FEATURE_NAMES
 
 _REQUIRED_METEO_KEYS = ("rh_700", "cloud_high", "inversion")
+_OPERATIONAL_REQUIRED_METEO_KEYS = (
+    "cloud_low",
+    "cloud_mid",
+    "cloud_high",
+    "visibility",
+    "rh",
+    "wind",
+    "temp",
+    "dewpoint",
+)
 
 
 def label_to_target(status: str) -> float:
@@ -130,6 +140,11 @@ def _series_val(series: list, idx: int):
 
 def meteo_row_complete(row: dict) -> bool:
     return all(row.get(k) is not None for k in _REQUIRED_METEO_KEYS)
+
+
+def operational_meteo_row_complete(row: dict) -> bool:
+    """Fields consistently archived by ECMWF IFS HRES single runs since March 2024."""
+    return all(row.get(k) is not None for k in _OPERATIONAL_REQUIRED_METEO_KEYS)
 
 
 def build_meteo_hour_row(hourly: dict, idx: int, *, precip48: float | None = None) -> dict:

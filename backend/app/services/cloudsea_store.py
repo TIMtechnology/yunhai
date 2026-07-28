@@ -690,14 +690,14 @@ def forecast_archive_precursor_complete(
     issue_time: str | None = None,
     db_path: Path | None = None,
 ) -> bool:
-    from app.engine.cloudsea_features import meteo_row_complete
+    from app.engine.cloudsea_features import operational_meteo_row_complete
     from app.services.meteo_backfill import precursor_hour_keys
 
     issue = issue_time or default_forecast_issue_time(target_date)
     rows = load_forecast_archive_precursor(
         spot_id, viewpoint_id, target_date, issue_time=issue, db_path=db_path
     )
-    have = {str(r.get("time")) for r in rows if meteo_row_complete(r)}
+    have = {str(r.get("time")) for r in rows if operational_meteo_row_complete(r)}
     return all(k in have for k in precursor_hour_keys(target_date))
 
 

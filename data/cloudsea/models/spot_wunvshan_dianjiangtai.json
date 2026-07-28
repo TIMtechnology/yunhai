@@ -1,0 +1,159 @@
+{
+  "algorithm": "logistic_regression",
+  "decision_threshold": 0.3300000000000002,
+  "evaluation": {
+    "baselines": {
+      "majority_balanced_accuracy": 0.5,
+      "majority_brier": 0.22345337026777462,
+      "rule_balanced_accuracy": 0.5,
+      "rule_brier": 0.25022666666666665,
+      "rule_f1": 0.42857142857142855
+    },
+    "holdout_days": 15,
+    "holdout_end": "2026-07-03",
+    "holdout_start": "2026-06-11",
+    "metrics": {
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.65,
+      "brier": 0.20854456441227573,
+      "f1": 0.5882352941176471,
+      "precision": 0.4166666666666667,
+      "recall": 1.0,
+      "roc_auc": 0.64,
+      "threshold": 0.3200000000000002
+    },
+    "negative_days": 10,
+    "positive_days": 5,
+    "production_blend_weight": 0.65,
+    "protocol": "chronological_holdout",
+    "quality_gate": {
+      "checks": {
+        "beats_majority": true,
+        "beats_rule": true,
+        "both_classes": true,
+        "time_ordered": true
+      },
+      "passed": true,
+      "thresholds": {
+        "min_balanced_accuracy": 0.6,
+        "min_negative_days": 3,
+        "min_positive_days": 3,
+        "min_recall": 0.5
+      }
+    },
+    "raw_ml_metrics": {
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.6000000000000001,
+      "brier": 0.19783515220177092,
+      "f1": 0.5333333333333333,
+      "precision": 0.4,
+      "recall": 0.8,
+      "roc_auc": 0.6799999999999999,
+      "threshold": 0.3200000000000002
+    },
+    "review_threshold": 0.3200000000000002,
+    "rule_context": {
+      "elev_max_5km_m": 753.0,
+      "local_water": true,
+      "meteorology": "same_exact_single_run_surface_inputs",
+      "terrain_source": "terrain_snapshot",
+      "viewing_mode": "valley_fill"
+    },
+    "train_end": "2026-06-10",
+    "train_start": "2024-10-05"
+  },
+  "feature_names": [
+    "cloud_low_mean",
+    "cloud_mid_mean",
+    "vis_min",
+    "rh_mean",
+    "wind_mean",
+    "precip48",
+    "evening_rh_mean",
+    "evening_cloud_low_mean",
+    "night_rh_mean",
+    "night_cloud_low_mean",
+    "delta_rh_night_to_dawn",
+    "delta_cloud_low_evening_to_dawn",
+    "doy_sin",
+    "doy_cos"
+  ],
+  "meteo_mode": "operational_single_run",
+  "model": {
+    "classes": [
+      0,
+      1
+    ],
+    "coef": [
+      0.21746055695468075,
+      -0.24247065324747102,
+      -0.2159425232714979,
+      -0.027782764408385154,
+      -0.052063977314698674,
+      -0.1417525106673263,
+      0.009257176686700527,
+      -0.09131918314332389,
+      0.0398516367596989,
+      -0.07296721765971086,
+      -0.11100539308969859,
+      0.28647177769383664,
+      -0.030227545153171734,
+      0.09903875617549447
+    ],
+    "intercept": -1.8587533230482824,
+    "mean": [
+      45.63055555555556,
+      23.063888888888886,
+      5960.277777777777,
+      92.07222222222222,
+      4.571666666666667,
+      2.6527777777777777,
+      85.61805555555556,
+      14.743055555555555,
+      91.92129629629629,
+      29.94907407407407,
+      0.15092592592592632,
+      30.887500000000003,
+      0.24730612346195033,
+      -0.6583944858575965
+    ],
+    "scale": [
+      42.201456790576714,
+      35.04363670861562,
+      7215.658507760555,
+      8.213694902455122,
+      3.6229772134101106,
+      4.8389614422421445,
+      10.795042282724161,
+      27.492043426684226,
+      9.296470366896186,
+      38.4980222244214,
+      5.393239859277373,
+      40.798794704078645,
+      0.6120405414676857,
+      0.3616113354009741
+    ]
+  },
+  "n_days": 72,
+  "schema_version": 1,
+  "spot_id": "wunvshan",
+  "trained_at": "2026-07-28T03:49:25+00:00",
+  "training": {
+    "calibration": "platt_from_time_ordered_oof",
+    "calibration_c": 1.0,
+    "calibration_splits": 4,
+    "data_sha256": "932c83c7ced1e3e23837deb5c55b574d7a801e8aa552d0f2d67bbcd47c3ddb02",
+    "date_end": "2026-07-03",
+    "date_start": "2024-10-05",
+    "feature_policy": "predeclared_surface_v1",
+    "fixed_c": 0.1,
+    "model": "ecmwf_ifs",
+    "negative_days": 50,
+    "positive_days": 22,
+    "run_hour_utc": 0,
+    "source": "open_meteo_single_runs"
+  },
+  "version": "cloudsea_logreg_operational_v1",
+  "viewpoint_id": "dianjiangtai",
+  "window": "v7"
+}

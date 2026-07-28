@@ -34,7 +34,9 @@ services:
       - CLOUDSEA_ENABLED=true
       - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:?set in server environment}
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
-      - CLOUDSEA_ML_ENABLED=false
+      - CLOUDSEA_MODEL_PATH=/app/baked/models/spot_wunvshan_dianjiangtai.json
+      - CLOUDSEA_ML_ENABLED=true
+      - CLOUDSEA_ALLOW_LEGACY_PICKLE_MODELS=false
       - CLOUDSEA_CONTRIBUTE_ENABLED=true
       - CLOUDSEA_COMMUNITY_AUTO_APPROVE=false
       - CLOUDSEA_CURATE_MIN_LABELS=3

@@ -24,7 +24,9 @@ services:
       - ALLOWED_HOSTS=["yunhai.timkj.com","localhost","127.0.0.1"]
       - CLOUDSEA_ADMIN_TOKEN=${CLOUDSEA_ADMIN_TOKEN:?set CLOUDSEA_ADMIN_TOKEN}
       - CLOUDSEA_DB_PATH=/app/data/cloudsea/cloudsea.db
-      - CLOUDSEA_ML_ENABLED=false
+      - CLOUDSEA_MODEL_PATH=/app/baked/models/spot_wunvshan_dianjiangtai.json
+      - CLOUDSEA_ML_ENABLED=true
+      - CLOUDSEA_ALLOW_LEGACY_PICKLE_MODELS=false
       - CONTRIBUTOR_SESSION_SECRET=${CONTRIBUTOR_SESSION_SECRET:?set CONTRIBUTOR_SESSION_SECRET}
       - CONTRIBUTOR_COOKIE_SECURE=true
     volumes:

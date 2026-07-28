@@ -39,12 +39,23 @@
 
   <main class="mx-auto max-w-4xl px-6 py-10 space-y-8">
     <header>
-      <p class="text-sm text-sky-600 mb-2"><span class="badge">2026-06-24 已上线</span></p>
-      <h1 class="text-3xl font-bold mb-3">v7.1 · 贴地雾校准 & 漏报修复</h1>
-      <p class="text-slate-600">在 6 月初 <strong>ML v7</strong> 上线基础上，针对「高湿但无观赏云海」「NWP 低云=0 却有云海」等边界 case 优化规则与融合逻辑，并重训五女山模型。5–6 月标注回测方向一致率由 <strong>83% 提升至 88%</strong>。</p>
+      <p class="text-sm text-sky-600 mb-2"><span class="badge">2026-07-28 已上线</span></p>
+      <h1 class="text-3xl font-bold mb-3">Operational ML · 精确历史运行 & 安全模型</h1>
+      <p class="text-slate-600">五女山点将台启用基于 ECMWF IFS HRES 00Z 精确历史运行训练的点位模型。模型只使用决策时已可见的预报，最后 15 天完全隔离评估，并以严格 JSON 随不可变镜像发布。</p>
     </header>
 
     <section class="glass">
+      <h2 class="text-lg font-semibold text-violet-600 mb-3">本次质量证据</h2>
+      <ul class="list-disc list-inside text-sm text-slate-700 space-y-2">
+        <li><strong>72 个可重建训练日</strong>：22 个有云海、50 个无云海；14 个跨年份稳定地面特征。</li>
+        <li><strong>时间外验证</strong>：最后 15 天融合模型平衡准确率 65%、召回率 100%、Brier 0.209；规则基线为 50%、60%、0.250。</li>
+        <li><strong>无 Pickle</strong>：只加载通过点位、来源、特征长度、有限数值和质量门禁校验的只读 JSON。</li>
+        <li><strong>无热部署</strong>：Admin 只生成候选；模型须经审查、CI、备份和冒烟测试后随镜像上线。</li>
+      </ul>
+    </section>
+
+    <section class="glass">
+      <h2 class="text-lg font-semibold text-slate-500 mb-3">历史 · 2026-06-24 v7.1 贴地雾校准</h2>
       <h2 class="text-lg font-semibold text-violet-600 mb-3">你会感受到什么变化？</h2>
       <ul class="list-disc list-inside text-sm text-slate-700 space-y-2">
         <li><strong>更少「假高概率」</strong>：清晨高湿、能见度差但并无层云时（贴地雾/霾），概率不再被抬到 60–70%。</li>

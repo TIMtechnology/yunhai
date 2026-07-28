@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0 — 2026-07-28
+
+### Operational ML
+
+- Five-Woman Mountain now uses a reviewed point model trained from exact ECMWF IFS HRES 00Z single runs that were available before the D-1 18:00 decision cutoff.
+- The fixed 14-feature logistic model uses time-ordered out-of-fold Platt calibration. Its final 15-day holdout achieved 0.65 balanced accuracy, 1.00 recall, and 0.209 Brier score versus the rule baseline's 0.50, 0.60, and 0.250.
+- Model artifacts are non-executable JSON and load only after strict schema, point identity, finite-number, source, chronological-evaluation, and quality-gate validation.
+- Admin retraining produces a candidate only. Production activation requires review, CI, an immutable image, backup, and smoke tests.
+
+### Data quality
+
+- Forecast archive backfill now uses the Single Runs API and records the exact ECMWF run. The former Historical Forecast backfill could no longer be mislabeled as an as-issued forecast.
+- Training uses only the surface fields consistently available across the long-term HRES archive; unavailable pressure-level values and constant point features are excluded.
+- The Five-Woman Mountain terrain and sunrise-sector profile is baked into the image so rule comparison and production inference use the same auditable DEM and local-water context without a runtime DEM dependency.
+
 ## 2.0.0 — 2026-07-28
 
 ### Security

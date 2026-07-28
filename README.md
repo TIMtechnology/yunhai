@@ -35,7 +35,7 @@
 | 层级 | 说明 |
 |------|------|
 | **规则引擎** | 基于文献的模糊逻辑评分（850/700 hPa 垂直场、逆温、低云/能见度补偿、Type A/B 型态） |
-| **ML 模型** | 日出窗口 03–07 点由标注数据训练的 Logistic 回归（**v7**，62 维 precursor + dawn 特征，点位专属 pkl） |
+| **ML 模型** | 五女山点将台在 03–07 点启用点位 Logistic 回归；使用前夜至日出的 14 个跨年份稳定特征，模型为严格校验的只读 JSON |
 | **底层观测** | 分层云量、垂直场剖面、云海型态、地面态等原始气象字段完整展示 |
 
 内置 **五女山、大黑山、黄山、庐山** 等精选景区观景点，也支持天地图 POI 搜索与地图拖拽自定义坐标。配套 **开放标注 / 审核 / ML 训练** 共建闭环（见下方 [共建计划](#-日出云海预测模型--共建计划)）。
@@ -59,8 +59,18 @@
 | 🔗 **预测分享** | 分享页、OG 预览图、竖版长图；分享图动态渲染，不落盘占用硬盘 |
 | 🏔️ **精选景区** | 预置观景点海拔、坐标、季节权重；支持全国 POI |
 | 📝 **开放标注** | 匿名贡献 ID、POI/社区点云海标注、审核后入训练集 |
-| 🔬 **标注回测** | 开放标注页、Historical Forecast 回测、Admin 审核与重训 API |
+| 🔬 **标注回测** | 开放标注页、精确历史模型运行回测、Admin 审核与受审候选生成 |
 | 📈 **预测反馈** | 用户访问预测时自动快照；次日 forecast vs 实况回测；**标注页所有人可看**历史预测 vs 实况双轨对比 |
+
+---
+
+## 🆕 2026-07-28 · 可审计 operational ML
+
+- 训练输入改为 Open-Meteo Single Runs 中决策截点前已发布的 ECMWF IFS HRES 00Z 运行，不再把事后拼接资料标成前夜预报。
+- 五女山点将台使用 72 个可重建标注日训练；最后 15 天完全隔离评估，含 5 个正例、10 个负例。
+- 生产融合模型时间外平衡准确率 **65%**、召回率 **100%**、Brier **0.209**；同期规则基线为 **50% / 60% / 0.250**。
+- 模型为非可执行 JSON，严格校验点位、特征、来源、时间外协议和质量门禁后才加载；旧 Pickle 仍保持禁用。
+- Admin 只生成候选模型，不能在线热替换；通过审查后随不可变镜像发布并可回滚。
 
 ---
 
@@ -187,10 +197,10 @@ python3 scripts/export_prediction_feedback.py --spot-id wunvshan --viewpoint-id 
 | | 日出质量独立标注（可见 / 遮挡 / 不可拍） | ✅ **已完成**（入库；**暂不入**云海 ML，待日出模型） |
 | **开放贡献与审核** | 匿名 Contributor ID、30 条/日限额、pending → approved 审核 | ✅ **已完成** |
 | | 标注页 Admin 可视化审核队列 UI | 🔶 **部分**（API 已有，`label.html?admin=1` 待增强） |
-| **社区点位专属模型** | 单点 accumulated ≥30 天 approved 后启用 spot 专属 ML pkl | ✅ **已完成**（五女山、东灵山 v7 已部署） |
+| **社区点位专属模型** | 单点 ≥30 天后生成受审 JSON 候选，通过时间外门禁再随版本发布 | 🔶 **部分**（五女山点将台已部署；其他点位继续积累/评估） |
 | **全国 POI 通用模型** | 汇总多地区 approved 样本，训练跨点位泛化 ML | 🔶 **部分**（全局 `--approved-only` 训练已有；POI 专项管线规划中） |
 | **精选落库** | approved ≥15 天 → 写入 `scenic-spots/*.json`，搜索可见 | ✅ **已完成**（Admin API） |
-| **定期重训** | 标注增量或周期触发自动重训 + LOOCV 门禁部署 | 🔶 **部分**（手动 `POST .../train` + `hot-patch-prod.sh`；cron 未接） |
+| **定期重训** | 标注增量后生成候选 + 时间外门禁 + 受审镜像部署 | 🔶 **部分**（Admin 可生成候选；自动发布刻意关闭） |
 | **预测反馈** | 访问快照、次日回测、标注页历史预测 vs 实况（**全员可见**） | ✅ **已完成**（2026-06） |
 | **深链与收藏** | `/?spot=&vp=`、`/?lat=&lng=`、`/label.html?...` 直达预测/标注 | ✅ **已完成** |
 
@@ -206,7 +216,7 @@ python3 scripts/export_prediction_feedback.py --spot-id wunvshan --viewpoint-id 
 
 **贡献流程**：主页选 POI → 「标注此点位」→ 选择日期 → 1/2/3 标注云海 → 可选标注日出质量 → 社区点可持久化编辑坐标。
 
-**Admin 流程**（需 Token）：审核队列 → approve/reject → 达标社区点 `curate` 落库 → `train` 重训云海 ML（不含日出质量字段）。
+**Admin 流程**（需 Token）：审核队列 → approve/reject → 达标社区点 `curate` 落库 → `train` 生成受审候选（不含日出质量字段，不在线热部署）。
 
 详细设计见 [`internal/open-annotation-plan.md`](internal/open-annotation-plan.md) · 标注操作见 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
 
@@ -215,7 +225,7 @@ python3 scripts/export_prediction_feedback.py --spot-id wunvshan --viewpoint-id 
 | 阶段 | 目标 |
 |------|------|
 | **近期** | 模型版本与贡献数公开展示；日出 ML 训练脚本（基于 `sunrise_quality`） |
-| **中期** | **单点专属 ML**（每社区点/精选点独立 pkl + 自动切换） |
+| **中期** | **单点专属 ML**（每社区点/精选点独立安全 JSON + 受审版本切换） |
 | **远期** | **全国 POI 通用 ML**（跨纬度/地形泛化）；定时重训 CI；贡献排行榜 |
 
 **确认结论（截至当前版本）**：
@@ -285,16 +295,22 @@ cd frontend && npm install && npm run dev
 # http://localhost:5173
 ```
 
-### 3. 评估云海 ML（实验性）
+### 3. 评估受审云海 ML
 
 ```bash
-# 只用于本地评估；生产默认规则引擎
-export CLOUDSEA_ML_ENABLED=true
-# 实际按 spot 加载未纳入 Git 的 spot_{spot}_{viewpoint}.pkl
-export CLOUDSEA_MODEL_PATH=../data/cloudsea/models/cloudsea_candidate.pkl
+# 先用精确 ECMWF 单次运行回填候选库（不要对生产库直接操作）
+python3 scripts/backfill_forecast_archive.py \
+  --db /path/to/review-copy.db \
+  --spot-id wunvshan --viewpoint-id dianjiangtai
+
+# 最后 15 天隔离评估；门禁失败不会写模型
+python3 scripts/train_operational_model.py \
+  --db /path/to/review-copy.db \
+  --spot-id wunvshan --viewpoint-id dianjiangtai \
+  --output data/cloudsea/models/spot_wunvshan_dianjiangtai.json
 ```
 
-模型不得由发布脚本临时训练。候选模型必须使用 `operational` 气象输入，并通过时间外/月度验证、样本量与特征复杂度审查后，才能在单独的受审版本中晋级；当前生产保持 `CLOUDSEA_ML_ENABLED=false`。
+模型不得由发布脚本临时训练或在线热替换。候选必须使用精确 single-run 气象输入，并通过时间外验证、安全 JSON 校验、样本量与特征复杂度审查后，才能在单独的受审版本中晋级。五女山受审模型在生产启用，其他点位门禁未通过时继续使用规则引擎。
 
 ### 4. Docker
 
@@ -330,7 +346,7 @@ docker compose -f docker-compose.prod.yml up -d
 | `PATCH` | `/api/contribute/locations/{id}` | 编辑我的社区点位名称/坐标/海拔 |
 | `GET` | `/api/satellite/cloud` | Himawari 红外裁切 |
 | `GET` | `/api/internal/cloudsea/review-queue` | 待审标注（Admin Token） |
-| `POST` | `/api/internal/cloudsea/train` | 手动重训 ML（Admin Token） |
+| `POST` | `/api/internal/cloudsea/train` | 生成受审 ML 候选（Admin Token；不热部署） |
 | `GET` | `/api/internal/cloudsea/prediction-history` | 某日历史预测访问（Admin Token） |
 | `POST` | `/api/internal/cloudsea/reconcile` | 手动触发预测回测（Admin Token） |
 | `POST` | `/api/internal/cloudsea/watch` | 手动触发气象 watcher（Admin Token） |
@@ -343,20 +359,22 @@ Swagger：`http://localhost:8000/docs`
 ## 🔬 ML 与标注工作流
 
 ```bash
-# 1. 回填标注日完整垂直场气象
-python3 scripts/backfill_meteo_hourly.py
+# 1. 在生产数据库副本中回填决策时可见的精确 00Z 模型运行
+python3 scripts/backfill_forecast_archive.py \
+  --db /path/to/review-copy.db \
+  --spot-id wunvshan --viewpoint-id dianjiangtai
 
-# 2. 训练 ML v7（仅 approved 标注 · operational 气象）
-python3 scripts/train_cloudsea_model.py \
-  --db data/cloudsea/cloudsea.prod.db \
+# 2. 训练 + 时间外质量门禁（失败不产出）
+python3 scripts/train_operational_model.py \
+  --db /path/to/review-copy.db \
   --spot-id wunvshan --viewpoint-id dianjiangtai \
-  --window v7 --mode operational --enhanced --db-only
+  --output data/cloudsea/models/spot_wunvshan_dianjiangtai.json
 
 # 3. 模型输出
-# data/cloudsea/models/spot_wunvshan_dianjiangtai.pkl
-# data/cloudsea/models/spot_donglingshan_fengding.pkl
+# data/cloudsea/models/spot_wunvshan_dianjiangtai.json
+# 仅包含系数、缩放参数、训练指纹与质量证据，不包含原始标注
 
-# 4. 生产标准发版（规则引擎；含测试、审计、备份与自动回滚）
+# 4. 生产标准发版（受审模型 + 规则；含测试、审计、备份与自动回滚）
 cp scripts/deploy.local.env.example scripts/deploy.local.env   # 首次
 bash scripts/release-prod.sh
 
@@ -367,7 +385,7 @@ bash scripts/run-scheduled-tasks.sh
 
 **开放标注页**：https://yunhai.timkj.com/label.html（无需账号，服务端签发匿名会话 Cookie）
 
-**Admin**：审核 / 落库 / 重训见 [共建计划](#-日出云海预测模型--共建计划) · 操作细节 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
+**Admin**：审核 / 落库 / 候选模型生成见 [共建计划](#-日出云海预测模型--共建计划) · 操作细节 [`internal/CLOUDSEA-LABEL.md`](internal/CLOUDSEA-LABEL.md)
 
 ---
 

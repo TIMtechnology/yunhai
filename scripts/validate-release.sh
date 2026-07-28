@@ -7,10 +7,36 @@ if git ls-files | grep -Eq '(^|/).*\.(db|sqlite)(-|\.|$)|data/cloudsea/models/.*
   exit 1
 fi
 
-if ! grep -q 'CLOUDSEA_ML_ENABLED=false' docker-compose.deploy.yml; then
-  echo "错误: 未通过质量门禁的 ML 不得在生产模板中启用" >&2
+unexpected_models="$(
+  find data/cloudsea/models -type f \
+    ! -name 'spot_wunvshan_dianjiangtai.json' \
+    -print
+)"
+if [[ -n "$unexpected_models" ]]; then
+  echo "错误: 模型目录含未列入受审清单的文件:" >&2
+  echo "$unexpected_models" >&2
   exit 1
 fi
+
+if ! grep -q 'CLOUDSEA_ML_ENABLED=true' docker-compose.deploy.yml; then
+  echo "错误: 已通过门禁的点位模型未在生产模板中启用" >&2
+  exit 1
+fi
+
+PYTHONPATH=backend .venv/bin/python - <<'PY'
+from pathlib import Path
+
+from app.engine.operational_ml import load_safe_artifact
+
+path = Path("data/cloudsea/models/spot_wunvshan_dianjiangtai.json")
+artifact = load_safe_artifact(
+    path,
+    expected_spot_id="wunvshan",
+    expected_viewpoint_id="dianjiangtai",
+)
+assert artifact["evaluation"]["quality_gate"]["passed"] is True
+print("受审 ML JSON 门禁通过")
+PY
 
 PYTHONPATH=backend .venv/bin/python -m pytest -q
 .venv/bin/python -m compileall -q backend/app scripts
