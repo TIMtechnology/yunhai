@@ -42,6 +42,10 @@ def test_security_headers_are_present() -> None:
     assert "worker-src 'self' blob:" in csp
     assert "'unsafe-eval'" not in csp
 
+    with TestClient(app) as client:
+        main_response = client.get("/")
+    assert "'unsafe-eval'" in main_response.headers["content-security-policy"]
+
 
 def test_untrusted_host_is_rejected() -> None:
     with TestClient(app) as client:

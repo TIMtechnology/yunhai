@@ -8,6 +8,11 @@ from starlette.responses import Response
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         response = await call_next(request)
+        amap_eval = (
+            " 'unsafe-eval'"
+            if request.url.path in {"/", "/index.html"}
+            else ""
+        )
         response.headers.setdefault(
             "Strict-Transport-Security",
             "max-age=31536000; includeSubDomains",
@@ -23,7 +28,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Content-Security-Policy",
             "default-src 'self'; "
             "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
-            "script-src 'self' 'unsafe-inline' https://webapi.amap.com https://*.amap.com; "
+            f"script-src 'self' 'unsafe-inline'{amap_eval} https://webapi.amap.com https://*.amap.com; "
             "worker-src 'self' blob:; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob: https: http://webapi.amap.com; "

@@ -1,4 +1,4 @@
-# 生产单镜像：前端静态 + FastAPI + ML 模型 + 社区精选落库种子
+# 生产单镜像：前端静态 + FastAPI + 社区精选落库种子
 # 构建：./scripts/build-amd64.sh
 # 发版：./scripts/release-prod.sh
 #
@@ -6,24 +6,21 @@ ARG NODE_IMAGE=docker.1ms.run/library/node:20-alpine
 ARG PYTHON_IMAGE=docker.1ms.run/library/python:3.12-slim
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ARG PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
-ARG BUILD_ID=dev
-
 FROM ${NODE_IMAGE} AS frontend-build
 ARG NPM_REGISTRY
-ARG VITE_AMAP_KEY
-ARG VITE_AMAP_SECURITY
 
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci --registry="${NPM_REGISTRY}"
 COPY frontend/ ./
+ARG VITE_AMAP_KEY
+ARG VITE_AMAP_SECURITY
 ENV VITE_AMAP_KEY=$VITE_AMAP_KEY
 ENV VITE_AMAP_SECURITY=$VITE_AMAP_SECURITY
 RUN npm run build
 
 FROM ${PYTHON_IMAGE}
 ARG PIP_INDEX
-ARG BUILD_ID
 
 WORKDIR /app
 
@@ -44,6 +41,7 @@ COPY data/terrain ./data/terrain
 COPY data/cloudsea/curated-spots ./baked/curated-spots
 COPY --from=frontend-build /app/dist ./static
 
+ARG BUILD_ID=dev
 RUN mkdir -p /app/data/analytics /app/data/cloudsea /app/data/share-cache /app/data/share-assets \
     && chown -R yunhai:yunhai /app/data \
     && printf '%s\n' "${BUILD_ID}" > /app/BUILD_ID
