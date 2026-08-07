@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -15,6 +15,7 @@ FORECAST_PRIMARY_TIMEOUT = 8.0
 FORECAST_STALE_TTL = 86400 * 7
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+SINGLE_RUN_FORECAST_URL = "https://single-runs-api.open-meteo.com/v1/forecast"
 ELEVATION_URL = "https://api.open-meteo.com/v1/elevation"
 
 HOURLY_VARS = [
@@ -39,6 +40,24 @@ HOURLY_VARS = [
     "relative_humidity_700hPa",
     "temperature_500hPa",
     "relative_humidity_500hPa",
+]
+
+# Must stay aligned with scripts/backfill_forecast_archive.py. The reviewed
+# operational model was trained on these surface fields from ECMWF IFS HRES
+# 00Z single runs, not on Open-Meteo's generic best-match forecast.
+OPERATIONAL_HOURLY_VARS = [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "dew_point_2m",
+    "precipitation",
+    "cloud_cover",
+    "cloud_cover_low",
+    "cloud_cover_mid",
+    "cloud_cover_high",
+    "wind_speed_10m",
+    "wind_direction_10m",
+    "wind_gusts_10m",
+    "visibility",
 ]
 
 PROFILE_LEVELS = [1000, 975, 950, 925, 900, 850, 700, 500]
@@ -115,6 +134,46 @@ async def fetch_forecast(lat: float, lng: float, days: int = 5) -> dict:
 
     cache_set(cache_key, data)
     cache_set(stale_key, data, ttl=FORECAST_STALE_TTL)
+    return data
+
+
+def operational_single_run_initialization(target_date: date) -> str:
+    return f"{(target_date - timedelta(days=1)).isoformat()}T00:00"
+
+
+def operational_single_run_source(target_date: date) -> str:
+    return f"open_meteo_single_runs:ecmwf_ifs:run={operational_single_run_initialization(target_date)}"
+
+
+async def fetch_operational_single_run(
+    lat: float,
+    lng: float,
+    *,
+    target_date: date,
+) -> dict:
+    """Fetch the exact as-issued model family used to train operational ML."""
+    run = operational_single_run_initialization(target_date)
+    cache_key = f"operational_single_run:v1:{lat:.4f}:{lng:.4f}:{run}"
+    cached = cache_get(cache_key)
+    if cached:
+        return cached
+
+    params = {
+        "latitude": lat,
+        "longitude": lng,
+        "run": run,
+        "forecast_hours": 48,
+        "hourly": ",".join(OPERATIONAL_HOURLY_VARS),
+        "timezone": "Asia/Shanghai",
+        "models": "ecmwf_ifs",
+    }
+    data = await get_json(
+        SINGLE_RUN_FORECAST_URL,
+        params=params,
+        timeout=FORECAST_PRIMARY_TIMEOUT,
+        retries=1,
+    )
+    cache_set(cache_key, data, ttl=FORECAST_STALE_TTL)
     return data
 
 

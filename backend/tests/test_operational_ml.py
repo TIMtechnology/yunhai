@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import asyncio
 import sqlite3
 import subprocess
 from datetime import date
@@ -16,7 +17,15 @@ from app.engine.operational_ml import (
     predict_artifact_probability,
 )
 from app.engine import cloudsea_ml
+from app.adapters import open_meteo
+from app.services import prediction_feedback, predictor
 from app.services.meteo_backfill import precursor_hour_keys
+from app.services.cloudsea_store import load_forecast_archive_precursor
+from app.services.meteo_cache import (
+    operational_precursor_rows_complete,
+    overlay_hourly_with_operational_rows,
+    precursor_rows_from_hourly,
+)
 from scripts.backfill_forecast_archive import (
     build_single_run_url,
     exact_single_run_archive_complete,
@@ -111,6 +120,154 @@ def test_single_run_backfill_uses_exact_00z_run_before_evening_decision() -> Non
     assert "historical-forecast-api" not in url
 
 
+def test_operational_inference_fetches_same_ecmwf_00z_single_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict = {}
+
+    async def fake_get_json(url, *, params, **kwargs):
+        captured.update({"url": url, "params": params, **kwargs})
+        return {"hourly": {"time": []}}
+
+    monkeypatch.setattr(open_meteo, "get_json", fake_get_json)
+    monkeypatch.setattr(open_meteo, "cache_get", lambda _key: None)
+    monkeypatch.setattr(open_meteo, "cache_set", lambda *_args, **_kwargs: None)
+
+    result = asyncio.run(
+        open_meteo.fetch_operational_single_run(
+            41.321319,
+            125.424537,
+            target_date=date(2026, 8, 7),
+        )
+    )
+
+    assert result == {"hourly": {"time": []}}
+    assert captured["url"] == "https://single-runs-api.open-meteo.com/v1/forecast"
+    assert captured["params"]["run"] == "2026-08-06T00:00"
+    assert captured["params"]["models"] == "ecmwf_ifs"
+    assert captured["params"]["forecast_hours"] == 48
+    assert "temperature_850hPa" not in captured["params"]["hourly"]
+
+
+def test_operational_model_never_consumes_generic_forecast_rows() -> None:
+    artifact = _valid_artifact()
+    generic_rows = [{"time": "2026-08-07T03:00", "source": "best_match"}]
+    exact_rows = [{"time": "2026-08-07T03:00", "source": "ecmwf_ifs_00z"}]
+
+    assert predictor.select_ml_precursor_rows(
+        artifact=artifact,
+        target_date="2026-08-07",
+        generic_rows=generic_rows,
+        operational_rows_by_date={"2026-08-07": exact_rows},
+    ) == exact_rows
+    assert predictor.select_ml_precursor_rows(
+        artifact=artifact,
+        target_date="2026-08-07",
+        generic_rows=generic_rows,
+        operational_rows_by_date=None,
+    ) == []
+
+    legacy = dict(artifact, meteo_mode="historical_forecast")
+    assert predictor.select_ml_precursor_rows(
+        artifact=legacy,
+        target_date="2026-08-07",
+        generic_rows=generic_rows,
+        operational_rows_by_date=None,
+    ) == generic_rows
+
+
+def test_prediction_snapshot_changes_when_operational_ml_input_changes() -> None:
+    display = {
+        "rows": [{"time": "2026-08-07T03:00", "rh": 80, "cloud_low": 10}],
+        "fingerprint": "display-same",
+    }
+    exact = {
+        **display,
+        "ml_input": {
+            "source": "open_meteo_single_runs:ecmwf_ifs:run=2026-08-06T00:00",
+            "rows": [{"time": "2026-08-07T03:00", "rh": 95, "cloud_low": 70}],
+        },
+    }
+
+    assert not prediction_feedback.meteo_snapshot_unchanged(display, exact)
+    assert prediction_feedback.meteo_snapshot_unchanged(exact, exact)
+
+    changed_run = json.loads(json.dumps(exact))
+    changed_run["ml_input"]["source"] = (
+        "open_meteo_single_runs:ecmwf_ifs:run=2026-08-06T06:00"
+    )
+    assert not prediction_feedback.meteo_snapshot_unchanged(exact, changed_run)
+
+
+def test_operational_rows_override_the_entire_cloudsea_scoring_weather() -> None:
+    hourly = {
+        "time": ["2026-08-06T19:00", "2026-08-07T03:00"],
+        "relative_humidity_2m": [70.0, 75.0],
+        "cloud_cover_low": [5.0, 6.0],
+        "cloud_cover_mid": [7.0, 8.0],
+        "cloud_cover_high": [9.0, 10.0],
+        "cloud_cover": [10.0, 11.0],
+        "relative_humidity_850hPa": [45.0, 50.0],
+    }
+    exact_rows = [
+        {
+            "time": "2026-08-07T03:00",
+            "rh": 96.0,
+            "cloud_low": 80.0,
+            "cloud_mid": 20.0,
+            "cloud_high": 0.0,
+            "rh_850": None,
+        }
+    ]
+
+    scoring = overlay_hourly_with_operational_rows(
+        hourly,
+        {"2026-08-07": exact_rows},
+    )
+
+    assert scoring["relative_humidity_2m"] == [70.0, 96.0]
+    assert scoring["cloud_cover_low"] == [5.0, 80.0]
+    assert scoring["cloud_cover"] == [10.0, pytest.approx(100 / 3)]
+    assert scoring["relative_humidity_850hPa"] == [45.0, None]
+    assert hourly["relative_humidity_2m"] == [70.0, 75.0]
+
+
+def test_incomplete_operational_window_is_rejected() -> None:
+    rows = [
+        {
+            "time": key,
+            "cloud_low": 10.0,
+            "cloud_mid": 20.0,
+            "cloud_high": 30.0,
+            "visibility": 10_000.0,
+            "rh": 85.0,
+            "wind": 2.0,
+            "temp": 15.0,
+            "dewpoint": 13.0,
+        }
+        for key in precursor_hour_keys("2026-08-07")
+    ]
+
+    assert operational_precursor_rows_complete(rows, "2026-08-07")
+    rows[-1]["visibility"] = None
+    assert not operational_precursor_rows_complete(rows, "2026-08-07")
+
+    times = precursor_hour_keys("2026-08-07")
+    incomplete_hourly = {
+        "time": times,
+        "cloud_cover_mid": [20.0] * len(times),
+        "cloud_cover_high": [30.0] * len(times),
+        "visibility": [10_000.0] * len(times),
+        "relative_humidity_2m": [85.0] * len(times),
+        "wind_speed_10m": [2.0] * len(times),
+        "temperature_2m": [15.0] * len(times),
+        "dew_point_2m": [13.0] * len(times),
+        "precipitation": [0.0] * len(times),
+    }
+    parsed = precursor_rows_from_hourly(incomplete_hourly, "2026-08-07")
+    assert not operational_precursor_rows_complete(parsed, "2026-08-07")
+
+
 def test_old_stitched_archive_is_not_treated_as_exact_single_run(tmp_path) -> None:
     db_path = tmp_path / "archive.db"
     with sqlite3.connect(db_path) as conn:
@@ -122,18 +279,22 @@ def test_old_stitched_archive_is_not_treated_as_exact_single_run(tmp_path) -> No
                 target_date TEXT,
                 issue_time TEXT,
                 ts TEXT,
-                source TEXT
+                source TEXT,
+                raw_json TEXT
             )
             """
         )
         conn.executemany(
             """
             INSERT INTO meteo_forecast_archive
-            (spot_id, viewpoint_id, target_date, issue_time, ts, source)
+            (spot_id, viewpoint_id, target_date, issue_time, ts, source, raw_json)
             VALUES ('wunvshan', 'dianjiangtai', '2026-06-19',
-                    '2026-06-18T18:00:00+08:00', ?, 'historical_forecast')
+                    '2026-06-18T18:00:00+08:00', ?, 'historical_forecast', ?)
             """,
-            [(timestamp,) for timestamp in precursor_hour_keys("2026-06-19")],
+            [
+                (timestamp, json.dumps({"time": timestamp, "rh": 90.0}))
+                for timestamp in precursor_hour_keys("2026-06-19")
+            ],
         )
 
     assert not exact_single_run_archive_complete(
@@ -142,6 +303,13 @@ def test_old_stitched_archive_is_not_treated_as_exact_single_run(tmp_path) -> No
         "2026-06-19",
         db_path=db_path,
     )
+    assert load_forecast_archive_precursor(
+        "wunvshan",
+        "dianjiangtai",
+        "2026-06-19",
+        expected_source="open_meteo_single_runs:ecmwf_ifs:run=2026-06-18T00:00",
+        db_path=db_path,
+    ) == []
 
 
 def test_training_requires_every_expected_hour_from_the_exact_run(tmp_path) -> None:

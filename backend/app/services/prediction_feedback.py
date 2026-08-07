@@ -223,6 +223,17 @@ def _append_access_visit(
 def _same_meteo_snapshot(prev: dict[str, Any] | None, current: dict[str, Any]) -> bool:
     if not prev:
         return False
+    prev_ml = prev.get("ml_input") or {}
+    current_ml = current.get("ml_input") or {}
+    if bool(prev_ml) != bool(current_ml):
+        return False
+    if prev_ml and current_ml:
+        if prev_ml.get("source") != current_ml.get("source"):
+            return False
+        if _meteo_fingerprint(prev_ml.get("rows") or []) != _meteo_fingerprint(
+            current_ml.get("rows") or []
+        ):
+            return False
     prev_fp = prev.get("fingerprint")
     cur_fp = current.get("fingerprint")
     if prev_fp and cur_fp:
@@ -288,7 +299,8 @@ def _maybe_feature_snapshot(
     artifact = resolve_ml_artifact(spot_id, viewpoint_id)
     if not artifact or artifact.get("window") != "v7":
         return None
-    rows = meteo_snapshot.get("rows") or []
+    model_input = meteo_snapshot.get("ml_input") or {}
+    rows = model_input.get("rows") or meteo_snapshot.get("rows") or []
     if not rows:
         return None
     feature_names = artifact.get("feature_names") or []
@@ -300,7 +312,11 @@ def _maybe_feature_snapshot(
         terrain=terrain,
         use_observable_field=use_observable,
     )
-    return {"feature_names": list(feat.keys()), "values": feat}
+    return {
+        "feature_names": list(feat.keys()),
+        "values": feat,
+        "input_source": model_input.get("source") or "display_forecast",
+    }
 
 
 def log_prediction_access_sync(
@@ -315,6 +331,8 @@ def log_prediction_access_sync(
     client_id: str | None = None,
     data_source: str = "live_forecast",
     snapshot_target_dates: list[str] | None = None,
+    operational_rows_by_date: dict[str, list[dict]] | None = None,
+    operational_sources_by_date: dict[str, str] | None = None,
 ) -> None:
     if not settings.cloudsea_enabled or not settings.cloudsea_auto_snapshot:
         return
@@ -335,6 +353,12 @@ def log_prediction_access_sync(
     for target_date in target_dates:
         try:
             meteo_snapshot = _build_meteo_snapshot(hourly, target_date)
+            operational_rows = (operational_rows_by_date or {}).get(target_date) or []
+            if operational_rows:
+                meteo_snapshot["ml_input"] = {
+                    "source": (operational_sources_by_date or {}).get(target_date),
+                    "rows": operational_rows,
+                }
             prediction = _compact_day_prediction(resp, target_date)
             lead = _lead_hours_to_dawn(issue_time, target_date)
             visit = _visit_record(

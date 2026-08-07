@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date as date_cls, datetime
+from datetime import date as date_cls, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.adapters.gibs_wms import fetch_himawari_best_effort
-from app.adapters.open_meteo import fetch_elevation, fetch_forecast, parse_daily_astronomy, slice_hourly_window, estimate_cloud_base
+from app.adapters.open_meteo import (
+    estimate_cloud_base,
+    fetch_elevation,
+    fetch_forecast,
+    fetch_operational_single_run,
+    operational_single_run_source,
+    parse_daily_astronomy,
+    slice_hourly_window,
+)
 from app.adapters.dem import estimate_cloud_top_m, get_terrain_context
 from app.engine.observable_field import compute_observable_field
 from app.adapters.sector_meteo import (
@@ -21,10 +29,18 @@ from app.services.meteo_cache import (
     astronomy_from_bundle,
     hour_rows_from_hourly,
     is_day_meteo_complete,
+    operational_precursor_rows_complete,
+    overlay_hourly_with_operational_rows,
+    precursor_rows_from_hourly,
     rows_to_hourly,
     serialize_astronomy_for_store,
 )
-from app.services.cloudsea_store import load_full_day_meteo_rows, load_meteo_day_cache, save_meteo_day_cache
+from app.services.cloudsea_store import (
+    load_forecast_archive_precursor,
+    load_full_day_meteo_rows,
+    load_meteo_day_cache,
+    save_meteo_day_cache,
+)
 from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
 from app.engine.coord_transform import weather_coords
 from app.engine.cloudsea_features import hour_raw_from_forecast
@@ -60,6 +76,47 @@ from app.services.spot_loader import get_spot, get_viewpoint
 
 TZ = ZoneInfo("Asia/Shanghai")
 SUNRISE_WINDOW_END_HOUR = 7
+
+
+def select_ml_precursor_rows(
+    *,
+    artifact: dict | None,
+    target_date: str,
+    generic_rows: list[dict],
+    operational_rows_by_date: dict[str, list[dict]] | None,
+) -> list[dict]:
+    """Prevent reviewed operational models from consuming best-match weather."""
+    if artifact and artifact.get("meteo_mode") == "operational_single_run":
+        return list((operational_rows_by_date or {}).get(target_date) or [])
+    return generic_rows
+
+
+async def _fetch_operational_rows(
+    lat: float,
+    lng: float,
+    target_dates: list[date_cls],
+) -> tuple[dict[str, list[dict]], dict[str, str]]:
+    rows_by_date: dict[str, list[dict]] = {}
+    sources_by_date: dict[str, str] = {}
+    if not target_dates:
+        return rows_by_date, sources_by_date
+
+    results = await asyncio.gather(
+        *(
+            fetch_operational_single_run(lat, lng, target_date=target_date)
+            for target_date in target_dates
+        ),
+        return_exceptions=True,
+    )
+    for target_date, payload in zip(target_dates, results, strict=True):
+        if isinstance(payload, BaseException) or not isinstance(payload, dict):
+            continue
+        date_key = target_date.isoformat()
+        rows = precursor_rows_from_hourly(payload.get("hourly") or {}, date_key)
+        if operational_precursor_rows_complete(rows, date_key):
+            rows_by_date[date_key] = rows
+            sources_by_date[date_key] = operational_single_run_source(target_date)
+    return rows_by_date, sources_by_date
 
 
 def canonicalize_predict_request(req: PredictRequest) -> PredictRequest:
@@ -430,6 +487,7 @@ def build_predictions_from_hourly(
     hour_limit: int | None = None,
     terrain: dict | None = None,
     viewing_mode: str = "valley_fill",
+    operational_rows_by_date: dict[str, list[dict]] | None = None,
 ) -> list[HourPrediction]:
     times: list[str] = hourly.get("time", [])
     if hour_limit is not None:
@@ -507,11 +565,20 @@ def build_predictions_from_hourly(
                     dews=dews,
                 )
             )
-        safe_operational_model = (
-            ml_artifact is not None
-            and ml_artifact.get("meteo_mode") == "operational_single_run"
+        rows = select_ml_precursor_rows(
+            artifact=ml_artifact,
+            target_date=day_key,
+            generic_rows=rows,
+            operational_rows_by_date=operational_rows_by_date,
         )
-        if req.spot_id and req.viewpoint_id and not safe_operational_model:
+        if (
+            req.spot_id
+            and req.viewpoint_id
+            and not (
+                ml_artifact is not None
+                and ml_artifact.get("meteo_mode") == "operational_single_run"
+            )
+        ):
             rows = supplement_precursor_rows(
                 req.spot_id,
                 req.viewpoint_id,
@@ -898,8 +965,14 @@ async def run_prediction(
     sunrise_months = spot.seasonality.get("sunrise_months") if spot else None
     now = datetime.now(TZ)
     profile_day = now.date()
+    operational_dates: list[date_cls] = []
+    ml_artifact = resolve_ml_artifact(req.spot_id, req.viewpoint_id)
+    if ml_artifact and ml_artifact.get("meteo_mode") == "operational_single_run":
+        if now.hour < SUNRISE_WINDOW_END_HOUR:
+            operational_dates.append(now.date())
+        operational_dates.append(now.date() + timedelta(days=1))
 
-    forecast, terrain = await asyncio.gather(
+    forecast, terrain, operational_result = await asyncio.gather(
         fetch_forecast(wlat, wlng, days=5),
         get_terrain_context(
             wlat,
@@ -909,6 +982,7 @@ async def run_prediction(
             spot_id=req.spot_id,
             viewpoint_id=req.viewpoint_id,
         ),
+        _fetch_operational_rows(wlat, wlng, operational_dates),
     )
     forecast_meta = {
         "source": "open-meteo",
@@ -917,6 +991,20 @@ async def run_prediction(
     }
     hourly = slice_hourly_window(forecast.get("hourly", {}), days=5)
     astronomy = parse_daily_astronomy(forecast)
+    operational_rows_by_date, operational_sources_by_date = operational_result
+    if operational_sources_by_date:
+        forecast_meta["operational_ml_sources"] = operational_sources_by_date
+    fallback_dates = sorted(
+        value.isoformat()
+        for value in operational_dates
+        if value.isoformat() not in operational_rows_by_date
+    )
+    if fallback_dates:
+        forecast_meta["operational_ml_fallback_dates"] = fallback_dates
+    scoring_hourly = overlay_hourly_with_operational_rows(
+        hourly,
+        operational_rows_by_date,
+    )
     viewing_mode, viewing_mode_note, _ = resolve_viewing_mode(
         spot_id=req.spot_id,
         viewpoint_id=req.viewpoint_id,
@@ -940,7 +1028,7 @@ async def run_prediction(
     results = build_predictions_from_hourly(
         req=req,
         elevation=elevation,
-        hourly=hourly,
+        hourly=scoring_hourly,
         astronomy=astronomy,
         cloudsea_months=cloudsea_months,
         sunrise_months=sunrise_months,
@@ -949,6 +1037,7 @@ async def run_prediction(
         hour_limit=req.hours,
         terrain=terrain,
         viewing_mode=viewing_mode,
+        operational_rows_by_date=operational_rows_by_date,
     )
     resp = _build_response(
         req,
@@ -966,7 +1055,7 @@ async def run_prediction(
     schedule_prediction_access_log(
         req=req,
         resp=resp,
-        hourly=hourly,
+        hourly=scoring_hourly,
         elevation=elevation,
         terrain=terrain,
         issue_time=now,
@@ -974,6 +1063,8 @@ async def run_prediction(
         client_id=client_id,
         data_source="live_forecast",
         snapshot_target_dates=snapshot_target_dates,
+        operational_rows_by_date=operational_rows_by_date,
+        operational_sources_by_date=operational_sources_by_date,
     )
     return resp
 
@@ -1137,12 +1228,36 @@ async def run_backtest_prediction(
         forecast_days=min(max((target_date - today).days + 1, 5), 16) if target_date >= today else 1,
     )
 
+    operational_rows_by_date: dict[str, list[dict]] = {}
+    ml_artifact = resolve_ml_artifact(req.spot_id, req.viewpoint_id)
+    if ml_artifact and ml_artifact.get("meteo_mode") == "operational_single_run":
+        if target_date < today and req.spot_id and req.viewpoint_id:
+            rows = load_forecast_archive_precursor(
+                req.spot_id,
+                req.viewpoint_id,
+                date_key,
+                expected_source=operational_single_run_source(target_date),
+            )
+            if operational_precursor_rows_complete(rows, date_key):
+                operational_rows_by_date[date_key] = rows
+        elif target_date <= today + timedelta(days=1):
+            operational_rows_by_date, _ = await _fetch_operational_rows(
+                wlat,
+                wlng,
+                [target_date],
+            )
+
+    scoring_hourly = overlay_hourly_with_operational_rows(
+        display_hourly,
+        operational_rows_by_date,
+    )
+
     # 标注/回测只需目标日逐时；live forecast 的 hourly 含 5–16 天，全量打分会拖垮 CPU
     results = await asyncio.to_thread(
         build_predictions_from_hourly,
         req=req,
         elevation=elevation,
-        hourly=display_hourly,
+        hourly=scoring_hourly,
         astronomy=astronomy,
         cloudsea_months=cloudsea_months,
         sunrise_months=sunrise_months,
@@ -1150,6 +1265,7 @@ async def run_backtest_prediction(
         now=backtest_now,
         terrain=terrain,
         viewing_mode=viewing_mode,
+        operational_rows_by_date=operational_rows_by_date,
     )
 
     window_hours = [
@@ -1161,7 +1277,7 @@ async def run_backtest_prediction(
 
     raw_rows = [
         row
-        for row in hour_rows_from_hourly(display_hourly, date_key)
+        for row in hour_rows_from_hourly(scoring_hourly, date_key)
         if window_start <= parse_shanghai_time(str(row["time"])).hour < window_end
     ]
 

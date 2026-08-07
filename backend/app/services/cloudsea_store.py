@@ -651,6 +651,7 @@ def load_forecast_archive_precursor(
     target_date: str,
     *,
     issue_time: str | None = None,
+    expected_source: str | None = None,
     db_path: Path | None = None,
 ) -> list[dict[str, Any]]:
     from app.services.meteo_backfill import precursor_hour_keys
@@ -661,13 +662,18 @@ def load_forecast_archive_precursor(
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
+        source_clause = " AND source=?" if expected_source else ""
+        params: list[Any] = [spot_id, viewpoint_id, target_date, issue]
+        if expected_source:
+            params.append(expected_source)
         rows = conn.execute(
-            """
+            f"""
             SELECT raw_json FROM meteo_forecast_archive
             WHERE spot_id=? AND viewpoint_id=? AND target_date=? AND issue_time=?
+              {source_clause}
             ORDER BY ts
             """,
-            (spot_id, viewpoint_id, target_date, issue),
+            params,
         ).fetchall()
     finally:
         conn.close()

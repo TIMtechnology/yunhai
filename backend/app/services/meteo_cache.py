@@ -114,3 +114,84 @@ def hour_rows_from_hourly(hourly: dict[str, Any], date_key: str) -> list[dict[st
             )
         )
     return rows
+
+
+def precursor_rows_from_hourly(
+    hourly: dict[str, Any],
+    target_date: str,
+) -> list[dict[str, Any]]:
+    """Build the fixed evening/night/dawn rows used by operational ML."""
+    from app.engine.cloudsea_features import build_meteo_hour_row
+    from app.services.meteo_backfill import precursor_hour_keys
+
+    expected = set(precursor_hour_keys(target_date))
+    rows: list[dict[str, Any]] = []
+    for idx, t_str in enumerate(hourly.get("time") or []):
+        if str(t_str) not in expected:
+            continue
+        rows.append(build_meteo_hour_row(hourly, idx))
+    return sorted(rows, key=lambda row: str(row.get("time") or ""))
+
+
+def operational_precursor_rows_complete(
+    rows: list[dict[str, Any]],
+    target_date: str,
+) -> bool:
+    """Require every expected hour and every field used by the operational model."""
+    from app.engine.cloudsea_features import operational_meteo_row_complete
+    from app.services.meteo_backfill import precursor_hour_keys
+
+    complete_times = {
+        str(row.get("time") or "")
+        for row in rows
+        if operational_meteo_row_complete(row)
+    }
+    return set(precursor_hour_keys(target_date)).issubset(complete_times)
+
+
+def overlay_hourly_with_operational_rows(
+    hourly: dict[str, Any],
+    operational_rows_by_date: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """Overlay exact single-run surface weather onto the hours used for scoring.
+
+    Pressure-level values are deliberately cleared for overlaid hours because the
+    reviewed ECMWF IFS HRES archive contains surface fields only. Keeping values
+    from the generic best-match forecast would silently mix two model products.
+    """
+    scoring: dict[str, Any] = {
+        key: list(value) if isinstance(value, list) else value
+        for key, value in hourly.items()
+    }
+    times = list(scoring.get("time") or [])
+    if not times:
+        return scoring
+    index_by_time = {str(value): idx for idx, value in enumerate(times)}
+
+    for rows in operational_rows_by_date.values():
+        for row in rows:
+            idx = index_by_time.get(str(row.get("time") or ""))
+            if idx is None:
+                continue
+            for source, destination in _ROW_TO_HOURLY.items():
+                series = scoring.get(destination)
+                if not isinstance(series, list) or len(series) != len(times):
+                    series = [None] * len(times)
+                    scoring[destination] = series
+                series[idx] = row.get(source)
+
+            cloud_parts = [
+                row.get("cloud_low"),
+                row.get("cloud_mid"),
+                row.get("cloud_high"),
+            ]
+            cloud_total = scoring.get("cloud_cover")
+            if not isinstance(cloud_total, list) or len(cloud_total) != len(times):
+                cloud_total = [None] * len(times)
+                scoring["cloud_cover"] = cloud_total
+            cloud_total[idx] = (
+                sum(float(value) for value in cloud_parts) / len(cloud_parts)
+                if all(value is not None for value in cloud_parts)
+                else None
+            )
+    return scoring
