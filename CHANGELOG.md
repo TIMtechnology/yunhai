@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.1 — 2026-08-07
+
+### Prediction reliability
+
+- Five-Woman Mountain operational inference now uses the same ECMWF IFS HRES 00Z single run as the reviewed training archive for both the rule engine and ML input.
+- Exact-run inputs are accepted only when all 12 precursor hours and required surface fields are present; otherwise prediction safely falls back to the rule engine without mixing forecast products.
+- Prediction snapshots record the exact model run and input rows, and historical replay rejects archives whose source is not the expected ECMWF run.
+- The five newly labelled positive days were evaluated with a chronological holdout. The 77-day candidate failed the production quality gate, so the reviewed 72-day model remains active.
+
 ## 2.1.0 — 2026-07-28
 
 ### Operational ML
