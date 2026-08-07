@@ -380,10 +380,14 @@ def _ml_factor_summary(hours: list[dict], date_key: str) -> list[str]:
     return lines[:6]
 
 
-def _model_calibration_note(spot_id: str | None, viewpoint_id: str | None) -> dict[str, Any]:
+def _model_calibration_note(
+    spot_id: str | None,
+    viewpoint_id: str | None,
+    ml_status: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     if not spot_id or not viewpoint_id:
         return {"enabled": False}
-    status = get_ml_status(spot_id, viewpoint_id)
+    status = ml_status or get_ml_status(spot_id, viewpoint_id)
     note: dict[str, Any] = {
         "ml_active": status.get("ml_active"),
         "mode": status.get("mode"),
@@ -527,7 +531,11 @@ def build_advisory_context(prediction: dict[str, Any], date_key: str) -> dict[st
         "hourly_forecast_sunrise_window": window_rows,
         "sunrise_window_stats": _sunrise_window_stats(window_rows),
         "ml_status": ml_status,
-        "ml_calibration": _model_calibration_note(spot_id, viewpoint_id),
+        "ml_calibration": _model_calibration_note(
+            spot_id,
+            viewpoint_id,
+            ml_status,
+        ),
         "ml_factor_lines": _ml_factor_summary(hours, date_key),
         "observable": loc.get("observable"),
         "terrain": loc.get("terrain"),

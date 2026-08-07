@@ -189,6 +189,11 @@ def test_llm_context_contains_server_owned_geography_for_independent_assessment(
                 "spot_id": "wunvshan",
                 "viewpoint_id": "dianjiangtai",
                 "viewing_mode": "valley_fill",
+                "ml_status": {
+                    "ml_active": True,
+                    "mode": "wunvshan_model",
+                    "eligible_labels": 77,
+                },
                 "terrain": {
                     "elev_max_5km_m": 824,
                     "relief_5km_m": 520,

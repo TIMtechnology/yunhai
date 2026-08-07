@@ -550,11 +550,19 @@ def test_operational_model_falls_back_when_precursor_window_is_incomplete(
     assert incomplete is None
 
 
-def test_training_replay_uses_the_same_complete_fusion_policy_as_inference() -> None:
+def test_training_replay_uses_the_same_complete_fusion_policy_as_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from app.engine.cloudsea_policy import merge_cloudsea_policy_hour
     from app.engine.cloudsea_scorer import score_cloudsea
     from app.models.schemas import FactorDetail, PredictionScore
     from scripts.train_operational_model import _production_day_probability
+
+    monkeypatch.setattr(
+        cloudsea_ml,
+        "get_ml_status",
+        lambda *_args: {"mode": "wunvshan_model"},
+    )
 
     row = {
         "time": "2026-08-07T05:00",
