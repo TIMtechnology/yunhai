@@ -14,14 +14,24 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 from app.adapters.dem import _azimuth_cache_bucket, fetch_sunrise_elevation_profile, get_terrain_context
 from app.engine.solar import sunrise_azimuth_deg
+from app.engine.coord_transform import weather_coords
 from app.services.spot_loader import load_spots
 from app.services.terrain_store import save_snapshot, snapshot_path
 
 
-async def bake_viewpoint(spot_id: str, viewpoint_id: str, *, lat: float, lng: float, elevation: float) -> Path:
+async def bake_viewpoint(
+    spot_id: str,
+    viewpoint_id: str,
+    *,
+    lat: float,
+    lng: float,
+    elevation: float,
+    coord_sys: str,
+) -> Path:
+    weather_lat, weather_lng = weather_coords(lat, lng, coord_sys)
     ctx = await get_terrain_context(
-        lat,
-        lng,
+        weather_lat,
+        weather_lng,
         elevation=elevation,
         profile_date=date.today(),
         spot_id=None,
@@ -50,21 +60,26 @@ async def bake_viewpoint(spot_id: str, viewpoint_id: str, *, lat: float, lng: fl
     profiles: dict[str, list] = {}
     for month in range(1, 13):
         d = date(2025, month, 15)
-        az = sunrise_azimuth_deg(lat, lng, d)
+        az = sunrise_azimuth_deg(weather_lat, weather_lng, d)
         bucket = str(_azimuth_cache_bucket(az))
         if bucket in profiles:
             continue
-        profiles[bucket] = await fetch_sunrise_elevation_profile(lat, lng, azimuth_deg=az)
+        profiles[bucket] = await fetch_sunrise_elevation_profile(
+            weather_lat,
+            weather_lng,
+            azimuth_deg=az,
+        )
         print(f"  剖面 bucket={bucket}° (month={month}) points={len(profiles[bucket])}")
 
     path = save_snapshot(
         spot_id=spot_id,
         viewpoint_id=viewpoint_id,
-        lat=lat,
-        lng=lng,
+        lat=weather_lat,
+        lng=weather_lng,
         elevation=elevation,
         base=base,
         profiles=profiles,
+        coord_sys="WGS84",
     )
     return path
 
@@ -79,27 +94,34 @@ async def main() -> None:
         parser.error("--viewpoint-id 需同时指定 --spot-id")
 
     spots = load_spots()
-    tasks: list[tuple[str, str, float, float, float]] = []
+    tasks: list[tuple[str, str, float, float, float, str]] = []
     for spot in spots.values():
         if args.spot_id and spot.id != args.spot_id:
             continue
         for vp in spot.viewpoints:
             if args.viewpoint_id and vp.id != args.viewpoint_id:
                 continue
-            tasks.append((spot.id, vp.id, vp.lat, vp.lng, vp.elevation))
+            tasks.append((spot.id, vp.id, vp.lat, vp.lng, vp.elevation, spot.coord_sys))
 
     if not tasks:
         print("无观景点可烘焙")
         return
 
     print(f"将烘焙 {len(tasks)} 个观景点 → {ROOT / 'data' / 'terrain'}")
-    for spot_id, vp_id, lat, lng, elev in tasks:
+    for spot_id, vp_id, lat, lng, elev, coord_sys in tasks:
         out = snapshot_path(spot_id, vp_id)
         print(f"\n[{spot_id}/{vp_id}] {lat:.4f},{lng:.4f} elev={elev}m")
         if args.dry_run:
             print(f"  → {out}")
             continue
-        path = await bake_viewpoint(spot_id, vp_id, lat=lat, lng=lng, elevation=elev)
+        path = await bake_viewpoint(
+            spot_id,
+            vp_id,
+            lat=lat,
+            lng=lng,
+            elevation=elev,
+            coord_sys=coord_sys,
+        )
         print(f"  ✓ 写入 {path}")
         await asyncio.sleep(2.5)
 

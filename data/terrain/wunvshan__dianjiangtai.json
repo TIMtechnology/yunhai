@@ -2,2638 +2,2639 @@
   "version": "v1",
   "spot_id": "wunvshan",
   "viewpoint_id": "dianjiangtai",
-  "lat": 41.321319,
-  "lng": 125.424537,
+  "lat": 41.31899232662774,
+  "lng": 125.41837910655754,
   "elevation": 804.0,
+  "coord_sys": "WGS84",
   "base": {
-    "elev_open_meteo_m": 485.0,
-    "aspect_deg": 140.8,
+    "elev_viewpoint_m": 744.0,
+    "lat": 41.31899232662774,
+    "elev_open_meteo_m": 744.0,
+    "lng": 125.41837910655754,
+    "elev_min_1km_m": 364.0,
+    "elev_max_5km_m": 799.0,
     "elev_min_5km_m": 242.0,
-    "elev_max_1km_m": 753.0,
-    "relief_5km_m": 511.0,
-    "source": "terrain_snapshot_baked",
-    "lng": 125.424537,
-    "elev_min_1km_m": 325.0,
-    "slope_deg": 19.4,
+    "relief_5km_m": 557.0,
+    "slope_deg": 19.6,
+    "aspect_deg": 61.0,
     "sample_counts": {
       "radius_1km": 29,
       "radius_5km": 85
     },
-    "dem_version": "v0_grid_sample",
-    "relief_1km_m": 428.0,
-    "lat": 41.321319,
-    "elev_viewpoint_m": 485.0,
-    "elev_max_5km_m": 753.0
+    "elev_max_1km_m": 799.0,
+    "relief_1km_m": 435.0,
+    "source": "terrain_snapshot_baked",
+    "dem_version": "v0_grid_sample"
   },
   "profiles": {
     "60": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 61.1,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 16.1,
-        "lat": 41.342894,
-        "lng": 125.432838,
-        "elev_m": 420.0
+        "lat": 41.340567,
+        "lng": 125.426681,
+        "elev_m": 427.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 61.1,
-        "lat": 41.332166,
-        "lng": 125.45072,
-        "elev_m": 487.0
+        "lat": 41.329839,
+        "lng": 125.444562,
+        "elev_m": 565.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 106.1,
-        "lat": 41.315085,
-        "lng": 125.453265,
+        "lat": 41.312757,
+        "lng": 125.447106,
         "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 16.1,
-        "lat": 41.364469,
-        "lng": 125.44114,
-        "elev_m": 513.0
+        "lat": 41.362142,
+        "lng": 125.434982,
+        "elev_m": 439.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 61.1,
-        "lat": 41.343014,
-        "lng": 125.476904,
-        "elev_m": 353.0
+        "lat": 41.340687,
+        "lng": 125.470745,
+        "elev_m": 303.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 106.1,
-        "lat": 41.30885,
-        "lng": 125.481993,
+        "lat": 41.306523,
+        "lng": 125.475832,
         "elev_m": 298.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 16.1,
-        "lat": 41.386044,
-        "lng": 125.449441,
+        "lat": 41.383717,
+        "lng": 125.443284,
+        "elev_m": 613.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 61.1,
+        "lat": 41.351534,
+        "lng": 125.496928,
         "elev_m": 621.0
       },
       {
         "distance_km": 7.5,
-        "azimuth_deg": 61.1,
-        "lat": 41.353861,
-        "lng": 125.503087,
-        "elev_m": 712.0
-      },
-      {
-        "distance_km": 7.5,
         "azimuth_deg": 106.1,
-        "lat": 41.302616,
-        "lng": 125.51072,
-        "elev_m": 315.0
+        "lat": 41.300288,
+        "lng": 125.504559,
+        "elev_m": 298.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 16.1,
-        "lat": 41.407619,
-        "lng": 125.457742,
-        "elev_m": 553.0
+        "lat": 41.405292,
+        "lng": 125.451585,
+        "elev_m": 520.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 61.1,
-        "lat": 41.364709,
-        "lng": 125.529271,
-        "elev_m": 352.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 106.1,
-        "lat": 41.296381,
-        "lng": 125.539448,
-        "elev_m": 484.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 16.1,
-        "lat": 41.429194,
-        "lng": 125.466043,
-        "elev_m": 471.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 61.1,
-        "lat": 41.375556,
-        "lng": 125.555454,
-        "elev_m": 420.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 106.1,
-        "lat": 41.290147,
-        "lng": 125.568176,
-        "elev_m": 347.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 16.1,
-        "lat": 41.450769,
-        "lng": 125.474345,
-        "elev_m": 391.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 61.1,
-        "lat": 41.386404,
-        "lng": 125.581638,
-        "elev_m": 300.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 106.1,
-        "lat": 41.283913,
-        "lng": 125.596904,
-        "elev_m": 383.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 16.1,
-        "lat": 41.472345,
-        "lng": 125.482646,
-        "elev_m": 417.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 61.1,
-        "lat": 41.397251,
-        "lng": 125.607821,
-        "elev_m": 361.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 106.1,
-        "lat": 41.277678,
-        "lng": 125.625631,
-        "elev_m": 633.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 16.1,
-        "lat": 41.49392,
-        "lng": 125.490947,
-        "elev_m": 459.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 61.1,
-        "lat": 41.408099,
-        "lng": 125.634005,
-        "elev_m": 463.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 106.1,
-        "lat": 41.271444,
-        "lng": 125.654359,
-        "elev_m": 684.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 16.1,
-        "lat": 41.515495,
-        "lng": 125.499248,
-        "elev_m": 650.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 61.1,
-        "lat": 41.418946,
-        "lng": 125.660188,
-        "elev_m": 442.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 106.1,
-        "lat": 41.265209,
-        "lng": 125.683087,
-        "elev_m": 645.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 16.1,
-        "lat": 41.53707,
-        "lng": 125.50755,
-        "elev_m": 512.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 61.1,
-        "lat": 41.429794,
-        "lng": 125.686372,
-        "elev_m": 310.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 106.1,
-        "lat": 41.258975,
-        "lng": 125.711815,
-        "elev_m": 537.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 16.1,
-        "lat": 41.558645,
-        "lng": 125.515851,
-        "elev_m": 488.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 61.1,
-        "lat": 41.440641,
-        "lng": 125.712555,
+        "lat": 41.362381,
+        "lng": 125.52311,
         "elev_m": 444.0
       },
       {
+        "distance_km": 10.0,
+        "azimuth_deg": 106.1,
+        "lat": 41.294053,
+        "lng": 125.533285,
+        "elev_m": 459.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 16.1,
+        "lat": 41.426867,
+        "lng": 125.459887,
+        "elev_m": 546.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 61.1,
+        "lat": 41.373228,
+        "lng": 125.549293,
+        "elev_m": 491.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 106.1,
+        "lat": 41.287818,
+        "lng": 125.562012,
+        "elev_m": 440.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 16.1,
+        "lat": 41.448442,
+        "lng": 125.468188,
+        "elev_m": 318.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 61.1,
+        "lat": 41.384075,
+        "lng": 125.575476,
+        "elev_m": 302.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 106.1,
+        "lat": 41.281583,
+        "lng": 125.590739,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 16.1,
+        "lat": 41.470017,
+        "lng": 125.47649,
+        "elev_m": 457.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 61.1,
+        "lat": 41.394922,
+        "lng": 125.601659,
+        "elev_m": 328.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 106.1,
+        "lat": 41.275348,
+        "lng": 125.619465,
+        "elev_m": 577.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 16.1,
+        "lat": 41.491592,
+        "lng": 125.484791,
+        "elev_m": 380.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 61.1,
+        "lat": 41.405769,
+        "lng": 125.627842,
+        "elev_m": 427.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 106.1,
+        "lat": 41.269114,
+        "lng": 125.648192,
+        "elev_m": 614.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 16.1,
+        "lat": 41.513167,
+        "lng": 125.493093,
+        "elev_m": 508.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 61.1,
+        "lat": 41.416616,
+        "lng": 125.654025,
+        "elev_m": 366.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 106.1,
+        "lat": 41.262879,
+        "lng": 125.676918,
+        "elev_m": 586.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 16.1,
+        "lat": 41.534742,
+        "lng": 125.501395,
+        "elev_m": 570.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 61.1,
+        "lat": 41.427463,
+        "lng": 125.680207,
+        "elev_m": 307.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 106.1,
+        "lat": 41.256644,
+        "lng": 125.705645,
+        "elev_m": 522.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 16.1,
+        "lat": 41.556317,
+        "lng": 125.509696,
+        "elev_m": 545.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 61.1,
+        "lat": 41.43831,
+        "lng": 125.70639,
+        "elev_m": 455.0
+      },
+      {
         "distance_km": 27.5,
         "azimuth_deg": 106.1,
-        "lat": 41.252741,
-        "lng": 125.740542,
-        "elev_m": 690.0
+        "lat": 41.250409,
+        "lng": 125.734371,
+        "elev_m": 591.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 16.1,
-        "lat": 41.58022,
-        "lng": 125.524152,
-        "elev_m": 492.0
+        "lat": 41.577892,
+        "lng": 125.517998,
+        "elev_m": 568.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 61.1,
-        "lat": 41.451489,
-        "lng": 125.738739,
-        "elev_m": 390.0
+        "lat": 41.449158,
+        "lng": 125.732573,
+        "elev_m": 315.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 106.1,
-        "lat": 41.246506,
-        "lng": 125.76927,
-        "elev_m": 534.0
+        "lat": 41.244174,
+        "lng": 125.763098,
+        "elev_m": 450.0
       }
     ],
     "70": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 72.2,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 27.2,
-        "lat": 41.341297,
-        "lng": 125.438195,
-        "elev_m": 328.0
+        "lat": 41.338971,
+        "lng": 125.432037,
+        "elev_m": 360.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 72.2,
-        "lat": 41.328193,
-        "lng": 125.453005,
-        "elev_m": 356.0
+        "lat": 41.325866,
+        "lng": 125.446846,
+        "elev_m": 395.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 117.2,
-        "lat": 41.311061,
-        "lng": 125.451139,
+        "lat": 41.308735,
+        "lng": 125.44498,
         "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 27.2,
-        "lat": 41.361276,
-        "lng": 125.451853,
-        "elev_m": 582.0
+        "lat": 41.358949,
+        "lng": 125.445695,
+        "elev_m": 586.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 72.2,
-        "lat": 41.335066,
-        "lng": 125.481473,
-        "elev_m": 401.0
+        "lat": 41.332739,
+        "lng": 125.475313,
+        "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 117.2,
-        "lat": 41.300804,
-        "lng": 125.47774,
-        "elev_m": 298.0
+        "lat": 41.298477,
+        "lng": 125.47158,
+        "elev_m": 388.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 27.2,
-        "lat": 41.381254,
-        "lng": 125.465511,
-        "elev_m": 727.0
+        "lat": 41.378927,
+        "lng": 125.459353,
+        "elev_m": 869.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 72.2,
-        "lat": 41.34194,
-        "lng": 125.509941,
-        "elev_m": 389.0
+        "lat": 41.339613,
+        "lng": 125.50378,
+        "elev_m": 464.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 117.2,
-        "lat": 41.290546,
-        "lng": 125.504342,
+        "lat": 41.288219,
+        "lng": 125.498181,
         "elev_m": 298.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 27.2,
-        "lat": 41.401232,
-        "lng": 125.47917,
-        "elev_m": 418.0
+        "lat": 41.398905,
+        "lng": 125.473011,
+        "elev_m": 468.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 72.2,
-        "lat": 41.348814,
-        "lng": 125.538409,
-        "elev_m": 496.0
+        "lat": 41.346486,
+        "lng": 125.532247,
+        "elev_m": 554.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 117.2,
-        "lat": 41.280289,
-        "lng": 125.530944,
-        "elev_m": 344.0
+        "lat": 41.277961,
+        "lng": 125.524782,
+        "elev_m": 436.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 27.2,
-        "lat": 41.421211,
-        "lng": 125.492828,
+        "lat": 41.418884,
+        "lng": 125.486669,
         "elev_m": 316.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 72.2,
-        "lat": 41.355687,
-        "lng": 125.566877,
-        "elev_m": 322.0
+        "lat": 41.35336,
+        "lng": 125.560715,
+        "elev_m": 377.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 117.2,
-        "lat": 41.270031,
-        "lng": 125.557546,
-        "elev_m": 326.0
+        "lat": 41.267704,
+        "lng": 125.551382,
+        "elev_m": 298.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 27.2,
-        "lat": 41.441189,
-        "lng": 125.506486,
-        "elev_m": 557.0
+        "lat": 41.438862,
+        "lng": 125.500327,
+        "elev_m": 537.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 72.2,
-        "lat": 41.362561,
-        "lng": 125.595345,
+        "lat": 41.360233,
+        "lng": 125.589182,
         "elev_m": 300.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 117.2,
-        "lat": 41.259774,
-        "lng": 125.584147,
-        "elev_m": 408.0
+        "lat": 41.257446,
+        "lng": 125.577983,
+        "elev_m": 391.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 27.2,
-        "lat": 41.461168,
-        "lng": 125.520144,
-        "elev_m": 418.0
+        "lat": 41.45884,
+        "lng": 125.513985,
+        "elev_m": 441.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 72.2,
-        "lat": 41.369435,
-        "lng": 125.623813,
+        "lat": 41.367106,
+        "lng": 125.617649,
         "elev_m": 300.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 117.2,
-        "lat": 41.249516,
-        "lng": 125.610749,
-        "elev_m": 530.0
+        "lat": 41.247188,
+        "lng": 125.604583,
+        "elev_m": 431.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 27.2,
-        "lat": 41.481146,
-        "lng": 125.533802,
-        "elev_m": 591.0
+        "lat": 41.478818,
+        "lng": 125.527643,
+        "elev_m": 657.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 72.2,
-        "lat": 41.376309,
-        "lng": 125.652281,
+        "lat": 41.37398,
+        "lng": 125.646116,
         "elev_m": 300.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 117.2,
-        "lat": 41.239259,
-        "lng": 125.637351,
-        "elev_m": 338.0
+        "lat": 41.23693,
+        "lng": 125.631184,
+        "elev_m": 360.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 27.2,
-        "lat": 41.501124,
-        "lng": 125.54746,
-        "elev_m": 578.0
+        "lat": 41.498797,
+        "lng": 125.541301,
+        "elev_m": 433.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 72.2,
-        "lat": 41.383182,
-        "lng": 125.680749,
-        "elev_m": 313.0
+        "lat": 41.380853,
+        "lng": 125.674583,
+        "elev_m": 302.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 117.2,
-        "lat": 41.229001,
-        "lng": 125.663952,
-        "elev_m": 435.0
+        "lat": 41.226673,
+        "lng": 125.657785,
+        "elev_m": 521.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 27.2,
-        "lat": 41.521103,
-        "lng": 125.561118,
-        "elev_m": 446.0
+        "lat": 41.518775,
+        "lng": 125.554959,
+        "elev_m": 584.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 72.2,
-        "lat": 41.390056,
-        "lng": 125.709217,
-        "elev_m": 567.0
+        "lat": 41.387727,
+        "lng": 125.70305,
+        "elev_m": 538.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 117.2,
-        "lat": 41.218744,
-        "lng": 125.690554,
-        "elev_m": 363.0
+        "lat": 41.216415,
+        "lng": 125.684385,
+        "elev_m": 381.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 27.2,
-        "lat": 41.541081,
-        "lng": 125.574776,
-        "elev_m": 481.0
+        "lat": 41.538753,
+        "lng": 125.568616,
+        "elev_m": 528.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 72.2,
-        "lat": 41.39693,
-        "lng": 125.737685,
-        "elev_m": 629.0
+        "lat": 41.3946,
+        "lng": 125.731517,
+        "elev_m": 566.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 117.2,
-        "lat": 41.208486,
-        "lng": 125.717156,
-        "elev_m": 548.0
+        "lat": 41.206157,
+        "lng": 125.710986,
+        "elev_m": 429.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 27.2,
-        "lat": 41.561059,
-        "lng": 125.588435,
-        "elev_m": 469.0
+        "lat": 41.558731,
+        "lng": 125.582274,
+        "elev_m": 501.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 72.2,
-        "lat": 41.403803,
-        "lng": 125.766153,
-        "elev_m": 580.0
+        "lat": 41.401474,
+        "lng": 125.759984,
+        "elev_m": 517.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 117.2,
-        "lat": 41.198229,
-        "lng": 125.743757,
-        "elev_m": 561.0
+        "lat": 41.1959,
+        "lng": 125.737586,
+        "elev_m": 687.0
       }
     ],
     "85": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 86.2,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 41.2,
-        "lat": 41.338205,
-        "lng": 125.444252,
-        "elev_m": 544.0
+        "lat": 41.335878,
+        "lng": 125.438093,
+        "elev_m": 343.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 86.2,
-        "lat": 41.32279,
-        "lng": 125.454376,
+        "lat": 41.320463,
+        "lng": 125.448217,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 131.2,
-        "lat": 41.306513,
-        "lng": 125.447021,
+        "lat": 41.304186,
+        "lng": 125.440862,
         "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 41.2,
-        "lat": 41.355091,
-        "lng": 125.463966,
-        "elev_m": 606.0
+        "lat": 41.352764,
+        "lng": 125.457807,
+        "elev_m": 456.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 86.2,
-        "lat": 41.32426,
-        "lng": 125.484215,
-        "elev_m": 436.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 131.2,
-        "lat": 41.291707,
-        "lng": 125.469505,
-        "elev_m": 391.0
-      },
-      {
-        "distance_km": 7.5,
-        "azimuth_deg": 41.2,
-        "lat": 41.371977,
-        "lng": 125.483681,
-        "elev_m": 545.0
-      },
-      {
-        "distance_km": 7.5,
-        "azimuth_deg": 86.2,
-        "lat": 41.325731,
-        "lng": 125.514054,
-        "elev_m": 461.0
-      },
-      {
-        "distance_km": 7.5,
-        "azimuth_deg": 131.2,
-        "lat": 41.276901,
-        "lng": 125.491989,
-        "elev_m": 416.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 41.2,
-        "lat": 41.388862,
-        "lng": 125.503396,
-        "elev_m": 417.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 86.2,
-        "lat": 41.327201,
-        "lng": 125.543893,
-        "elev_m": 463.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 131.2,
-        "lat": 41.262095,
-        "lng": 125.514473,
-        "elev_m": 427.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 41.2,
-        "lat": 41.405748,
-        "lng": 125.52311,
-        "elev_m": 333.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 86.2,
-        "lat": 41.328672,
-        "lng": 125.573732,
-        "elev_m": 465.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 131.2,
-        "lat": 41.247289,
-        "lng": 125.536957,
+        "lat": 41.321933,
+        "lng": 125.478055,
         "elev_m": 298.0
       },
       {
+        "distance_km": 5.0,
+        "azimuth_deg": 131.2,
+        "lat": 41.28938,
+        "lng": 125.463345,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 41.2,
+        "lat": 41.36965,
+        "lng": 125.477521,
+        "elev_m": 666.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 86.2,
+        "lat": 41.323404,
+        "lng": 125.507893,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 131.2,
+        "lat": 41.274574,
+        "lng": 125.485828,
+        "elev_m": 493.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 41.2,
+        "lat": 41.386536,
+        "lng": 125.497235,
+        "elev_m": 574.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 86.2,
+        "lat": 41.324875,
+        "lng": 125.537731,
+        "elev_m": 405.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 131.2,
+        "lat": 41.259768,
+        "lng": 125.508311,
+        "elev_m": 405.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 41.2,
+        "lat": 41.403421,
+        "lng": 125.516949,
+        "elev_m": 312.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 86.2,
+        "lat": 41.326345,
+        "lng": 125.567568,
+        "elev_m": 576.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 131.2,
+        "lat": 41.244962,
+        "lng": 125.530794,
+        "elev_m": 326.0
+      },
+      {
         "distance_km": 15.0,
         "azimuth_deg": 41.2,
-        "lat": 41.422634,
-        "lng": 125.542825,
-        "elev_m": 366.0
+        "lat": 41.420307,
+        "lng": 125.536663,
+        "elev_m": 460.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 86.2,
-        "lat": 41.330143,
-        "lng": 125.60357,
-        "elev_m": 307.0
+        "lat": 41.327816,
+        "lng": 125.597406,
+        "elev_m": 314.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 131.2,
-        "lat": 41.232482,
-        "lng": 125.55944,
-        "elev_m": 358.0
+        "lat": 41.230156,
+        "lng": 125.553278,
+        "elev_m": 393.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 41.2,
-        "lat": 41.43952,
-        "lng": 125.56254,
-        "elev_m": 396.0
+        "lat": 41.437193,
+        "lng": 125.556377,
+        "elev_m": 323.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 86.2,
-        "lat": 41.331613,
-        "lng": 125.633409,
+        "lat": 41.329286,
+        "lng": 125.627244,
         "elev_m": 299.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 131.2,
-        "lat": 41.217676,
-        "lng": 125.581924,
-        "elev_m": 329.0
+        "lat": 41.215349,
+        "lng": 125.575761,
+        "elev_m": 497.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 41.2,
-        "lat": 41.456406,
-        "lng": 125.582254,
-        "elev_m": 449.0
+        "lat": 41.454079,
+        "lng": 125.576091,
+        "elev_m": 368.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 86.2,
-        "lat": 41.333084,
-        "lng": 125.663248,
-        "elev_m": 378.0
+        "lat": 41.330757,
+        "lng": 125.657082,
+        "elev_m": 372.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 131.2,
-        "lat": 41.20287,
-        "lng": 125.604408,
-        "elev_m": 405.0
+        "lat": 41.200543,
+        "lng": 125.598244,
+        "elev_m": 370.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 41.2,
-        "lat": 41.473292,
-        "lng": 125.601969,
-        "elev_m": 340.0
+        "lat": 41.470965,
+        "lng": 125.595805,
+        "elev_m": 442.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 86.2,
-        "lat": 41.334554,
-        "lng": 125.693087,
-        "elev_m": 375.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 131.2,
-        "lat": 41.188064,
-        "lng": 125.626892,
-        "elev_m": 679.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 41.2,
-        "lat": 41.490177,
-        "lng": 125.621684,
+        "lat": 41.332227,
+        "lng": 125.68692,
         "elev_m": 408.0
       },
       {
+        "distance_km": 22.5,
+        "azimuth_deg": 131.2,
+        "lat": 41.185737,
+        "lng": 125.620727,
+        "elev_m": 663.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 41.2,
+        "lat": 41.48785,
+        "lng": 125.615519,
+        "elev_m": 402.0
+      },
+      {
         "distance_km": 25.0,
         "azimuth_deg": 86.2,
-        "lat": 41.336025,
-        "lng": 125.722926,
-        "elev_m": 323.0
+        "lat": 41.333698,
+        "lng": 125.716758,
+        "elev_m": 318.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 131.2,
-        "lat": 41.173258,
-        "lng": 125.649376,
-        "elev_m": 487.0
+        "lat": 41.170931,
+        "lng": 125.64321,
+        "elev_m": 641.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 41.2,
-        "lat": 41.507063,
-        "lng": 125.641399,
-        "elev_m": 568.0
+        "lat": 41.504736,
+        "lng": 125.635233,
+        "elev_m": 566.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 86.2,
-        "lat": 41.337496,
-        "lng": 125.752765,
-        "elev_m": 482.0
+        "lat": 41.335168,
+        "lng": 125.746596,
+        "elev_m": 493.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 131.2,
-        "lat": 41.158452,
-        "lng": 125.67186,
-        "elev_m": 516.0
+        "lat": 41.156125,
+        "lng": 125.665693,
+        "elev_m": 522.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 41.2,
-        "lat": 41.523949,
-        "lng": 125.661113,
-        "elev_m": 494.0
+        "lat": 41.521622,
+        "lng": 125.654948,
+        "elev_m": 519.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 86.2,
-        "lat": 41.338966,
-        "lng": 125.782604,
-        "elev_m": 523.0
+        "lat": 41.336639,
+        "lng": 125.776433,
+        "elev_m": 620.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 131.2,
-        "lat": 41.143646,
-        "lng": 125.694344,
-        "elev_m": 608.0
+        "lat": 41.141319,
+        "lng": 125.688176,
+        "elev_m": 664.0
       }
     ],
     "105": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 102.6,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 57.6,
-        "lat": 41.333359,
-        "lng": 125.44978,
-        "elev_m": 607.0
+        "lat": 41.331032,
+        "lng": 125.443621,
+        "elev_m": 491.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 102.6,
-        "lat": 41.316427,
-        "lng": 125.453722,
-        "elev_m": 327.0
+        "lat": 41.314101,
+        "lng": 125.447563,
+        "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 147.6,
-        "lat": 41.302361,
-        "lng": 125.440568,
-        "elev_m": 298.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 57.6,
-        "lat": 41.345399,
-        "lng": 125.475022,
-        "elev_m": 428.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 102.6,
-        "lat": 41.311536,
-        "lng": 125.482907,
-        "elev_m": 298.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 147.6,
-        "lat": 41.283404,
-        "lng": 125.4566,
-        "elev_m": 298.0
-      },
-      {
-        "distance_km": 7.5,
-        "azimuth_deg": 57.6,
-        "lat": 41.357439,
-        "lng": 125.500265,
-        "elev_m": 683.0
-      },
-      {
-        "distance_km": 7.5,
-        "azimuth_deg": 102.6,
-        "lat": 41.306644,
-        "lng": 125.512092,
-        "elev_m": 298.0
-      },
-      {
-        "distance_km": 7.5,
-        "azimuth_deg": 147.6,
-        "lat": 41.264446,
-        "lng": 125.472631,
-        "elev_m": 342.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 57.6,
-        "lat": 41.369478,
-        "lng": 125.525507,
-        "elev_m": 350.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 102.6,
-        "lat": 41.301753,
-        "lng": 125.541278,
-        "elev_m": 399.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 147.6,
-        "lat": 41.245488,
-        "lng": 125.488663,
-        "elev_m": 508.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 57.6,
-        "lat": 41.381518,
-        "lng": 125.55075,
+        "lat": 41.300035,
+        "lng": 125.43441,
         "elev_m": 416.0
       },
       {
-        "distance_km": 12.5,
-        "azimuth_deg": 102.6,
-        "lat": 41.296861,
-        "lng": 125.570463,
-        "elev_m": 299.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 147.6,
-        "lat": 41.226531,
-        "lng": 125.504694,
-        "elev_m": 504.0
-      },
-      {
-        "distance_km": 15.0,
+        "distance_km": 5.0,
         "azimuth_deg": 57.6,
-        "lat": 41.393558,
-        "lng": 125.575993,
-        "elev_m": 322.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 102.6,
-        "lat": 41.291969,
-        "lng": 125.599648,
-        "elev_m": 382.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 147.6,
-        "lat": 41.207573,
-        "lng": 125.520725,
-        "elev_m": 464.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 57.6,
-        "lat": 41.405598,
-        "lng": 125.601235,
-        "elev_m": 354.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 102.6,
-        "lat": 41.287078,
-        "lng": 125.628833,
-        "elev_m": 566.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 147.6,
-        "lat": 41.188615,
-        "lng": 125.536757,
-        "elev_m": 532.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 57.6,
-        "lat": 41.417638,
-        "lng": 125.626478,
-        "elev_m": 447.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 102.6,
-        "lat": 41.282186,
-        "lng": 125.658018,
-        "elev_m": 715.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 147.6,
-        "lat": 41.169658,
-        "lng": 125.552788,
-        "elev_m": 570.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 57.6,
-        "lat": 41.429678,
-        "lng": 125.651721,
-        "elev_m": 592.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 102.6,
-        "lat": 41.277294,
-        "lng": 125.687203,
-        "elev_m": 655.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 147.6,
-        "lat": 41.1507,
-        "lng": 125.56882,
-        "elev_m": 363.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 57.6,
-        "lat": 41.441718,
-        "lng": 125.676963,
-        "elev_m": 328.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 102.6,
-        "lat": 41.272403,
-        "lng": 125.716388,
-        "elev_m": 447.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 147.6,
-        "lat": 41.131742,
-        "lng": 125.584851,
-        "elev_m": 792.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 57.6,
-        "lat": 41.453758,
-        "lng": 125.702206,
+        "lat": 41.343072,
+        "lng": 125.468862,
         "elev_m": 312.0
       },
       {
+        "distance_km": 5.0,
+        "azimuth_deg": 102.6,
+        "lat": 41.309209,
+        "lng": 125.476747,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 147.6,
+        "lat": 41.281077,
+        "lng": 125.450441,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 57.6,
+        "lat": 41.355112,
+        "lng": 125.494104,
+        "elev_m": 687.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 102.6,
+        "lat": 41.304318,
+        "lng": 125.505932,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 147.6,
+        "lat": 41.26212,
+        "lng": 125.466472,
+        "elev_m": 351.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 57.6,
+        "lat": 41.367152,
+        "lng": 125.519345,
+        "elev_m": 378.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 102.6,
+        "lat": 41.299427,
+        "lng": 125.535116,
+        "elev_m": 369.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 147.6,
+        "lat": 41.243162,
+        "lng": 125.482503,
+        "elev_m": 497.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 57.6,
+        "lat": 41.379192,
+        "lng": 125.544587,
+        "elev_m": 432.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 102.6,
+        "lat": 41.294535,
+        "lng": 125.5643,
+        "elev_m": 373.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 147.6,
+        "lat": 41.224204,
+        "lng": 125.498534,
+        "elev_m": 403.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 57.6,
+        "lat": 41.391232,
+        "lng": 125.569829,
+        "elev_m": 303.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 102.6,
+        "lat": 41.289644,
+        "lng": 125.593484,
+        "elev_m": 398.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 147.6,
+        "lat": 41.205247,
+        "lng": 125.514565,
+        "elev_m": 511.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 57.6,
+        "lat": 41.403273,
+        "lng": 125.59507,
+        "elev_m": 419.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 102.6,
+        "lat": 41.284752,
+        "lng": 125.622668,
+        "elev_m": 528.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 147.6,
+        "lat": 41.186289,
+        "lng": 125.530596,
+        "elev_m": 416.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 57.6,
+        "lat": 41.415313,
+        "lng": 125.620312,
+        "elev_m": 547.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 102.6,
+        "lat": 41.279861,
+        "lng": 125.651852,
+        "elev_m": 516.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 147.6,
+        "lat": 41.167332,
+        "lng": 125.546627,
+        "elev_m": 547.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 57.6,
+        "lat": 41.427353,
+        "lng": 125.645553,
+        "elev_m": 527.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 102.6,
+        "lat": 41.274969,
+        "lng": 125.681036,
+        "elev_m": 630.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 147.6,
+        "lat": 41.148374,
+        "lng": 125.562658,
+        "elev_m": 362.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 57.6,
+        "lat": 41.439393,
+        "lng": 125.670795,
+        "elev_m": 332.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 102.6,
+        "lat": 41.270078,
+        "lng": 125.710221,
+        "elev_m": 477.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 147.6,
+        "lat": 41.129417,
+        "lng": 125.578689,
+        "elev_m": 744.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 57.6,
+        "lat": 41.451433,
+        "lng": 125.696037,
+        "elev_m": 307.0
+      },
+      {
         "distance_km": 27.5,
         "azimuth_deg": 102.6,
-        "lat": 41.267511,
-        "lng": 125.745573,
-        "elev_m": 457.0
+        "lat": 41.265186,
+        "lng": 125.739405,
+        "elev_m": 488.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 147.6,
-        "lat": 41.112785,
-        "lng": 125.600882,
-        "elev_m": 568.0
+        "lat": 41.110459,
+        "lng": 125.59472,
+        "elev_m": 461.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 57.6,
-        "lat": 41.465797,
-        "lng": 125.727448,
-        "elev_m": 318.0
+        "lat": 41.463473,
+        "lng": 125.721278,
+        "elev_m": 316.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 102.6,
-        "lat": 41.26262,
-        "lng": 125.774759,
-        "elev_m": 579.0
+        "lat": 41.260295,
+        "lng": 125.768589,
+        "elev_m": 434.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 147.6,
-        "lat": 41.093827,
-        "lng": 125.616914,
-        "elev_m": 430.0
+        "lat": 41.091501,
+        "lng": 125.610751,
+        "elev_m": 431.0
       }
     ],
     "115": [
       {
         "distance_km": 0.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "azimuth_deg": 115.4,
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
-        "azimuth_deg": 70.6,
-        "lat": 41.328791,
-        "lng": 125.452737,
-        "elev_m": 393.0
+        "azimuth_deg": 70.4,
+        "lat": 41.326526,
+        "lng": 125.446548,
+        "elev_m": 379.0
       },
       {
         "distance_km": 2.5,
-        "azimuth_deg": 115.6,
-        "lat": 41.311627,
-        "lng": 125.451512,
+        "azimuth_deg": 115.4,
+        "lat": 41.30936,
+        "lng": 125.445391,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
-        "azimuth_deg": 160.6,
-        "lat": 41.300141,
-        "lng": 125.434486,
-        "elev_m": 416.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 70.6,
-        "lat": 41.336263,
-        "lng": 125.480936,
-        "elev_m": 407.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.301935,
-        "lng": 125.478487,
+        "azimuth_deg": 160.4,
+        "lat": 41.297836,
+        "lng": 125.428411,
         "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
-        "azimuth_deg": 160.6,
-        "lat": 41.278962,
-        "lng": 125.444435,
+        "azimuth_deg": 70.4,
+        "lat": 41.33406,
+        "lng": 125.474717,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 115.4,
+        "lat": 41.299728,
+        "lng": 125.472403,
+        "elev_m": 412.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 160.4,
+        "lat": 41.27668,
+        "lng": 125.438442,
         "elev_m": 298.0
       },
       {
         "distance_km": 7.5,
-        "azimuth_deg": 70.6,
-        "lat": 41.343734,
-        "lng": 125.509136,
-        "elev_m": 431.0
+        "azimuth_deg": 70.4,
+        "lat": 41.341594,
+        "lng": 125.502887,
+        "elev_m": 490.0
       },
       {
         "distance_km": 7.5,
-        "azimuth_deg": 115.6,
-        "lat": 41.292243,
-        "lng": 125.505462,
-        "elev_m": 298.0
+        "azimuth_deg": 115.4,
+        "lat": 41.290095,
+        "lng": 125.499415,
+        "elev_m": 390.0
       },
       {
         "distance_km": 7.5,
-        "azimuth_deg": 160.6,
-        "lat": 41.257784,
-        "lng": 125.454384,
+        "azimuth_deg": 160.4,
+        "lat": 41.255523,
+        "lng": 125.448473,
         "elev_m": 298.0
       },
       {
         "distance_km": 10.0,
-        "azimuth_deg": 70.6,
-        "lat": 41.351206,
-        "lng": 125.537335,
-        "elev_m": 440.0
+        "azimuth_deg": 70.4,
+        "lat": 41.349129,
+        "lng": 125.531056,
+        "elev_m": 541.0
       },
       {
         "distance_km": 10.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.282551,
-        "lng": 125.532437,
-        "elev_m": 391.0
+        "azimuth_deg": 115.4,
+        "lat": 41.280463,
+        "lng": 125.526427,
+        "elev_m": 414.0
       },
       {
         "distance_km": 10.0,
-        "azimuth_deg": 160.6,
-        "lat": 41.236605,
-        "lng": 125.464332,
-        "elev_m": 316.0
+        "azimuth_deg": 160.4,
+        "lat": 41.234367,
+        "lng": 125.458505,
+        "elev_m": 467.0
       },
       {
         "distance_km": 12.5,
-        "azimuth_deg": 70.6,
-        "lat": 41.358678,
-        "lng": 125.565535,
-        "elev_m": 305.0
+        "azimuth_deg": 70.4,
+        "lat": 41.356663,
+        "lng": 125.559225,
+        "elev_m": 322.0
       },
       {
         "distance_km": 12.5,
-        "azimuth_deg": 115.6,
-        "lat": 41.272859,
-        "lng": 125.559412,
-        "elev_m": 365.0
+        "azimuth_deg": 115.4,
+        "lat": 41.27083,
+        "lng": 125.553439,
+        "elev_m": 298.0
       },
       {
         "distance_km": 12.5,
-        "azimuth_deg": 160.6,
-        "lat": 41.215427,
-        "lng": 125.474281,
-        "elev_m": 633.0
+        "azimuth_deg": 160.4,
+        "lat": 41.213211,
+        "lng": 125.468536,
+        "elev_m": 538.0
       },
       {
         "distance_km": 15.0,
-        "azimuth_deg": 70.6,
-        "lat": 41.36615,
-        "lng": 125.593734,
+        "azimuth_deg": 70.4,
+        "lat": 41.364197,
+        "lng": 125.587394,
         "elev_m": 300.0
       },
       {
         "distance_km": 15.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.263167,
-        "lng": 125.586387,
-        "elev_m": 447.0
+        "azimuth_deg": 115.4,
+        "lat": 41.261198,
+        "lng": 125.58045,
+        "elev_m": 422.0
       },
       {
         "distance_km": 15.0,
-        "azimuth_deg": 160.6,
-        "lat": 41.194249,
-        "lng": 125.48423,
-        "elev_m": 597.0
+        "azimuth_deg": 160.4,
+        "lat": 41.192054,
+        "lng": 125.478568,
+        "elev_m": 520.0
       },
       {
         "distance_km": 17.5,
-        "azimuth_deg": 70.6,
-        "lat": 41.373621,
-        "lng": 125.621934,
+        "azimuth_deg": 70.4,
+        "lat": 41.371731,
+        "lng": 125.615563,
         "elev_m": 300.0
       },
       {
         "distance_km": 17.5,
-        "azimuth_deg": 115.6,
-        "lat": 41.253475,
-        "lng": 125.613362,
-        "elev_m": 564.0
+        "azimuth_deg": 115.4,
+        "lat": 41.251565,
+        "lng": 125.607462,
+        "elev_m": 427.0
       },
       {
         "distance_km": 17.5,
-        "azimuth_deg": 160.6,
-        "lat": 41.17307,
-        "lng": 125.494179,
-        "elev_m": 386.0
+        "azimuth_deg": 160.4,
+        "lat": 41.170898,
+        "lng": 125.488599,
+        "elev_m": 528.0
       },
       {
         "distance_km": 20.0,
-        "azimuth_deg": 70.6,
-        "lat": 41.381093,
-        "lng": 125.650133,
-        "elev_m": 301.0
+        "azimuth_deg": 70.4,
+        "lat": 41.379265,
+        "lng": 125.643732,
+        "elev_m": 300.0
       },
       {
         "distance_km": 20.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.243783,
-        "lng": 125.640337,
-        "elev_m": 532.0
+        "azimuth_deg": 115.4,
+        "lat": 41.241933,
+        "lng": 125.634474,
+        "elev_m": 464.0
       },
       {
         "distance_km": 20.0,
-        "azimuth_deg": 160.6,
-        "lat": 41.151892,
-        "lng": 125.504128,
-        "elev_m": 685.0
+        "azimuth_deg": 160.4,
+        "lat": 41.149742,
+        "lng": 125.49863,
+        "elev_m": 611.0
       },
       {
         "distance_km": 22.5,
-        "azimuth_deg": 70.6,
-        "lat": 41.388565,
-        "lng": 125.678333,
-        "elev_m": 334.0
+        "azimuth_deg": 70.4,
+        "lat": 41.386799,
+        "lng": 125.671902,
+        "elev_m": 324.0
       },
       {
         "distance_km": 22.5,
-        "azimuth_deg": 115.6,
-        "lat": 41.234091,
-        "lng": 125.667312,
-        "elev_m": 493.0
+        "azimuth_deg": 115.4,
+        "lat": 41.232301,
+        "lng": 125.661486,
+        "elev_m": 360.0
       },
       {
         "distance_km": 22.5,
-        "azimuth_deg": 160.6,
-        "lat": 41.130713,
-        "lng": 125.514077,
-        "elev_m": 420.0
+        "azimuth_deg": 160.4,
+        "lat": 41.128585,
+        "lng": 125.508662,
+        "elev_m": 357.0
       },
       {
         "distance_km": 25.0,
-        "azimuth_deg": 70.6,
-        "lat": 41.396037,
-        "lng": 125.706533,
-        "elev_m": 570.0
+        "azimuth_deg": 70.4,
+        "lat": 41.394333,
+        "lng": 125.700071,
+        "elev_m": 451.0
       },
       {
         "distance_km": 25.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.224399,
-        "lng": 125.694287,
-        "elev_m": 591.0
+        "azimuth_deg": 115.4,
+        "lat": 41.222668,
+        "lng": 125.688498,
+        "elev_m": 442.0
       },
       {
         "distance_km": 25.0,
-        "azimuth_deg": 160.6,
-        "lat": 41.109535,
-        "lng": 125.524026,
-        "elev_m": 221.0
+        "azimuth_deg": 160.4,
+        "lat": 41.107429,
+        "lng": 125.518693,
+        "elev_m": 327.0
       },
       {
         "distance_km": 27.5,
-        "azimuth_deg": 70.6,
-        "lat": 41.403509,
-        "lng": 125.734732,
-        "elev_m": 509.0
+        "azimuth_deg": 70.4,
+        "lat": 41.401867,
+        "lng": 125.72824,
+        "elev_m": 641.0
       },
       {
         "distance_km": 27.5,
-        "azimuth_deg": 115.6,
-        "lat": 41.214707,
-        "lng": 125.721262,
-        "elev_m": 649.0
+        "azimuth_deg": 115.4,
+        "lat": 41.213036,
+        "lng": 125.71551,
+        "elev_m": 629.0
       },
       {
         "distance_km": 27.5,
-        "azimuth_deg": 160.6,
-        "lat": 41.088357,
-        "lng": 125.533975,
-        "elev_m": 350.0
+        "azimuth_deg": 160.4,
+        "lat": 41.086273,
+        "lng": 125.528725,
+        "elev_m": 205.0
       },
       {
         "distance_km": 30.0,
-        "azimuth_deg": 70.6,
-        "lat": 41.41098,
-        "lng": 125.762932,
-        "elev_m": 741.0
+        "azimuth_deg": 70.4,
+        "lat": 41.409401,
+        "lng": 125.756409,
+        "elev_m": 558.0
       },
       {
         "distance_km": 30.0,
-        "azimuth_deg": 115.6,
-        "lat": 41.205015,
-        "lng": 125.748237,
-        "elev_m": 646.0
+        "azimuth_deg": 115.4,
+        "lat": 41.203403,
+        "lng": 125.742522,
+        "elev_m": 726.0
       },
       {
         "distance_km": 30.0,
-        "azimuth_deg": 160.6,
-        "lat": 41.067178,
-        "lng": 125.543923,
-        "elev_m": 410.0
+        "azimuth_deg": 160.4,
+        "lat": 41.065116,
+        "lng": 125.538756,
+        "elev_m": 428.0
       }
     ],
     "120": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 121.8,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 76.8,
-        "lat": 41.326446,
-        "lng": 125.45365,
+        "lat": 41.32412,
+        "lng": 125.447491,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 121.8,
-        "lat": 41.309484,
-        "lng": 125.449951,
+        "lat": 41.307158,
+        "lng": 125.443792,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 166.8,
-        "lat": 41.299454,
-        "lng": 125.431364,
-        "elev_m": 360.0
+        "lat": 41.297128,
+        "lng": 125.425207,
+        "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 76.8,
-        "lat": 41.331574,
-        "lng": 125.482764,
-        "elev_m": 434.0
+        "lat": 41.329248,
+        "lng": 125.476603,
+        "elev_m": 383.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 121.8,
-        "lat": 41.297649,
-        "lng": 125.475365,
-        "elev_m": 397.0
+        "lat": 41.295323,
+        "lng": 125.469206,
+        "elev_m": 413.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 166.8,
-        "lat": 41.27759,
-        "lng": 125.438192,
+        "lat": 41.275263,
+        "lng": 125.432035,
         "elev_m": 298.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 76.8,
-        "lat": 41.336701,
-        "lng": 125.511877,
-        "elev_m": 341.0
+        "lat": 41.334376,
+        "lng": 125.505715,
+        "elev_m": 383.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 121.8,
-        "lat": 41.285814,
-        "lng": 125.500779,
-        "elev_m": 329.0
+        "lat": 41.283489,
+        "lng": 125.494619,
+        "elev_m": 408.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 166.8,
-        "lat": 41.255725,
-        "lng": 125.445019,
+        "lat": 41.253399,
+        "lng": 125.438862,
         "elev_m": 298.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 76.8,
-        "lat": 41.341829,
-        "lng": 125.54099,
-        "elev_m": 506.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 121.8,
-        "lat": 41.273979,
-        "lng": 125.526192,
-        "elev_m": 298.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 166.8,
-        "lat": 41.233861,
-        "lng": 125.451846,
-        "elev_m": 399.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 76.8,
-        "lat": 41.346956,
-        "lng": 125.570103,
-        "elev_m": 328.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 121.8,
-        "lat": 41.262144,
-        "lng": 125.551606,
-        "elev_m": 298.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 166.8,
-        "lat": 41.211996,
-        "lng": 125.458674,
-        "elev_m": 480.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 76.8,
-        "lat": 41.352084,
-        "lng": 125.599217,
-        "elev_m": 386.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 121.8,
-        "lat": 41.250309,
-        "lng": 125.57702,
-        "elev_m": 374.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 166.8,
-        "lat": 41.190131,
-        "lng": 125.465501,
-        "elev_m": 518.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 76.8,
-        "lat": 41.357211,
-        "lng": 125.62833,
-        "elev_m": 354.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 121.8,
-        "lat": 41.238474,
-        "lng": 125.602434,
-        "elev_m": 399.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 166.8,
-        "lat": 41.168267,
-        "lng": 125.472328,
-        "elev_m": 681.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 76.8,
-        "lat": 41.362339,
-        "lng": 125.657443,
-        "elev_m": 313.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 121.8,
-        "lat": 41.226639,
-        "lng": 125.627848,
-        "elev_m": 597.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 166.8,
-        "lat": 41.146402,
-        "lng": 125.479156,
-        "elev_m": 610.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 76.8,
-        "lat": 41.367466,
-        "lng": 125.686556,
-        "elev_m": 372.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 121.8,
-        "lat": 41.214805,
-        "lng": 125.653262,
-        "elev_m": 446.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 166.8,
-        "lat": 41.124538,
-        "lng": 125.485983,
-        "elev_m": 552.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 76.8,
-        "lat": 41.372594,
-        "lng": 125.71567,
-        "elev_m": 530.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 121.8,
-        "lat": 41.20297,
-        "lng": 125.678676,
-        "elev_m": 400.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 166.8,
-        "lat": 41.102673,
-        "lng": 125.492811,
-        "elev_m": 293.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 76.8,
-        "lat": 41.377721,
-        "lng": 125.744783,
-        "elev_m": 589.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 121.8,
-        "lat": 41.191135,
-        "lng": 125.704089,
-        "elev_m": 695.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 166.8,
-        "lat": 41.080808,
-        "lng": 125.499638,
-        "elev_m": 379.0
-      },
-      {
-        "distance_km": 30.0,
-        "azimuth_deg": 76.8,
-        "lat": 41.382849,
-        "lng": 125.773896,
+        "lat": 41.339504,
+        "lng": 125.534827,
         "elev_m": 502.0
       },
       {
+        "distance_km": 10.0,
+        "azimuth_deg": 121.8,
+        "lat": 41.271654,
+        "lng": 125.520032,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 166.8,
+        "lat": 41.231534,
+        "lng": 125.44569,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 76.8,
+        "lat": 41.344632,
+        "lng": 125.56394,
+        "elev_m": 357.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 121.8,
+        "lat": 41.25982,
+        "lng": 125.545446,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 166.8,
+        "lat": 41.20967,
+        "lng": 125.452518,
+        "elev_m": 504.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 76.8,
+        "lat": 41.34976,
+        "lng": 125.593052,
+        "elev_m": 392.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 121.8,
+        "lat": 41.247985,
+        "lng": 125.570859,
+        "elev_m": 429.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 166.8,
+        "lat": 41.187805,
+        "lng": 125.459346,
+        "elev_m": 669.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 76.8,
+        "lat": 41.354888,
+        "lng": 125.622164,
+        "elev_m": 300.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 121.8,
+        "lat": 41.236151,
+        "lng": 125.596272,
+        "elev_m": 391.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 166.8,
+        "lat": 41.165941,
+        "lng": 125.466173,
+        "elev_m": 516.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 76.8,
+        "lat": 41.360016,
+        "lng": 125.651276,
+        "elev_m": 383.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 121.8,
+        "lat": 41.224316,
+        "lng": 125.621686,
+        "elev_m": 495.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 166.8,
+        "lat": 41.144076,
+        "lng": 125.473001,
+        "elev_m": 645.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 76.8,
+        "lat": 41.365144,
+        "lng": 125.680388,
+        "elev_m": 304.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 121.8,
+        "lat": 41.212482,
+        "lng": 125.647099,
+        "elev_m": 485.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 166.8,
+        "lat": 41.122212,
+        "lng": 125.479829,
+        "elev_m": 658.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 76.8,
+        "lat": 41.370272,
+        "lng": 125.7095,
+        "elev_m": 527.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 121.8,
+        "lat": 41.200647,
+        "lng": 125.672512,
+        "elev_m": 438.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 166.8,
+        "lat": 41.100347,
+        "lng": 125.486657,
+        "elev_m": 474.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 76.8,
+        "lat": 41.3754,
+        "lng": 125.738612,
+        "elev_m": 584.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 121.8,
+        "lat": 41.188813,
+        "lng": 125.697925,
+        "elev_m": 629.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 166.8,
+        "lat": 41.078483,
+        "lng": 125.493484,
+        "elev_m": 406.0
+      },
+      {
+        "distance_km": 30.0,
+        "azimuth_deg": 76.8,
+        "lat": 41.380528,
+        "lng": 125.767724,
+        "elev_m": 405.0
+      },
+      {
         "distance_km": 30.0,
         "azimuth_deg": 121.8,
-        "lat": 41.1793,
-        "lng": 125.729503,
-        "elev_m": 765.0
+        "lat": 41.176978,
+        "lng": 125.723339,
+        "elev_m": 790.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 166.8,
-        "lat": 41.058944,
-        "lng": 125.506465,
-        "elev_m": 180.0
+        "lat": 41.056618,
+        "lng": 125.500312,
+        "elev_m": 335.0
       }
     ],
     "110": [
       {
         "distance_km": 0.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "azimuth_deg": 111.9,
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
-        "azimuth_deg": 63.5,
-        "lat": 41.331341,
-        "lng": 125.451297,
-        "elev_m": 455.0
+        "azimuth_deg": 66.9,
+        "lat": 41.327809,
+        "lng": 125.445881,
+        "elev_m": 452.0
       },
       {
         "distance_km": 2.5,
-        "azimuth_deg": 108.5,
-        "lat": 41.314194,
-        "lng": 125.452895,
+        "azimuth_deg": 111.9,
+        "lat": 41.310621,
+        "lng": 125.446126,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
-        "azimuth_deg": 153.5,
-        "lat": 41.301221,
-        "lng": 125.437881,
-        "elev_m": 323.0
+        "azimuth_deg": 156.9,
+        "lat": 41.298337,
+        "lng": 125.430118,
+        "elev_m": 334.0
       },
       {
         "distance_km": 5.0,
-        "azimuth_deg": 63.5,
-        "lat": 41.341363,
-        "lng": 125.478058,
-        "elev_m": 312.0
-      },
-      {
-        "distance_km": 5.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.30707,
-        "lng": 125.481254,
+        "azimuth_deg": 66.9,
+        "lat": 41.336625,
+        "lng": 125.473382,
         "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
-        "azimuth_deg": 153.5,
-        "lat": 41.281124,
-        "lng": 125.451226,
+        "azimuth_deg": 111.9,
+        "lat": 41.30225,
+        "lng": 125.473873,
+        "elev_m": 386.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 156.9,
+        "lat": 41.277683,
+        "lng": 125.441856,
         "elev_m": 298.0
       },
       {
         "distance_km": 7.5,
-        "azimuth_deg": 63.5,
-        "lat": 41.351385,
-        "lng": 125.504818,
-        "elev_m": 629.0
+        "azimuth_deg": 66.9,
+        "lat": 41.345441,
+        "lng": 125.500884,
+        "elev_m": 462.0
       },
       {
         "distance_km": 7.5,
-        "azimuth_deg": 108.5,
-        "lat": 41.299945,
-        "lng": 125.509612,
+        "azimuth_deg": 111.9,
+        "lat": 41.293879,
+        "lng": 125.50162,
+        "elev_m": 304.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 156.9,
+        "lat": 41.257028,
+        "lng": 125.453595,
         "elev_m": 298.0
       },
       {
-        "distance_km": 7.5,
-        "azimuth_deg": 153.5,
-        "lat": 41.261026,
-        "lng": 125.46457,
-        "elev_m": 345.0
+        "distance_km": 10.0,
+        "azimuth_deg": 66.9,
+        "lat": 41.354257,
+        "lng": 125.528385,
+        "elev_m": 436.0
       },
       {
         "distance_km": 10.0,
-        "azimuth_deg": 63.5,
-        "lat": 41.361407,
-        "lng": 125.531579,
-        "elev_m": 376.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.292821,
-        "lng": 125.537971,
-        "elev_m": 516.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 153.5,
-        "lat": 41.240929,
-        "lng": 125.477915,
-        "elev_m": 493.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 63.5,
-        "lat": 41.371429,
-        "lng": 125.558339,
-        "elev_m": 333.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 108.5,
-        "lat": 41.285696,
-        "lng": 125.566329,
-        "elev_m": 356.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 153.5,
-        "lat": 41.220831,
-        "lng": 125.491259,
-        "elev_m": 335.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 63.5,
-        "lat": 41.381451,
-        "lng": 125.5851,
-        "elev_m": 314.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.278572,
-        "lng": 125.594688,
-        "elev_m": 392.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 153.5,
-        "lat": 41.200734,
-        "lng": 125.504604,
-        "elev_m": 435.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 63.5,
-        "lat": 41.391473,
-        "lng": 125.61186,
-        "elev_m": 433.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 108.5,
-        "lat": 41.271447,
-        "lng": 125.623046,
-        "elev_m": 635.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 153.5,
-        "lat": 41.180636,
-        "lng": 125.517948,
-        "elev_m": 467.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 63.5,
-        "lat": 41.401494,
-        "lng": 125.63862,
-        "elev_m": 347.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.264323,
-        "lng": 125.651405,
-        "elev_m": 839.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 153.5,
-        "lat": 41.160538,
-        "lng": 125.531293,
-        "elev_m": 565.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 63.5,
-        "lat": 41.411516,
-        "lng": 125.665381,
-        "elev_m": 306.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 108.5,
-        "lat": 41.257198,
-        "lng": 125.679763,
+        "azimuth_deg": 111.9,
+        "lat": 41.285508,
+        "lng": 125.529367,
         "elev_m": 511.0
       },
       {
+        "distance_km": 10.0,
+        "azimuth_deg": 156.9,
+        "lat": 41.236373,
+        "lng": 125.465334,
+        "elev_m": 311.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 66.9,
+        "lat": 41.363074,
+        "lng": 125.555887,
+        "elev_m": 322.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 111.9,
+        "lat": 41.277136,
+        "lng": 125.557114,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 156.9,
+        "lat": 41.215718,
+        "lng": 125.477072,
+        "elev_m": 576.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 66.9,
+        "lat": 41.37189,
+        "lng": 125.583388,
+        "elev_m": 325.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 111.9,
+        "lat": 41.268765,
+        "lng": 125.584861,
+        "elev_m": 568.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 156.9,
+        "lat": 41.195063,
+        "lng": 125.488811,
+        "elev_m": 542.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 66.9,
+        "lat": 41.380706,
+        "lng": 125.61089,
+        "elev_m": 346.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 111.9,
+        "lat": 41.260394,
+        "lng": 125.612608,
+        "elev_m": 534.0
+      },
+      {
+        "distance_km": 17.5,
+        "azimuth_deg": 156.9,
+        "lat": 41.174408,
+        "lng": 125.50055,
+        "elev_m": 384.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 66.9,
+        "lat": 41.389522,
+        "lng": 125.638392,
+        "elev_m": 412.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 111.9,
+        "lat": 41.252023,
+        "lng": 125.640355,
+        "elev_m": 586.0
+      },
+      {
+        "distance_km": 20.0,
+        "azimuth_deg": 156.9,
+        "lat": 41.153753,
+        "lng": 125.512288,
+        "elev_m": 717.0
+      },
+      {
         "distance_km": 22.5,
-        "azimuth_deg": 153.5,
-        "lat": 41.140441,
-        "lng": 125.544637,
-        "elev_m": 503.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 63.5,
-        "lat": 41.421538,
-        "lng": 125.692141,
-        "elev_m": 310.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.250073,
-        "lng": 125.708121,
-        "elev_m": 641.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 153.5,
-        "lat": 41.120343,
-        "lng": 125.557982,
-        "elev_m": 523.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 63.5,
-        "lat": 41.43156,
-        "lng": 125.718902,
-        "elev_m": 456.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 108.5,
-        "lat": 41.242949,
-        "lng": 125.73648,
-        "elev_m": 775.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 153.5,
-        "lat": 41.100246,
-        "lng": 125.571326,
-        "elev_m": 526.0
-      },
-      {
-        "distance_km": 30.0,
-        "azimuth_deg": 63.5,
-        "lat": 41.441582,
-        "lng": 125.745662,
+        "azimuth_deg": 66.9,
+        "lat": 41.398339,
+        "lng": 125.665893,
         "elev_m": 367.0
       },
       {
-        "distance_km": 30.0,
-        "azimuth_deg": 108.5,
-        "lat": 41.235824,
-        "lng": 125.764838,
-        "elev_m": 553.0
+        "distance_km": 22.5,
+        "azimuth_deg": 111.9,
+        "lat": 41.243652,
+        "lng": 125.668102,
+        "elev_m": 570.0
+      },
+      {
+        "distance_km": 22.5,
+        "azimuth_deg": 156.9,
+        "lat": 41.133098,
+        "lng": 125.524027,
+        "elev_m": 245.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 66.9,
+        "lat": 41.407155,
+        "lng": 125.693395,
+        "elev_m": 524.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 111.9,
+        "lat": 41.23528,
+        "lng": 125.695849,
+        "elev_m": 487.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 156.9,
+        "lat": 41.112443,
+        "lng": 125.535766,
+        "elev_m": 430.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 66.9,
+        "lat": 41.415971,
+        "lng": 125.720896,
+        "elev_m": 397.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 111.9,
+        "lat": 41.226909,
+        "lng": 125.723596,
+        "elev_m": 518.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 156.9,
+        "lat": 41.091788,
+        "lng": 125.547504,
+        "elev_m": 548.0
       },
       {
         "distance_km": 30.0,
-        "azimuth_deg": 153.5,
-        "lat": 41.080148,
-        "lng": 125.58467,
-        "elev_m": 456.0
+        "azimuth_deg": 66.9,
+        "lat": 41.424788,
+        "lng": 125.748398,
+        "elev_m": 514.0
+      },
+      {
+        "distance_km": 30.0,
+        "azimuth_deg": 111.9,
+        "lat": 41.218538,
+        "lng": 125.751343,
+        "elev_m": 676.0
+      },
+      {
+        "distance_km": 30.0,
+        "azimuth_deg": 156.9,
+        "lat": 41.071133,
+        "lng": 125.559243,
+        "elev_m": 486.0
       }
     ],
     "95": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 93.0,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 48.0,
-        "lat": 41.33636,
-        "lng": 125.446743,
-        "elev_m": 599.0
+        "lat": 41.334033,
+        "lng": 125.440584,
+        "elev_m": 439.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 93.0,
-        "lat": 41.320162,
-        "lng": 125.4544,
+        "lat": 41.317836,
+        "lng": 125.448241,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 138.0,
-        "lat": 41.304642,
-        "lng": 125.444565,
-        "elev_m": 298.0
+        "lat": 41.302315,
+        "lng": 125.438406,
+        "elev_m": 315.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 48.0,
-        "lat": 41.351401,
-        "lng": 125.468948,
-        "elev_m": 417.0
+        "lat": 41.349074,
+        "lng": 125.462789,
+        "elev_m": 394.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 93.0,
-        "lat": 41.319006,
-        "lng": 125.484264,
-        "elev_m": 309.0
+        "lat": 41.316679,
+        "lng": 125.478104,
+        "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 138.0,
-        "lat": 41.287965,
-        "lng": 125.464592,
+        "lat": 41.285639,
+        "lng": 125.458433,
         "elev_m": 298.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 48.0,
-        "lat": 41.366442,
-        "lng": 125.491154,
-        "elev_m": 472.0
+        "lat": 41.364116,
+        "lng": 125.484994,
+        "elev_m": 455.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 93.0,
-        "lat": 41.317849,
-        "lng": 125.514127,
+        "lat": 41.315522,
+        "lng": 125.507966,
         "elev_m": 298.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 138.0,
-        "lat": 41.271288,
-        "lng": 125.48462,
+        "lat": 41.268962,
+        "lng": 125.47846,
         "elev_m": 421.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 48.0,
-        "lat": 41.381483,
-        "lng": 125.51336,
-        "elev_m": 467.0
+        "lat": 41.379157,
+        "lng": 125.507199,
+        "elev_m": 546.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 93.0,
-        "lat": 41.316692,
-        "lng": 125.543991,
-        "elev_m": 467.0
+        "lat": 41.314366,
+        "lng": 125.537828,
+        "elev_m": 495.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 138.0,
-        "lat": 41.254611,
-        "lng": 125.504647,
-        "elev_m": 390.0
+        "lat": 41.252285,
+        "lng": 125.498487,
+        "elev_m": 426.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 48.0,
-        "lat": 41.396524,
-        "lng": 125.535566,
-        "elev_m": 312.0
+        "lat": 41.394198,
+        "lng": 125.529403,
+        "elev_m": 310.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 93.0,
-        "lat": 41.315535,
-        "lng": 125.573854,
-        "elev_m": 423.0
+        "lat": 41.313209,
+        "lng": 125.567691,
+        "elev_m": 311.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 138.0,
-        "lat": 41.237935,
-        "lng": 125.524675,
-        "elev_m": 400.0
+        "lat": 41.235608,
+        "lng": 125.518513,
+        "elev_m": 404.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 48.0,
-        "lat": 41.411565,
-        "lng": 125.557771,
-        "elev_m": 346.0
+        "lat": 41.409239,
+        "lng": 125.551608,
+        "elev_m": 329.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 93.0,
-        "lat": 41.314379,
-        "lng": 125.603717,
+        "lat": 41.312052,
+        "lng": 125.597553,
         "elev_m": 299.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 138.0,
-        "lat": 41.221258,
-        "lng": 125.544702,
-        "elev_m": 341.0
+        "lat": 41.218931,
+        "lng": 125.53854,
+        "elev_m": 425.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 48.0,
-        "lat": 41.426606,
-        "lng": 125.579977,
-        "elev_m": 455.0
+        "lat": 41.42428,
+        "lng": 125.573813,
+        "elev_m": 420.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 93.0,
-        "lat": 41.313222,
-        "lng": 125.633581,
-        "elev_m": 398.0
+        "lat": 41.310896,
+        "lng": 125.627416,
+        "elev_m": 409.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 138.0,
-        "lat": 41.204581,
-        "lng": 125.56473,
-        "elev_m": 600.0
+        "lat": 41.202254,
+        "lng": 125.558567,
+        "elev_m": 565.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 48.0,
-        "lat": 41.441647,
-        "lng": 125.602183,
-        "elev_m": 456.0
+        "lat": 41.439321,
+        "lng": 125.596018,
+        "elev_m": 416.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 93.0,
-        "lat": 41.312065,
-        "lng": 125.663444,
-        "elev_m": 412.0
+        "lat": 41.309739,
+        "lng": 125.657278,
+        "elev_m": 496.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 138.0,
-        "lat": 41.187904,
-        "lng": 125.584757,
-        "elev_m": 489.0
+        "lat": 41.185577,
+        "lng": 125.578594,
+        "elev_m": 532.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 48.0,
-        "lat": 41.456688,
-        "lng": 125.624388,
-        "elev_m": 385.0
+        "lat": 41.454362,
+        "lng": 125.618223,
+        "elev_m": 414.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 93.0,
-        "lat": 41.310909,
-        "lng": 125.693308,
-        "elev_m": 431.0
+        "lat": 41.308582,
+        "lng": 125.68714,
+        "elev_m": 478.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 138.0,
-        "lat": 41.171227,
-        "lng": 125.604785,
-        "elev_m": 617.0
+        "lat": 41.168901,
+        "lng": 125.598621,
+        "elev_m": 743.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 48.0,
-        "lat": 41.471729,
-        "lng": 125.646594,
-        "elev_m": 446.0
+        "lat": 41.469403,
+        "lng": 125.640428,
+        "elev_m": 479.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 93.0,
-        "lat": 41.309752,
-        "lng": 125.723171,
-        "elev_m": 401.0
+        "lat": 41.307426,
+        "lng": 125.717003,
+        "elev_m": 449.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 138.0,
-        "lat": 41.15455,
-        "lng": 125.624812,
-        "elev_m": 897.0
+        "lat": 41.152224,
+        "lng": 125.618648,
+        "elev_m": 885.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 48.0,
-        "lat": 41.48677,
-        "lng": 125.6688,
-        "elev_m": 391.0
+        "lat": 41.484444,
+        "lng": 125.662633,
+        "elev_m": 370.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 93.0,
-        "lat": 41.308595,
-        "lng": 125.753034,
-        "elev_m": 405.0
+        "lat": 41.306269,
+        "lng": 125.746865,
+        "elev_m": 326.0
       },
       {
         "distance_km": 27.5,
         "azimuth_deg": 138.0,
-        "lat": 41.137873,
-        "lng": 125.64484,
-        "elev_m": 730.0
+        "lat": 41.135547,
+        "lng": 125.638675,
+        "elev_m": 822.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 48.0,
-        "lat": 41.501812,
-        "lng": 125.691005,
-        "elev_m": 349.0
+        "lat": 41.499485,
+        "lng": 125.684838,
+        "elev_m": 430.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 93.0,
-        "lat": 41.307438,
-        "lng": 125.782898,
-        "elev_m": 376.0
+        "lat": 41.305112,
+        "lng": 125.776727,
+        "elev_m": 339.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 138.0,
-        "lat": 41.121196,
-        "lng": 125.664867,
-        "elev_m": 823.0
+        "lat": 41.11887,
+        "lng": 125.658701,
+        "elev_m": 937.0
       }
     ],
     "75": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 77.2,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 32.2,
-        "lat": 41.340329,
-        "lng": 125.440459,
-        "elev_m": 417.0
+        "lat": 41.338002,
+        "lng": 125.434301,
+        "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 77.2,
-        "lat": 41.326306,
-        "lng": 125.453694,
+        "lat": 41.323979,
+        "lng": 125.447535,
         "elev_m": 298.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 122.2,
-        "lat": 41.309361,
-        "lng": 125.449849,
+        "lat": 41.307035,
+        "lng": 125.44369,
         "elev_m": 298.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 32.2,
-        "lat": 41.359338,
-        "lng": 125.456381,
-        "elev_m": 499.0
+        "lat": 41.357012,
+        "lng": 125.450222,
+        "elev_m": 472.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 77.2,
-        "lat": 41.331292,
-        "lng": 125.48285,
-        "elev_m": 434.0
+        "lat": 41.328965,
+        "lng": 125.47669,
+        "elev_m": 411.0
       },
       {
         "distance_km": 5.0,
         "azimuth_deg": 122.2,
-        "lat": 41.297404,
-        "lng": 125.475161,
-        "elev_m": 389.0
+        "lat": 41.295077,
+        "lng": 125.469001,
+        "elev_m": 385.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 32.2,
-        "lat": 41.378348,
-        "lng": 125.472302,
-        "elev_m": 610.0
+        "lat": 41.376021,
+        "lng": 125.466143,
+        "elev_m": 786.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 77.2,
-        "lat": 41.336279,
-        "lng": 125.512007,
-        "elev_m": 343.0
+        "lat": 41.333952,
+        "lng": 125.505846,
+        "elev_m": 416.0
       },
       {
         "distance_km": 7.5,
         "azimuth_deg": 122.2,
-        "lat": 41.285446,
-        "lng": 125.500473,
-        "elev_m": 329.0
+        "lat": 41.283119,
+        "lng": 125.494312,
+        "elev_m": 428.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 32.2,
-        "lat": 41.397358,
-        "lng": 125.488224,
-        "elev_m": 368.0
+        "lat": 41.395031,
+        "lng": 125.482065,
+        "elev_m": 472.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 77.2,
-        "lat": 41.341265,
-        "lng": 125.541163,
-        "elev_m": 518.0
+        "lat": 41.338938,
+        "lng": 125.535002,
+        "elev_m": 450.0
       },
       {
         "distance_km": 10.0,
         "azimuth_deg": 122.2,
-        "lat": 41.273489,
-        "lng": 125.525784,
+        "lat": 41.271161,
+        "lng": 125.519622,
         "elev_m": 298.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 32.2,
-        "lat": 41.416367,
-        "lng": 125.504146,
+        "lat": 41.41404,
+        "lng": 125.497986,
         "elev_m": 314.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 77.2,
-        "lat": 41.346252,
-        "lng": 125.57032,
-        "elev_m": 333.0
+        "lat": 41.343924,
+        "lng": 125.564157,
+        "elev_m": 368.0
       },
       {
         "distance_km": 12.5,
         "azimuth_deg": 122.2,
-        "lat": 41.261531,
-        "lng": 125.551096,
+        "lat": 41.259204,
+        "lng": 125.544933,
         "elev_m": 298.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 32.2,
-        "lat": 41.435377,
-        "lng": 125.520068,
-        "elev_m": 415.0
+        "lat": 41.43305,
+        "lng": 125.513908,
+        "elev_m": 347.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 77.2,
-        "lat": 41.351239,
-        "lng": 125.599477,
-        "elev_m": 383.0
+        "lat": 41.348911,
+        "lng": 125.593313,
+        "elev_m": 419.0
       },
       {
         "distance_km": 15.0,
         "azimuth_deg": 122.2,
-        "lat": 41.249574,
-        "lng": 125.576408,
-        "elev_m": 410.0
+        "lat": 41.247246,
+        "lng": 125.570244,
+        "elev_m": 378.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 32.2,
-        "lat": 41.454387,
-        "lng": 125.53599,
-        "elev_m": 601.0
+        "lat": 41.452059,
+        "lng": 125.529829,
+        "elev_m": 558.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 77.2,
-        "lat": 41.356225,
-        "lng": 125.628633,
-        "elev_m": 325.0
+        "lat": 41.353897,
+        "lng": 125.622469,
+        "elev_m": 300.0
       },
       {
         "distance_km": 17.5,
         "azimuth_deg": 122.2,
-        "lat": 41.237616,
-        "lng": 125.60172,
-        "elev_m": 420.0
+        "lat": 41.235288,
+        "lng": 125.595555,
+        "elev_m": 421.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 32.2,
-        "lat": 41.473396,
-        "lng": 125.551912,
-        "elev_m": 449.0
+        "lat": 41.471069,
+        "lng": 125.545751,
+        "elev_m": 448.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 77.2,
-        "lat": 41.361212,
-        "lng": 125.65779,
-        "elev_m": 322.0
+        "lat": 41.358884,
+        "lng": 125.651624,
+        "elev_m": 368.0
       },
       {
         "distance_km": 20.0,
         "azimuth_deg": 122.2,
-        "lat": 41.225658,
-        "lng": 125.627032,
-        "elev_m": 583.0
+        "lat": 41.22333,
+        "lng": 125.620866,
+        "elev_m": 538.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 32.2,
-        "lat": 41.492406,
-        "lng": 125.567833,
-        "elev_m": 654.0
+        "lat": 41.490079,
+        "lng": 125.561672,
+        "elev_m": 537.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 77.2,
-        "lat": 41.366198,
-        "lng": 125.686947,
-        "elev_m": 364.0
+        "lat": 41.36387,
+        "lng": 125.68078,
+        "elev_m": 303.0
       },
       {
         "distance_km": 22.5,
         "azimuth_deg": 122.2,
-        "lat": 41.213701,
-        "lng": 125.652344,
+        "lat": 41.211373,
+        "lng": 125.646177,
+        "elev_m": 502.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 32.2,
+        "lat": 41.509088,
+        "lng": 125.577594,
+        "elev_m": 441.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 77.2,
+        "lat": 41.368856,
+        "lng": 125.709935,
+        "elev_m": 471.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 122.2,
+        "lat": 41.199415,
+        "lng": 125.671488,
+        "elev_m": 476.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 32.2,
+        "lat": 41.528098,
+        "lng": 125.593515,
+        "elev_m": 402.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 77.2,
+        "lat": 41.373843,
+        "lng": 125.739091,
+        "elev_m": 527.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 122.2,
+        "lat": 41.187457,
+        "lng": 125.696798,
+        "elev_m": 650.0
+      },
+      {
+        "distance_km": 30.0,
+        "azimuth_deg": 32.2,
+        "lat": 41.547107,
+        "lng": 125.609437,
+        "elev_m": 404.0
+      },
+      {
+        "distance_km": 30.0,
+        "azimuth_deg": 77.2,
+        "lat": 41.378829,
+        "lng": 125.768247,
         "elev_m": 439.0
       },
       {
-        "distance_km": 25.0,
-        "azimuth_deg": 32.2,
-        "lat": 41.511416,
-        "lng": 125.583755,
-        "elev_m": 366.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 77.2,
-        "lat": 41.371185,
-        "lng": 125.716103,
-        "elev_m": 489.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 122.2,
-        "lat": 41.201743,
-        "lng": 125.677656,
-        "elev_m": 384.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 32.2,
-        "lat": 41.530426,
-        "lng": 125.599677,
-        "elev_m": 390.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 77.2,
-        "lat": 41.376172,
-        "lng": 125.74526,
-        "elev_m": 503.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 122.2,
-        "lat": 41.189786,
-        "lng": 125.702968,
-        "elev_m": 634.0
-      },
-      {
-        "distance_km": 30.0,
-        "azimuth_deg": 32.2,
-        "lat": 41.549435,
-        "lng": 125.615599,
-        "elev_m": 417.0
-      },
-      {
-        "distance_km": 30.0,
-        "azimuth_deg": 77.2,
-        "lat": 41.381158,
-        "lng": 125.774416,
-        "elev_m": 547.0
-      },
-      {
         "distance_km": 30.0,
         "azimuth_deg": 122.2,
-        "lat": 41.177828,
-        "lng": 125.728279,
-        "elev_m": 806.0
+        "lat": 41.1755,
+        "lng": 125.722109,
+        "elev_m": 729.0
       }
     ],
     "65": [
       {
         "distance_km": 0.0,
         "azimuth_deg": 64.1,
-        "lat": 41.321319,
-        "lng": 125.424537,
-        "elev_m": 485.0
+        "lat": 41.31899232662774,
+        "lng": 125.41837910655754,
+        "elev_m": 744.0
       },
       {
         "distance_km": 2.5,
         "azimuth_deg": 19.1,
-        "lat": 41.34254,
-        "lng": 125.434323,
+        "lat": 41.340213,
+        "lng": 125.428166,
+        "elev_m": 423.0
+      },
+      {
+        "distance_km": 2.5,
+        "azimuth_deg": 64.1,
+        "lat": 41.3288,
+        "lng": 125.445279,
+        "elev_m": 542.0
+      },
+      {
+        "distance_km": 2.5,
+        "azimuth_deg": 109.1,
+        "lat": 41.311642,
+        "lng": 125.446634,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 19.1,
+        "lat": 41.361434,
+        "lng": 125.437952,
+        "elev_m": 406.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 64.1,
+        "lat": 41.338608,
+        "lng": 125.472178,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 5.0,
+        "azimuth_deg": 109.1,
+        "lat": 41.304292,
+        "lng": 125.474889,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 19.1,
+        "lat": 41.382655,
+        "lng": 125.447739,
+        "elev_m": 668.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 64.1,
+        "lat": 41.348416,
+        "lng": 125.499078,
+        "elev_m": 484.0
+      },
+      {
+        "distance_km": 7.5,
+        "azimuth_deg": 109.1,
+        "lat": 41.296942,
+        "lng": 125.503145,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 19.1,
+        "lat": 41.403876,
+        "lng": 125.457526,
+        "elev_m": 731.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 64.1,
+        "lat": 41.358225,
+        "lng": 125.525978,
+        "elev_m": 520.0
+      },
+      {
+        "distance_km": 10.0,
+        "azimuth_deg": 109.1,
+        "lat": 41.289592,
+        "lng": 125.5314,
+        "elev_m": 475.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 19.1,
+        "lat": 41.425097,
+        "lng": 125.467312,
+        "elev_m": 505.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 64.1,
+        "lat": 41.368033,
+        "lng": 125.552877,
+        "elev_m": 371.0
+      },
+      {
+        "distance_km": 12.5,
+        "azimuth_deg": 109.1,
+        "lat": 41.282241,
+        "lng": 125.559655,
+        "elev_m": 298.0
+      },
+      {
+        "distance_km": 15.0,
+        "azimuth_deg": 19.1,
+        "lat": 41.446318,
+        "lng": 125.477099,
         "elev_m": 335.0
       },
       {
-        "distance_km": 2.5,
+        "distance_km": 15.0,
         "azimuth_deg": 64.1,
-        "lat": 41.331127,
-        "lng": 125.451437,
-        "elev_m": 455.0
+        "lat": 41.377841,
+        "lng": 125.579777,
+        "elev_m": 300.0
       },
       {
-        "distance_km": 2.5,
+        "distance_km": 15.0,
         "azimuth_deg": 109.1,
-        "lat": 41.313969,
-        "lng": 125.452793,
-        "elev_m": 298.0
+        "lat": 41.274891,
+        "lng": 125.58791,
+        "elev_m": 392.0
       },
       {
-        "distance_km": 5.0,
+        "distance_km": 17.5,
         "azimuth_deg": 19.1,
-        "lat": 41.363761,
-        "lng": 125.44411,
-        "elev_m": 480.0
+        "lat": 41.467539,
+        "lng": 125.486886,
+        "elev_m": 515.0
       },
       {
-        "distance_km": 5.0,
+        "distance_km": 17.5,
         "azimuth_deg": 64.1,
-        "lat": 41.340936,
-        "lng": 125.478338,
-        "elev_m": 326.0
+        "lat": 41.387649,
+        "lng": 125.606676,
+        "elev_m": 340.0
       },
       {
-        "distance_km": 5.0,
+        "distance_km": 17.5,
         "azimuth_deg": 109.1,
-        "lat": 41.306619,
-        "lng": 125.48105,
-        "elev_m": 298.0
+        "lat": 41.267541,
+        "lng": 125.616165,
+        "elev_m": 641.0
       },
       {
-        "distance_km": 7.5,
+        "distance_km": 20.0,
         "azimuth_deg": 19.1,
-        "lat": 41.384982,
-        "lng": 125.453896,
-        "elev_m": 623.0
+        "lat": 41.488759,
+        "lng": 125.496672,
+        "elev_m": 441.0
       },
       {
-        "distance_km": 7.5,
+        "distance_km": 20.0,
         "azimuth_deg": 64.1,
-        "lat": 41.350744,
-        "lng": 125.505238,
-        "elev_m": 585.0
+        "lat": 41.397457,
+        "lng": 125.633576,
+        "elev_m": 388.0
       },
       {
-        "distance_km": 7.5,
+        "distance_km": 20.0,
         "azimuth_deg": 109.1,
-        "lat": 41.299269,
-        "lng": 125.509306,
-        "elev_m": 298.0
+        "lat": 41.260191,
+        "lng": 125.64442,
+        "elev_m": 757.0
       },
       {
-        "distance_km": 10.0,
+        "distance_km": 22.5,
         "azimuth_deg": 19.1,
-        "lat": 41.406203,
-        "lng": 125.463683,
-        "elev_m": 533.0
+        "lat": 41.50998,
+        "lng": 125.506459,
+        "elev_m": 531.0
       },
       {
-        "distance_km": 10.0,
+        "distance_km": 22.5,
         "azimuth_deg": 64.1,
-        "lat": 41.360553,
-        "lng": 125.532138,
-        "elev_m": 370.0
-      },
-      {
-        "distance_km": 10.0,
-        "azimuth_deg": 109.1,
-        "lat": 41.29192,
-        "lng": 125.537562,
-        "elev_m": 479.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 19.1,
-        "lat": 41.427424,
-        "lng": 125.473469,
-        "elev_m": 378.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 64.1,
-        "lat": 41.370361,
-        "lng": 125.559039,
-        "elev_m": 339.0
-      },
-      {
-        "distance_km": 12.5,
-        "azimuth_deg": 109.1,
-        "lat": 41.28457,
-        "lng": 125.565819,
+        "lat": 41.407265,
+        "lng": 125.660476,
         "elev_m": 375.0
       },
       {
-        "distance_km": 15.0,
-        "azimuth_deg": 19.1,
-        "lat": 41.448645,
-        "lng": 125.483256,
-        "elev_m": 488.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 64.1,
-        "lat": 41.380169,
-        "lng": 125.585939,
-        "elev_m": 347.0
-      },
-      {
-        "distance_km": 15.0,
-        "azimuth_deg": 109.1,
-        "lat": 41.27722,
-        "lng": 125.594075,
-        "elev_m": 373.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 19.1,
-        "lat": 41.469866,
-        "lng": 125.493042,
-        "elev_m": 617.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 64.1,
-        "lat": 41.389978,
-        "lng": 125.612839,
-        "elev_m": 468.0
-      },
-      {
-        "distance_km": 17.5,
-        "azimuth_deg": 109.1,
-        "lat": 41.26987,
-        "lng": 125.622331,
-        "elev_m": 649.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 19.1,
-        "lat": 41.491087,
-        "lng": 125.502829,
-        "elev_m": 503.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 64.1,
-        "lat": 41.399786,
-        "lng": 125.63974,
-        "elev_m": 333.0
-      },
-      {
-        "distance_km": 20.0,
-        "azimuth_deg": 109.1,
-        "lat": 41.26252,
-        "lng": 125.650588,
-        "elev_m": 809.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 19.1,
-        "lat": 41.512308,
-        "lng": 125.512615,
-        "elev_m": 476.0
-      },
-      {
-        "distance_km": 22.5,
-        "azimuth_deg": 64.1,
-        "lat": 41.409595,
-        "lng": 125.66664,
-        "elev_m": 302.0
-      },
-      {
         "distance_km": 22.5,
         "azimuth_deg": 109.1,
-        "lat": 41.25517,
-        "lng": 125.678844,
-        "elev_m": 519.0
+        "lat": 41.25284,
+        "lng": 125.672675,
+        "elev_m": 477.0
       },
       {
         "distance_km": 25.0,
         "azimuth_deg": 19.1,
-        "lat": 41.533529,
-        "lng": 125.522402,
+        "lat": 41.531201,
+        "lng": 125.516245,
+        "elev_m": 456.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 64.1,
+        "lat": 41.417073,
+        "lng": 125.687375,
+        "elev_m": 307.0
+      },
+      {
+        "distance_km": 25.0,
+        "azimuth_deg": 109.1,
+        "lat": 41.24549,
+        "lng": 125.700931,
+        "elev_m": 782.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 19.1,
+        "lat": 41.552422,
+        "lng": 125.526032,
+        "elev_m": 425.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 64.1,
+        "lat": 41.426881,
+        "lng": 125.714275,
+        "elev_m": 363.0
+      },
+      {
+        "distance_km": 27.5,
+        "azimuth_deg": 109.1,
+        "lat": 41.23814,
+        "lng": 125.729186,
+        "elev_m": 608.0
+      },
+      {
+        "distance_km": 30.0,
+        "azimuth_deg": 19.1,
+        "lat": 41.573643,
+        "lng": 125.535819,
         "elev_m": 470.0
       },
       {
-        "distance_km": 25.0,
-        "azimuth_deg": 64.1,
-        "lat": 41.419403,
-        "lng": 125.69354,
-        "elev_m": 366.0
-      },
-      {
-        "distance_km": 25.0,
-        "azimuth_deg": 109.1,
-        "lat": 41.247821,
-        "lng": 125.7071,
-        "elev_m": 726.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 19.1,
-        "lat": 41.55475,
-        "lng": 125.532188,
-        "elev_m": 495.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 64.1,
-        "lat": 41.429211,
-        "lng": 125.720441,
-        "elev_m": 420.0
-      },
-      {
-        "distance_km": 27.5,
-        "azimuth_deg": 109.1,
-        "lat": 41.240471,
-        "lng": 125.735357,
-        "elev_m": 738.0
-      },
-      {
-        "distance_km": 30.0,
-        "azimuth_deg": 19.1,
-        "lat": 41.575971,
-        "lng": 125.541975,
-        "elev_m": 436.0
-      },
-      {
         "distance_km": 30.0,
         "azimuth_deg": 64.1,
-        "lat": 41.43902,
-        "lng": 125.747341,
-        "elev_m": 372.0
+        "lat": 41.436689,
+        "lng": 125.741174,
+        "elev_m": 429.0
       },
       {
         "distance_km": 30.0,
         "azimuth_deg": 109.1,
-        "lat": 41.233121,
-        "lng": 125.763613,
-        "elev_m": 566.0
+        "lat": 41.23079,
+        "lng": 125.757441,
+        "elev_m": 709.0
       }
     ]
   }

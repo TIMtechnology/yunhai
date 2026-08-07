@@ -25,7 +25,8 @@
   "rules": {
     "min_wind": 0.5,
     "max_wind": 8,
-    "rh_threshold": 75
+    "rh_threshold": 75,
+    "spatial_valley_meteo": true
   },
   "cloud_region": {
     "span_lng": 2.0,

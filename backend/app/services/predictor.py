@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import sqlite3
 from datetime import date as date_cls, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -14,13 +16,14 @@ from app.adapters.open_meteo import (
     parse_daily_astronomy,
     slice_hourly_window,
 )
-from app.adapters.dem import estimate_cloud_top_m, get_terrain_context
-from app.engine.observable_field import compute_observable_field
+from app.adapters.dem import get_terrain_context
 from app.adapters.sector_meteo import (
     build_sector_meteo_index,
     fetch_sector_forecast_multi,
     fetch_sector_historical_multi,
+    fetch_sector_operational_multi,
     pick_sector_sample_points,
+    pick_valley_sample_points,
 )
 from app.engine.solar import sunrise_azimuth_for_datetime
 from app.engine.viewing_mode import resolve_viewing_mode
@@ -36,25 +39,26 @@ from app.services.meteo_cache import (
     serialize_astronomy_for_store,
 )
 from app.services.cloudsea_store import (
+    default_forecast_issue_time,
     load_forecast_archive_precursor,
     load_full_day_meteo_rows,
     load_meteo_day_cache,
+    load_spatial_forecast_archive,
     save_meteo_day_cache,
+    save_spatial_forecast_archive,
 )
 from app.adapters.nsmc_wms import compute_bbox, resolve_bbox_span
 from app.engine.coord_transform import weather_coords
 from app.engine.cloudsea_features import hour_raw_from_forecast
 from app.engine.cloudsea_ml import (
-    build_observational_factors,
     get_ml_status,
-    merge_ml_cloudsea_score,
     predict_day_cloudsea,
     resolve_ml_artifact,
     should_use_spot_ml,
 )
+from app.engine.cloudsea_policy import merge_cloudsea_policy_hour
 from app.services.meteo_backfill import precursor_hour_keys, supplement_precursor_rows
-from app.engine.cloudsea_scorer import _classify_cloudsea_archetype, cloudsea_plausibility_cap, score_cloudsea
-from app.engine.water_context import water_fog_signal_hour
+from app.engine.cloudsea_scorer import score_cloudsea
 from app.engine.satellite_analyzer import analyze_ir_image
 from app.engine.scenario import build_scenario, weather_text
 from app.engine.sunrise_scorer import score_sunrise_window
@@ -76,6 +80,7 @@ from app.services.spot_loader import get_spot, get_viewpoint
 
 TZ = ZoneInfo("Asia/Shanghai")
 SUNRISE_WINDOW_END_HOUR = 7
+log = logging.getLogger(__name__)
 
 
 def select_ml_precursor_rows(
@@ -187,10 +192,32 @@ def _hour_in_sunrise_sector_window(t_str: str) -> bool:
     return SUNRISE_SECTOR_HOUR_START <= parse_shanghai_time(t_str).astimezone(TZ).hour < SUNRISE_SECTOR_HOUR_END
 
 
-def _needs_sector_meteo(viewing_mode: str, hourly_times: list[str]) -> bool:
-    if viewing_mode != "peak_overlook":
+def _needs_sector_meteo(
+    viewing_mode: str,
+    hourly_times: list[str],
+    *,
+    enable_valley: bool = False,
+) -> bool:
+    if viewing_mode != "peak_overlook" and not (
+        viewing_mode == "valley_fill" and enable_valley
+    ):
         return False
     return any(_hour_in_sunrise_sector_window(t) for t in hourly_times)
+
+
+def _spatial_meteo_meta(terrain: dict, *, enabled: bool) -> dict:
+    """Expose whether reviewed spatial input was usable without leaking coordinates."""
+    by_time = terrain.get("sector_meteo_by_time") or {}
+    sample_points = terrain.get("sector_sample_points") or []
+    source = terrain.get("sector_meteo_source")
+    active = bool(enabled and source and by_time)
+    return {
+        "enabled": enabled,
+        "status": "active" if active else "fallback_point_only",
+        "source": source if active else None,
+        "sample_points": len(sample_points),
+        "available_hours": len(by_time),
+    }
 
 
 def _sector_forecast_days(hourly_times: list[str], *, default: int = 5) -> int:
@@ -212,11 +239,19 @@ async def _ensure_sector_meteo_if_needed(
     hourly_times: list[str],
     target_date: date_cls | None = None,
     forecast_days: int = 5,
+    enable_valley: bool = False,
+    operational_target_dates: list[date_cls] | None = None,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
 ) -> None:
-    """仅 peak_overlook 且 hourly 含日出扇区窗口时才拉扇区气象。"""
+    """Load spatial weather only for peak views or explicitly reviewed valley sites."""
     if terrain.get("sector_meteo_by_time"):
         return
-    if not _needs_sector_meteo(viewing_mode, hourly_times):
+    if not _needs_sector_meteo(
+        viewing_mode,
+        hourly_times,
+        enable_valley=enable_valley,
+    ):
         return
     days = _sector_forecast_days(hourly_times, default=forecast_days)
     terrain["sector_meteo_by_time"] = await _load_sector_meteo_index(
@@ -226,6 +261,10 @@ async def _ensure_sector_meteo_if_needed(
         viewing_mode=viewing_mode,
         target_date=target_date,
         forecast_days=days,
+        enable_valley=enable_valley,
+        operational_target_dates=operational_target_dates,
+        spot_id=spot_id,
+        viewpoint_id=viewpoint_id,
     )
 
 
@@ -237,13 +276,124 @@ async def _load_sector_meteo_index(
     viewing_mode: str,
     target_date: date_cls | None = None,
     forecast_days: int = 5,
+    enable_valley: bool = False,
+    operational_target_dates: list[date_cls] | None = None,
+    spot_id: str | None = None,
+    viewpoint_id: str | None = None,
 ) -> dict[str, list[dict]]:
-    """峰顶俯瞰：预拉取日出扇区 3–18 km 各 GPS 网格的逐时气象。"""
-    if viewing_mode != "peak_overlook":
-        return {}
+    """Preload source-aligned spatial weather for the sunrise/valley field."""
     profile = terrain.get("elev_profile_sunrise")
     az = terrain.get("sunrise_azimuth_deg")
     if not profile or az is None:
+        return {}
+    if viewing_mode == "valley_fill":
+        if not enable_valley or not operational_target_dates:
+            return {}
+        viewer_elev = float(
+            terrain.get("elev_curated_m")
+            or terrain.get("elev_viewpoint_m")
+            or 0
+        )
+        sample_points = pick_valley_sample_points(
+            profile,
+            viewer_elev_m=viewer_elev,
+        )
+        if not sample_points:
+            return {}
+        index: dict[str, list[dict]] = {}
+        dates_to_fetch: list[date_cls] = []
+        for day in operational_target_dates:
+            required_keys = {
+                f"{day.isoformat()}T{hour:02d}:00"
+                for hour in range(SUNRISE_SECTOR_HOUR_START, SUNRISE_SECTOR_HOUR_END)
+            }
+            archived: dict[str, list[dict]] = {}
+            if spot_id and viewpoint_id:
+                try:
+                    archived = load_spatial_forecast_archive(
+                        spot_id,
+                        viewpoint_id,
+                        day.isoformat(),
+                        expected_source=operational_single_run_source(day),
+                    )
+                except (OSError, sqlite3.Error, ValueError) as exc:
+                    log.warning(
+                        "spatial_meteo_archive_read_failed spot=%s viewpoint=%s date=%s error=%s",
+                        spot_id,
+                        viewpoint_id,
+                        day.isoformat(),
+                        type(exc).__name__,
+                    )
+            if required_keys.issubset(archived) and all(
+                archived[key] for key in required_keys
+            ):
+                index.update({key: archived[key] for key in required_keys})
+            else:
+                dates_to_fetch.append(day)
+
+        payloads = await asyncio.gather(
+            *(
+                fetch_sector_operational_multi(sample_points, target_date=day)
+                for day in dates_to_fetch
+            ),
+            return_exceptions=True,
+        )
+        for day, payload in zip(dates_to_fetch, payloads, strict=True):
+            if isinstance(payload, BaseException):
+                log.warning(
+                    "spatial_meteo_fetch_fallback spot=%s viewpoint=%s date=%s error=%s",
+                    spot_id,
+                    viewpoint_id,
+                    day.isoformat(),
+                    type(payload).__name__,
+                )
+                continue
+            fetched_index = build_sector_meteo_index(
+                payload,
+                sample_points,
+            )
+            required_keys = {
+                f"{day.isoformat()}T{hour:02d}:00"
+                for hour in range(SUNRISE_SECTOR_HOUR_START, SUNRISE_SECTOR_HOUR_END)
+            }
+            day_index = {
+                key: fetched_index[key]
+                for key in required_keys
+                if fetched_index.get(key)
+            }
+            if set(day_index) != required_keys:
+                log.warning(
+                    "spatial_meteo_fetch_incomplete spot=%s viewpoint=%s date=%s hours=%s",
+                    spot_id,
+                    viewpoint_id,
+                    day.isoformat(),
+                    len(day_index),
+                )
+                continue
+            index.update(day_index)
+            if spot_id and viewpoint_id and day_index:
+                try:
+                    save_spatial_forecast_archive(
+                        spot_id=spot_id,
+                        viewpoint_id=viewpoint_id,
+                        target_date=day.isoformat(),
+                        issue_time=default_forecast_issue_time(day.isoformat()),
+                        source=operational_single_run_source(day),
+                        index=day_index,
+                    )
+                except (OSError, sqlite3.Error, ValueError) as exc:
+                    log.warning(
+                        "spatial_meteo_archive_write_failed spot=%s viewpoint=%s date=%s error=%s",
+                        spot_id,
+                        viewpoint_id,
+                        day.isoformat(),
+                        type(exc).__name__,
+                    )
+        terrain["sector_sample_points"] = sample_points
+        if index:
+            terrain["sector_meteo_source"] = "ecmwf_ifs_d_minus_1_00z"
+        return index
+    if viewing_mode != "peak_overlook":
         return {}
     sample_points = pick_sector_sample_points(
         profile,
@@ -262,6 +412,7 @@ async def _load_sector_meteo_index(
         forecasts = await fetch_sector_forecast_multi(sample_points, days=forecast_days)
     index = build_sector_meteo_index(forecasts, sample_points)
     terrain["sector_sample_points"] = sample_points
+    terrain["sector_meteo_source"] = "open_meteo_best_match"
     return index
 
 
@@ -593,8 +744,6 @@ def build_predictions_from_hourly(
     terrain_ctx: dict = terrain if terrain is not None else {}
     if terrain_ctx and viewing_mode:
         terrain_ctx["viewing_mode"] = viewing_mode
-    elev_max_5km = float(terrain_ctx.get("elev_max_5km_m") or elevation)
-
     results: list[HourPrediction] = []
     for idx, t_str in enumerate(times):
         t = parse_shanghai_time(t_str)
@@ -625,33 +774,11 @@ def build_predictions_from_hourly(
             now=now, hour_time=t, local_hour=local_hour
         )
         cloud_base = estimate_cloud_base(temp, dew)
-        cloud_top_est = estimate_cloud_top_m(cloud_base, low, mid)
         sun_az = (
             sunrise_azimuth_for_datetime(wlat, wlng, sunrise_at)
             if sunrise_at
             else terrain_ctx.get("sunrise_azimuth_deg")
         )
-        obs_field = compute_observable_field(
-            viewer_elev_m=elevation,
-            cloud_base_m=cloud_base,
-            cloud_top_m=cloud_top_est,
-            visibility_m=vis,
-            elev_profile_sunrise=terrain_ctx.get("elev_profile_sunrise"),
-            viewing_mode=viewing_mode,
-            rh_850=rh_850,
-            rh_700=rh_700,
-            sunrise_azimuth_deg=sun_az,
-            elev_max_5km_m=elev_max_5km,
-            sector_meteo=(terrain_ctx.get("sector_meteo_by_time") or {}).get(t_str),
-            summit_cloud_low=low,
-            summit_rh=rh,
-        )
-        if 3 <= local_hour < 7:
-            prev = terrain_ctx.get("sunrise_observable")
-            if prev is None or float(obs_field.get("observable_fraction") or 0) >= float(
-                prev.get("observable_fraction") or 0
-            ):
-                terrain_ctx["sunrise_observable"] = obs_field
 
         cloudsea = score_cloudsea(
             rh=rh,
@@ -680,70 +807,11 @@ def build_predictions_from_hourly(
             summit_rh=rh,
             retrospective=retrospective,
         )
-        if 3 <= local_hour < 7:
-            prev_prob = terrain_ctx.get("peak_hour_cloudsea_prob")
-            if prev_prob is None or cloudsea.probability >= prev_prob:
-                terrain_ctx["peak_hour_observable"] = obs_field
-                terrain_ctx["peak_hour_cloudsea_prob"] = cloudsea.probability
-        wf_sig = water_fog_signal_hour(
-            terrain_ctx.get("local_water") if terrain_ctx else None,
-            elevation=elevation,
-            rh=rh,
-            temp=temp,
-            dewpoint=dew,
-            wind=wind,
-            cloud_high=high,
-        )
-        obs = build_observational_factors(
-            cloud_low=low,
-            cloud_mid=mid,
-            cloud_high=high,
-            visibility=vis,
-            rh=rh,
-            rh_850=rh_850,
-            rh_700=rh_700,
-            t_850=t_850,
-            t_925=t_925,
-            wind=wind,
-            precip_recent=recent,
-            elevation=elevation,
-            water_fog_signal=wf_sig,
-        )
-        archetype, _ = _classify_cloudsea_archetype(
-            cloud_low=low,
-            cloud_mid=mid,
-            visibility=vis,
-            rh=rh,
-            rh_850=rh_850,
-            precip_recent=recent,
-            t_850=t_850,
-            t_925=t_925,
-            viewing_mode=viewing_mode,
-            observable=obs_field,
-            water_fog_signal=wf_sig,
-        )
-        plausibility_cap = cloudsea_plausibility_cap(
-            cloud_low=low,
-            cloud_mid=mid,
-            rh=rh,
-            rh_850=rh_850,
-            rh_700=rh_700,
-            t_850=t_850,
-            t_925=t_925,
-            visibility=vis,
-            archetype=archetype,
-            viewing_mode=viewing_mode,
-            observable_fraction=float(obs_field.get("observable_fraction") or 0),
-            elev_max_5km=elev_max_5km,
-            elevation=elevation,
-            cloud_base=cloud_base,
-            water_fog_signal=wf_sig,
-        )
-
         use_ml = (
             should_use_spot_ml(req.spot_id, req.viewpoint_id)
             and 3 <= local_hour < 7
         )
+        ml_score = None
         if use_ml:
             if day_key not in ml_day_cache:
                 if ml_window in ("v7", "precursor"):
@@ -767,22 +835,45 @@ def build_predictions_from_hourly(
                         terrain=terrain_ctx or None,
                     )
             ml_score = ml_day_cache.get(day_key)
-            if ml_score is not None:
-                cloudsea = merge_ml_cloudsea_score(
-                    cloudsea,
-                    ml_score,
-                    observational=obs,
-                    spot_id=req.spot_id,
-                    viewpoint_id=req.viewpoint_id,
-                    plausibility_cap=plausibility_cap,
-                    visibility=vis,
-                    rh=rh,
-                    water_fog_signal=wf_sig,
-                    cloud_low=low,
-                    cloud_mid=mid,
-                    retrospective=retrospective,
-                    rule_archetype=archetype,
-                )
+
+        policy = merge_cloudsea_policy_hour(
+            cloudsea,
+            ml_score=ml_score,
+            spot_id=req.spot_id,
+            viewpoint_id=req.viewpoint_id,
+            elevation=elevation,
+            viewing_mode=viewing_mode,
+            terrain=terrain_ctx or None,
+            rh=rh,
+            cloud_low=low,
+            cloud_mid=mid,
+            cloud_high=high,
+            wind=wind,
+            precip_recent=recent,
+            temp=temp,
+            dewpoint=dew,
+            visibility=vis,
+            rh_850=rh_850,
+            rh_700=rh_700,
+            t_850=t_850,
+            t_925=t_925,
+            sunrise_azimuth_deg=sun_az,
+            sector_meteo=(terrain_ctx.get("sector_meteo_by_time") or {}).get(t_str),
+            retrospective=retrospective,
+        )
+        cloudsea = policy.score
+        obs_field = policy.observable
+        wf_sig = policy.water_fog_signal
+        if 3 <= local_hour < 7:
+            prev = terrain_ctx.get("sunrise_observable")
+            if prev is None or float(obs_field.get("observable_fraction") or 0) >= float(
+                prev.get("observable_fraction") or 0
+            ):
+                terrain_ctx["sunrise_observable"] = obs_field
+            prev_prob = terrain_ctx.get("peak_hour_cloudsea_prob")
+            if prev_prob is None or cloudsea.probability >= prev_prob:
+                terrain_ctx["peak_hour_observable"] = obs_field
+                terrain_ctx["peak_hour_cloudsea_prob"] = cloudsea.probability
 
         if retrospective and 3 <= local_hour < SUNRISE_WINDOW_END_HOUR:
             location_identity = (
@@ -809,14 +900,6 @@ def build_predictions_from_hourly(
                         reference="product_v202607",
                     ),
                 },
-                cloud_base_m=cloudsea.cloud_base_m,
-            )
-
-        if not (use_ml and ml_day_cache.get(day_key) is not None):
-            cloudsea = PredictionScore(
-                probability=cloudsea.probability,
-                grade=cloudsea.grade,
-                factors={**cloudsea.factors, **{f"obs_{k}": v for k, v in obs.items()}},
                 cloud_base_m=cloudsea.cloud_base_m,
             )
 
@@ -932,6 +1015,8 @@ def _build_response(
             location["observable"] = terrain["sunrise_observable"]
         if terrain.get("sector_sample_points"):
             location["terrain"]["sector_sample_count"] = len(terrain["sector_sample_points"])
+        if terrain.get("sector_meteo_source"):
+            location["terrain"]["sector_meteo_source"] = terrain["sector_meteo_source"]
     if satellite_context:
         location["satellite_context"] = satellite_context
 
@@ -1012,6 +1097,9 @@ async def run_prediction(
         terrain=terrain,
     )
     terrain["viewing_mode"] = viewing_mode
+    spatial_valley_enabled = bool(
+        spot and (spot.rules or {}).get("spatial_valley_meteo")
+    )
 
     satellite_context, _ = await asyncio.gather(
         _fetch_satellite_context(wlat, wlng, spot),
@@ -1022,8 +1110,17 @@ async def run_prediction(
             viewing_mode=viewing_mode,
             hourly_times=hourly.get("time", []),
             forecast_days=5,
+            enable_valley=spatial_valley_enabled,
+            operational_target_dates=operational_dates,
+            spot_id=req.spot_id,
+            viewpoint_id=req.viewpoint_id,
         ),
     )
+    if spatial_valley_enabled:
+        forecast_meta["spatial_meteo"] = _spatial_meteo_meta(
+            terrain,
+            enabled=True,
+        )
 
     results = build_predictions_from_hourly(
         req=req,
@@ -1218,6 +1315,12 @@ async def run_backtest_prediction(
     )
     terrain["viewing_mode"] = viewing_mode
 
+    ml_artifact = resolve_ml_artifact(req.spot_id, req.viewpoint_id)
+    spatial_operational_dates = (
+        [target_date]
+        if ml_artifact and ml_artifact.get("meteo_mode") == "operational_single_run"
+        else []
+    )
     await _ensure_sector_meteo_if_needed(
         lat=wlat,
         lng=wlng,
@@ -1226,10 +1329,15 @@ async def run_backtest_prediction(
         hourly_times=display_hourly.get("time", []),
         target_date=target_date,
         forecast_days=min(max((target_date - today).days + 1, 5), 16) if target_date >= today else 1,
+        enable_valley=bool(
+            spot and (spot.rules or {}).get("spatial_valley_meteo")
+        ),
+        operational_target_dates=spatial_operational_dates,
+        spot_id=req.spot_id,
+        viewpoint_id=req.viewpoint_id,
     )
 
     operational_rows_by_date: dict[str, list[dict]] = {}
-    ml_artifact = resolve_ml_artifact(req.spot_id, req.viewpoint_id)
     if ml_artifact and ml_artifact.get("meteo_mode") == "operational_single_run":
         if target_date < today and req.spot_id and req.viewpoint_id:
             rows = load_forecast_archive_precursor(

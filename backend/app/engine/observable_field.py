@@ -128,6 +128,9 @@ def compute_observable_field(
             elev_max_5km_m=elev_max_5km_m or viewer_elev_m,
             moisture=moisture,
             vis_range_km=vis_range,
+            sector_meteo=sector_meteo,
+            summit_cloud_low=summit_cloud_low,
+            summit_rh=summit_rh,
         )
 
     az_center = sunrise_azimuth_deg if sunrise_azimuth_deg is not None else 90.0
@@ -296,6 +299,9 @@ def _valley_fill_field(
     elev_max_5km_m: float,
     moisture: float,
     vis_range_km: float,
+    sector_meteo: list[dict[str, Any]] | None,
+    summit_cloud_low: float,
+    summit_rh: float,
 ) -> dict[str, Any]:
     in_layer = cloud_base_m < viewer_elev_m < cloud_base_m + 800
     valley_fill = cloud_base_m < elev_max_5km_m and viewer_elev_m >= elev_max_5km_m - 200
@@ -306,6 +312,48 @@ def _valley_fill_field(
         gap = max(elev_max_5km_m - cloud_base_m, 0.0)
         fraction = clamp(0.35 + bell_score(gap, 250, 350) * 0.45)
     fraction *= 0.6 + 0.4 * moisture
+
+    unique_cells: dict[tuple[float, float], dict[str, Any]] = {}
+    for snap in sector_meteo or []:
+        key = (
+            round(float(snap.get("model_lat") or snap.get("lat") or 0), 4),
+            round(float(snap.get("model_lng") or snap.get("lng") or 0), 4),
+        )
+        unique_cells.setdefault(key, snap)
+    valley_cells = [
+        snap
+        for snap in unique_cells.values()
+        if float(snap.get("elev_m") or viewer_elev_m) <= viewer_elev_m - 100
+    ]
+    cloudy_cells = [
+        snap
+        for snap in valley_cells
+        if float(snap.get("cloud_low") or 0) >= 60
+        and float(snap.get("rh") or 0) >= 90
+        and snap.get("visibility") is not None
+        and float(snap["visibility"]) <= 2000
+    ]
+    summit_clear = (
+        summit_cloud_low <= 15
+        and summit_rh >= 85
+        and visibility_m is not None
+        and visibility_m >= 3000
+    )
+    spatial_valley_cloud = bool(summit_clear and cloudy_cells)
+    if spatial_valley_cloud:
+        cloudy_fraction = len(cloudy_cells) / max(len(valley_cells), 1)
+        fraction = max(fraction, min(0.85, 0.60 + cloudy_fraction * 0.25))
+
+    sector_low = [float(s.get("cloud_low") or 0) for s in valley_cells]
+    sector_rh = [float(s.get("rh") or 0) for s in valley_cells]
+    sector_vis = [
+        float(s["visibility"])
+        for s in valley_cells
+        if s.get("visibility") is not None
+    ]
+    note = "山谷填云：观景点与云底/谷地匹配"
+    if spatial_valley_cloud:
+        note += " · 观景台较晴而湖谷网格有厚低云，存在空间差异云海"
 
     return {
         "viewing_mode": "valley_fill",
@@ -323,7 +371,17 @@ def _valley_fill_field(
         "viewer_above_cloud": viewer_elev_m > cloud_top_m,
         "viewer_below_cloud_base": viewer_elev_m < cloud_base_m,
         "moisture_factor": round(moisture, 3),
-        "note": "山谷填云：观景点与云底/谷地匹配",
+        "spatial_valley_cloud": spatial_valley_cloud,
+        "sector_cloud_low_mean": (
+            round(sum(sector_low) / len(sector_low), 1) if sector_low else None
+        ),
+        "sector_cloud_low_max": round(max(sector_low), 1) if sector_low else None,
+        "sector_rh_mean": (
+            round(sum(sector_rh) / len(sector_rh), 1) if sector_rh else None
+        ),
+        "sector_visibility_min_m": round(min(sector_vis), 1) if sector_vis else None,
+        "sector_meteo_points": len(valley_cells),
+        "note": note,
     }
 
 
