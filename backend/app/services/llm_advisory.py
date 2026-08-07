@@ -14,23 +14,26 @@ import httpx
 from app.adapters.http_retry import post_json
 from app.config import settings
 from app.engine.cloudsea_ml import get_ml_status
+from app.engine.coord_transform import weather_coords
 from app.services.cache import cache_get, cache_set
+from app.services.spot_loader import get_spot, get_viewpoint
 
 log = logging.getLogger(__name__)
 TZ = ZoneInfo("Asia/Shanghai")
 
-SYSTEM_PROMPT = """你是高山日出云海观赏的气象与预测解读顾问。只能依据 JSON 中的数值发言，不得编造观测、模型版本或 LOOCV。
+SYSTEM_PROMPT = """你是高山日出云海观赏的气象与预测解读顾问。只能依据 JSON 中的事实与数值发言，不得编造周边地物、观测、模型版本或 LOOCV。
 
 输出简体中文 Markdown，固定小节（不要增删）：
 ## 一句话结论
 ## 逐时气象解读（03:00–07:00）
 ## 气象机理简析
+## 点位地形与水体独立研判
 ## 规则引擎与 ML 对照
 ## 出行建议
 ## 免责声明
 
 硬性规则：
-1. **判断倾向**：全文仅使用 `verdict_hint.verdict`；「一句话结论」与「出行建议」首条须一致。
+1. **独立判断**：`platform_verdict_hint` 只是平台参考，不是预设答案。必须先结合逐时气象与 `site_geography` 独立判断，再说明与平台倾向一致或分歧；不得只复述平台分数。若分歧，明确写出触发分歧的地形/水体/空间气象证据与不确定性。
 2. **云海概率**：仅以 `ui_display_scores.cloudsea_prob_pct` 与 `hourly_forecast_sunrise_window` 为准；**禁止**用 `day_summary.peak_cloudsea_prob`（全天峰值）。
 3. **能见度**：`vis_m` 为米，写作 X.X km。
 4. **逐时气象**：逐小时引用数据；可用 Markdown 表格。
@@ -39,8 +42,9 @@ SYSTEM_PROMPT = """你是高山日出云海观赏的气象与预测解读顾问�
    - 必读 `prediction_pipeline`。若 `ml_active` 为 false：写明「本点位未启用 ML」，**只解读** `rule_engine_cloudsea_pct` 与融合展示分，**禁止**编造 P_ml、LOOCV、模型名、标注天数。
    - 若 `ml_active` 为 true：写出规则%、ML 原始%、融合% 三者；明确写「佐证」或「驳斥」——当气象机理与某一方矛盾时说明理由（例如：高湿低云量却两者均给低分→一致偏保守；规则明显高于 ML→指出规则可能高估）。
    - 可引用 `ml_calibration` 的 LOOCV 说明可信度，但不得夸大。
-7. **免责声明**：仅一句「AI 辅助解读，数值预测以系统为准，观赏受天气突变影响。」
-8. 不要输出 JSON；约 600–900 字。"""
+7. **点位地形与水体独立研判**（核心）：必须引用 GPS 坐标、观景点海拔、周边山体起伏/谷地和已提供的湖泊或水库事实，解释水汽补给、夜间冷却、谷地汇流、风场扰动及观景点相对云层高度如何影响云海。`site_geography.local_water` 为空时必须写“缺少已核验水体资料”，禁止自行杜撰湖泊。
+8. **免责声明**：仅一句「AI 独立研判仅供辅助，数值预测以系统为准，观赏受天气突变影响。」
+9. 不要输出 JSON；约 700–1000 字。"""
 
 
 def _hour_rows_for_date(hours: list[dict], date_key: str) -> list[dict]:
@@ -252,7 +256,11 @@ def _build_prediction_pipeline(
 
     rule_pct = _parse_pct_from_factor(factors.get("fuzzy_reference"))
     ml_pct = _parse_pct_from_factor(factors.get("ml_model")) if ml_active else None
-    fused_pct = int(ui_scores.get("cloudsea_prob_pct") or (h.get("cloudsea") or {}).get("probability") or 0)
+    fused_pct = int(
+        ui_scores.get("cloudsea_prob_pct")
+        or (((h or {}).get("cloudsea") or {}).get("probability"))
+        or 0
+    )
 
     pipeline: dict[str, Any] = {
         "ml_active": ml_active,
@@ -372,10 +380,14 @@ def _ml_factor_summary(hours: list[dict], date_key: str) -> list[str]:
     return lines[:6]
 
 
-def _model_calibration_note(spot_id: str | None, viewpoint_id: str | None) -> dict[str, Any]:
+def _model_calibration_note(
+    spot_id: str | None,
+    viewpoint_id: str | None,
+    ml_status: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     if not spot_id or not viewpoint_id:
         return {"enabled": False}
-    status = get_ml_status(spot_id, viewpoint_id)
+    status = ml_status or get_ml_status(spot_id, viewpoint_id)
     note: dict[str, Any] = {
         "ml_active": status.get("ml_active"),
         "mode": status.get("mode"),
@@ -397,6 +409,89 @@ def _model_calibration_note(spot_id: str | None, viewpoint_id: str | None) -> di
     return note
 
 
+def _site_geography_context(loc: dict[str, Any]) -> dict[str, Any]:
+    """Build trusted point geography instead of asking the LLM to invent it from GPS."""
+    spot_id = loc.get("spot_id")
+    viewpoint_id = loc.get("viewpoint_id")
+    spot = get_spot(spot_id) if spot_id else None
+    viewpoint = get_viewpoint(spot_id, viewpoint_id) if spot_id and viewpoint_id else None
+
+    map_lat = float(viewpoint.lat if viewpoint else (loc.get("lat") or 0))
+    map_lng = float(viewpoint.lng if viewpoint else (loc.get("lng") or 0))
+    coord_sys = str(spot.coord_sys if spot else (loc.get("coord_sys") or "WGS84"))
+    weather_lat, weather_lng = weather_coords(map_lat, map_lng, coord_sys)
+    elevation = float(
+        viewpoint.elevation if viewpoint else (loc.get("elevation") or 0)
+    )
+    local_water = None
+    if viewpoint and viewpoint.local_water:
+        local_water = viewpoint.local_water
+    elif spot and spot.local_water:
+        local_water = spot.local_water
+
+    water_summary: dict[str, Any] | None = None
+    water_drop = None
+    if isinstance(local_water, dict):
+        water_summary = {
+            key: local_water.get(key)
+            for key in (
+                "name",
+                "surface_elev_m",
+                "surface_elev_range_m",
+                "nearest_distance_km",
+                "area_total_km2",
+                "area_within_10km_km2",
+                "shoreline_km",
+            )
+            if local_water.get(key) is not None
+        }
+        if local_water.get("surface_elev_m") is not None:
+            water_drop = round(elevation - float(local_water["surface_elev_m"]), 1)
+
+    terrain = loc.get("terrain") if isinstance(loc.get("terrain"), dict) else {}
+    observable = loc.get("observable") if isinstance(loc.get("observable"), dict) else {}
+    return {
+        "spot_name": spot.name if spot else loc.get("name"),
+        "viewpoint_name": viewpoint.name if viewpoint else None,
+        "region": spot.region if spot else None,
+        "coordinates": {
+            "map_coord_sys": coord_sys,
+            "map_gcj02": (
+                {"lat": round(map_lat, 6), "lng": round(map_lng, 6)}
+                if coord_sys.upper().replace("_", "-") in {"GCJ-02", "GCJ02"}
+                else None
+            ),
+            "weather_wgs84": {
+                "lat": round(weather_lat, 6),
+                "lng": round(weather_lng, 6),
+            },
+        },
+        "viewpoint_elevation_m": elevation,
+        "viewing_mode": loc.get("viewing_mode"),
+        "terrain": terrain,
+        "local_water": water_summary,
+        "water_to_viewpoint_height_m": water_drop,
+        "spatial_observable_field": {
+            key: observable.get(key)
+            for key in (
+                "spatial_valley_cloud",
+                "sector_cloud_low_mean",
+                "sector_cloud_low_max",
+                "sector_rh_mean",
+                "sector_visibility_min_m",
+                "observable_fraction",
+                "note",
+            )
+            if observable.get(key) is not None
+        },
+        "data_limitations": (
+            []
+            if spot and viewpoint
+            else ["自定义坐标缺少已核验的周边水体与山体策展资料"]
+        ),
+    }
+
+
 def build_advisory_context(prediction: dict[str, Any], date_key: str) -> dict[str, Any]:
     loc = prediction.get("location") or {}
     hours = prediction.get("hours") or []
@@ -410,6 +505,7 @@ def build_advisory_context(prediction: dict[str, Any], date_key: str) -> dict[st
     ui_scores = _ui_display_scores(hours, day_summary)
     ml_status = loc.get("ml_status") or get_ml_status(spot_id, viewpoint_id)
     precip_prev = _precip_prev_day(hours, date_key)
+    site_geography = _site_geography_context(loc)
     ctx = {
         "date": date_key,
         "probability_note": (
@@ -421,6 +517,7 @@ def build_advisory_context(prediction: dict[str, Any], date_key: str) -> dict[st
             hours, day_summary, ml_status, ui_scores, date_key
         ),
         "meteo_analysis_hints": _build_meteo_analysis_hints(window_rows, precip_prev, loc),
+        "site_geography": site_geography,
         "location": {
             "name": loc.get("name"),
             "lat": loc.get("lat"),
@@ -434,12 +531,17 @@ def build_advisory_context(prediction: dict[str, Any], date_key: str) -> dict[st
         "hourly_forecast_sunrise_window": window_rows,
         "sunrise_window_stats": _sunrise_window_stats(window_rows),
         "ml_status": ml_status,
-        "ml_calibration": _model_calibration_note(spot_id, viewpoint_id),
+        "ml_calibration": _model_calibration_note(
+            spot_id,
+            viewpoint_id,
+            ml_status,
+        ),
         "ml_factor_lines": _ml_factor_summary(hours, date_key),
         "observable": loc.get("observable"),
         "terrain": loc.get("terrain"),
     }
     ctx["verdict_hint"] = _compute_verdict_hint(day_summary, window_rows, ui_scores)
+    ctx["platform_verdict_hint"] = ctx["verdict_hint"]
     # 兼容旧字段名
     ctx["sunrise_window_hours"] = window_rows
     return ctx
@@ -454,6 +556,7 @@ def _advisory_fingerprint(context: dict[str, Any]) -> str:
         "verdict_hint": context.get("verdict_hint"),
         "prediction_pipeline": context.get("prediction_pipeline"),
         "meteo_analysis_hints": context.get("meteo_analysis_hints"),
+        "site_geography": context.get("site_geography"),
         "ml_factor_lines": context.get("ml_factor_lines"),
         "ml_status": {
             k: (context.get("ml_status") or {}).get(k)
@@ -474,7 +577,7 @@ def _cache_key(
 ) -> str:
     sid = spot_id or f"{lat:.4f}_{lng:.4f}"
     vid = viewpoint_id or "_"
-    return f"llm_advisory:v5:{sid}:{vid}:{date_key}:{fingerprint}"
+    return f"llm_advisory:v6:{sid}:{vid}:{date_key}:{fingerprint}"
 
 
 async def generate_daily_brief(
@@ -515,10 +618,12 @@ async def generate_daily_brief(
             cached["cached"] = True
             return cached
     user_payload = json.dumps(context, ensure_ascii=False, indent=2)
-    hint = context.get("verdict_hint") or {}
+    hint = context.get("platform_verdict_hint") or {}
     user_prompt = (
         f"请为以下日期生成出行解读。目标日期：{date_key}\n"
-        f"系统建议判断倾向（必须全文一致采用）：{hint.get('verdict')} — {hint.get('rationale')}\n\n"
+        f"平台参考倾向（只用于对照，可基于地形气象证据明确质疑）："
+        f"{hint.get('verdict')} — {hint.get('rationale')}\n"
+        "请先完成点位地形、水体与逐时气象的独立研判，再与平台规则/ML 结果对照。\n\n"
         f"结构化数据（JSON）：\n{user_payload}"
     )
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.2.0 — 2026-08-07
+
+### Prediction quality
+
+- Five-Woman Mountain now samples four reviewed low-terrain cells along the sunrise valley using the same D-1 ECMWF IFS HRES 00Z run as point inference and training. A clear summit above saturated, low-visibility valley cells is recognized as spatial-difference cloud sea evidence.
+- Live inference and offline replay now share one canonical post-rule policy, eliminating drift in observational factors, plausibility caps, water context, and ML fusion.
+- The promoted v2 point model uses 77 reconstructable labels and a fixed UI-aligned 0.50 threshold. On the latest untouched 15-day holdout it achieved 0.652 balanced accuracy, 0.875 recall, 0.737 F1, and 0.233 Brier score; all promotion gates passed.
+- Spatial evidence improved the same holdout by 6.25 percentage points balanced accuracy, 12.5 points recall, and 0.031 Brier. The prior chronological window remained stable at 0.900 balanced accuracy and 1.000 recall.
+
+### AI advisory
+
+- DeepSeek receives server-owned GCJ-02 and WGS84 coordinates, viewpoint elevation, regional terrain, nearby named water bodies, summit-to-water height difference, and available spatial valley observations.
+- The prompt requires an independent terrain-and-water assessment and an explicit agreement or disagreement with the platform verdict; merely restating rule or ML scores is prohibited.
+
+### Operations
+
+- Prediction metadata reports whether spatial meteorology is active or has fallen back to point-only input, including source, sample count, and available hours.
+- Exact spatial forecasts are archived separately for reproducible retraining and historical replay. Fetch and archive failures produce bounded operational warnings without exposing coordinates or credentials.
+- Baked terrain snapshots are now generated and resolved in WGS84, matching weather-provider coordinates.
+
 ## 2.1.1 — 2026-08-07
 
 ### Prediction reliability

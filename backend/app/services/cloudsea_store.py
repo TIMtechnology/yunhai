@@ -108,6 +108,28 @@ def init_store() -> None:
             CREATE INDEX IF NOT EXISTS idx_forecast_archive_lookup
                 ON meteo_forecast_archive(spot_id, viewpoint_id, target_date, issue_time);
 
+            CREATE TABLE IF NOT EXISTS meteo_spatial_forecast_archive (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                spot_id TEXT NOT NULL,
+                viewpoint_id TEXT NOT NULL,
+                target_date TEXT NOT NULL,
+                issue_time TEXT NOT NULL,
+                ts TEXT NOT NULL,
+                sample_key TEXT NOT NULL,
+                source TEXT NOT NULL,
+                raw_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE(
+                    spot_id, viewpoint_id, target_date,
+                    issue_time, ts, sample_key
+                )
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_spatial_forecast_archive_lookup
+                ON meteo_spatial_forecast_archive(
+                    spot_id, viewpoint_id, target_date, issue_time
+                );
+
             CREATE TABLE IF NOT EXISTS prediction_access_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at TEXT NOT NULL,
@@ -686,6 +708,102 @@ def load_forecast_archive_precursor(
         if isinstance(raw, dict) and str(raw.get("time") or "") in keys:
             parsed.append(raw)
     return sorted(parsed, key=lambda r: str(r.get("time")))
+
+
+def save_spatial_forecast_archive(
+    *,
+    spot_id: str,
+    viewpoint_id: str,
+    target_date: str,
+    issue_time: str,
+    source: str,
+    index: dict[str, list[dict[str, Any]]],
+    db_path: Path | None = None,
+) -> int:
+    """Persist exact-run valley/sector cells used by the production policy."""
+    path = db_path or Path(settings.cloudsea_db_path)
+    saved = 0
+    conn = sqlite3.connect(path)
+    try:
+        for timestamp, snapshots in index.items():
+            for snapshot in snapshots:
+                sample_key = (
+                    f"{float(snapshot.get('lat') or 0):.5f},"
+                    f"{float(snapshot.get('lng') or 0):.5f}"
+                )
+                conn.execute(
+                    """
+                    INSERT INTO meteo_spatial_forecast_archive
+                    (spot_id, viewpoint_id, target_date, issue_time, ts,
+                     sample_key, source, raw_json, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(
+                        spot_id, viewpoint_id, target_date,
+                        issue_time, ts, sample_key
+                    ) DO UPDATE SET
+                        source=excluded.source,
+                        raw_json=excluded.raw_json,
+                        created_at=excluded.created_at
+                    """,
+                    (
+                        spot_id,
+                        viewpoint_id,
+                        target_date,
+                        issue_time,
+                        timestamp,
+                        sample_key,
+                        source,
+                        json.dumps(snapshot, ensure_ascii=False, sort_keys=True),
+                        _now_iso(),
+                    ),
+                )
+                saved += 1
+        conn.commit()
+    finally:
+        conn.close()
+    return saved
+
+
+def load_spatial_forecast_archive(
+    spot_id: str,
+    viewpoint_id: str,
+    target_date: str,
+    *,
+    issue_time: str | None = None,
+    expected_source: str | None = None,
+    db_path: Path | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    issue = issue_time or default_forecast_issue_time(target_date)
+    path = db_path or Path(settings.cloudsea_db_path)
+    conn = sqlite3.connect(path)
+    conn.row_factory = sqlite3.Row
+    try:
+        source_clause = " AND source=?" if expected_source else ""
+        params: list[Any] = [spot_id, viewpoint_id, target_date, issue]
+        if expected_source:
+            params.append(expected_source)
+        rows = conn.execute(
+            f"""
+            SELECT ts, raw_json
+            FROM meteo_spatial_forecast_archive
+            WHERE spot_id=? AND viewpoint_id=? AND target_date=? AND issue_time=?
+              {source_clause}
+            ORDER BY ts, sample_key
+            """,
+            params,
+        ).fetchall()
+    finally:
+        conn.close()
+
+    index: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        try:
+            snapshot = json.loads(row["raw_json"])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(snapshot, dict):
+            index.setdefault(str(row["ts"]), []).append(snapshot)
+    return index
 
 
 def forecast_archive_precursor_complete(

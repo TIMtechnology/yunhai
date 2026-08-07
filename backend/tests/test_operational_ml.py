@@ -104,6 +104,30 @@ def _valid_artifact() -> dict:
     }
 
 
+def _valid_v2_artifact() -> dict:
+    artifact = _valid_artifact()
+    artifact["version"] = "cloudsea_logreg_operational_v2"
+    artifact["decision_threshold"] = 0.5
+    artifact["training"].update(
+        {
+            "calibration": "none_ui_threshold_0_50",
+            "spatial_policy": "exact_valley_cells_v1",
+            "spatial_data_sha256": "b" * 64,
+        }
+    )
+    artifact["evaluation"].update(
+        {
+            "production_policy": "canonical_hourly_fusion_v1",
+            "review_threshold": 0.5,
+        }
+    )
+    artifact["evaluation"]["rule_context"]["spatial_meteorology"] = (
+        "same_exact_single_run_valley_cells"
+    )
+    artifact["evaluation"]["quality_gate"]["checks"]["rolling_stability"] = True
+    return artifact
+
+
 def test_single_run_backfill_uses_exact_00z_run_before_evening_decision() -> None:
     assert single_run_initialization("2026-06-19") == "2026-06-18T00:00"
 
@@ -377,6 +401,27 @@ def test_safe_json_artifact_loads_and_predicts_without_pickle(tmp_path) -> None:
     assert probability == pytest.approx(expected)
 
 
+def test_v2_artifact_requires_canonical_threshold_and_exact_spatial_evidence(tmp_path) -> None:
+    path = tmp_path / "model.json"
+    path.write_text(json.dumps(_valid_v2_artifact()), encoding="utf-8")
+
+    loaded = load_safe_artifact(path)
+
+    assert loaded["version"] == "cloudsea_logreg_operational_v2"
+
+    invalid = _valid_v2_artifact()
+    invalid["decision_threshold"] = 0.33
+    path.write_text(json.dumps(invalid), encoding="utf-8")
+    with pytest.raises(ArtifactValidationError):
+        load_safe_artifact(path)
+
+    invalid = _valid_v2_artifact()
+    invalid["evaluation"]["quality_gate"]["checks"]["rolling_stability"] = False
+    path.write_text(json.dumps(invalid), encoding="utf-8")
+    with pytest.raises(ArtifactValidationError):
+        load_safe_artifact(path)
+
+
 @pytest.mark.parametrize(
     "mutate",
     [
@@ -453,7 +498,11 @@ def test_tracked_production_artifact_passes_strict_loader() -> None:
         expected_viewpoint_id="dianjiangtai",
     )
 
-    assert artifact["n_days"] == 72
+    assert artifact["version"] == "cloudsea_logreg_operational_v2"
+    assert artifact["n_days"] == 77
+    assert artifact["decision_threshold"] == pytest.approx(0.5)
+    assert artifact["training"]["spatial_policy"] == "exact_valley_cells_v1"
+    assert artifact["evaluation"]["production_policy"] == "canonical_hourly_fusion_v1"
     assert artifact["evaluation"]["quality_gate"]["passed"] is True
 
 
@@ -499,3 +548,145 @@ def test_operational_model_falls_back_when_precursor_window_is_incomplete(
 
     assert complete is not None
     assert incomplete is None
+
+
+def test_training_replay_uses_the_same_complete_fusion_policy_as_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.engine.cloudsea_policy import merge_cloudsea_policy_hour
+    from app.engine.cloudsea_scorer import score_cloudsea
+    from app.models.schemas import FactorDetail, PredictionScore
+    from scripts.train_operational_model import _production_day_probability
+
+    monkeypatch.setattr(
+        cloudsea_ml,
+        "get_ml_status",
+        lambda *_args: {"mode": "wunvshan_model"},
+    )
+
+    row = {
+        "time": "2026-08-07T05:00",
+        "rh": 98.0,
+        "cloud_low": 41.0,
+        "cloud_mid": 0.0,
+        "cloud_high": 0.0,
+        "wind": 3.5,
+        "precipitation": 0.0,
+        "precip48": 0.0,
+        "temp": 18.0,
+        "dewpoint": 17.7,
+        "visibility": 180.0,
+    }
+    terrain = {"elev_max_5km_m": 799.0}
+    rule = score_cloudsea(
+        rh=row["rh"],
+        cloud_low=row["cloud_low"],
+        cloud_mid=row["cloud_mid"],
+        cloud_high=row["cloud_high"],
+        wind=row["wind"],
+        precip=row["precipitation"],
+        precip_recent=row["precip48"],
+        temp=row["temp"],
+        dewpoint=row["dewpoint"],
+        elevation=804,
+        month=8,
+        visibility=row["visibility"],
+        viewing_mode="valley_fill",
+        terrain=terrain,
+        retrospective=False,
+    )
+    ml_score = PredictionScore(
+        probability=20,
+        grade="较低",
+        factors={
+            "ml_model": FactorDetail(
+                score=0.2,
+                weight=1.0,
+                label="ML 云海模型",
+                description="测试 ML 分数",
+                reference="test",
+            )
+        },
+    )
+    inference = merge_cloudsea_policy_hour(
+        rule,
+        ml_score=ml_score,
+        spot_id="wunvshan",
+        viewpoint_id="dianjiangtai",
+        elevation=804,
+        viewing_mode="valley_fill",
+        terrain=terrain,
+        rh=row["rh"],
+        cloud_low=row["cloud_low"],
+        cloud_mid=row["cloud_mid"],
+        cloud_high=row["cloud_high"],
+        wind=row["wind"],
+        precip_recent=row["precip48"],
+        temp=row["temp"],
+        dewpoint=row["dewpoint"],
+        visibility=row["visibility"],
+        retrospective=False,
+    ).score
+
+    replay = _production_day_probability(
+        [row],
+        target_date="2026-08-07",
+        elevation=804,
+        terrain=terrain,
+        viewing_mode="valley_fill",
+        cloudsea_months=[],
+        ml_probability=0.2,
+        spot_id="wunvshan",
+        viewpoint_id="dianjiangtai",
+    )
+
+    assert replay == pytest.approx(inference.probability / 100.0)
+
+
+def test_exact_spatial_forecast_archive_round_trips_by_target_date(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    from app.config import settings
+    from app.services import cloudsea_store
+
+    db_path = tmp_path / "spatial.db"
+    monkeypatch.setattr(settings, "cloudsea_db_path", str(db_path))
+    cloudsea_store.init_store()
+    source = "open_meteo_single_runs:ecmwf_ifs:run=2026-08-06T00:00"
+    index = {
+        "2026-08-07T05:00": [
+            {
+                "lat": 41.3003,
+                "lng": 125.5046,
+                "elev_m": 298,
+                "model_lat": 41.3005,
+                "model_lng": 125.5093,
+                "model_elev_m": 298,
+                "cloud_low": 98,
+                "cloud_mid": 0,
+                "rh": 100,
+                "visibility": 100,
+            }
+        ]
+    }
+
+    saved = cloudsea_store.save_spatial_forecast_archive(
+        spot_id="wunvshan",
+        viewpoint_id="dianjiangtai",
+        target_date="2026-08-07",
+        issue_time="2026-08-06T18:00:00+08:00",
+        source=source,
+        index=index,
+        db_path=db_path,
+    )
+    loaded = cloudsea_store.load_spatial_forecast_archive(
+        "wunvshan",
+        "dianjiangtai",
+        "2026-08-07",
+        expected_source=source,
+        db_path=db_path,
+    )
+
+    assert saved == 1
+    assert loaded == index

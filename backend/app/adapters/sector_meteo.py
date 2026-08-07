@@ -9,7 +9,13 @@ from typing import Any
 import httpx
 
 from app.adapters.http_retry import get_json
-from app.adapters.open_meteo import FORECAST_URL, estimate_cloud_base, FORECAST_PRIMARY_TIMEOUT
+from app.adapters.open_meteo import (
+    FORECAST_PRIMARY_TIMEOUT,
+    FORECAST_URL,
+    SINGLE_RUN_FORECAST_URL,
+    estimate_cloud_base,
+    operational_single_run_initialization,
+)
 
 # 扇区仅需低层云量/温湿，不必拉全量气压层（显著减小响应体）
 SECTOR_HOURLY_VARS = [
@@ -26,6 +32,7 @@ from app.adapters.dem import estimate_cloud_top_m
 from app.services.cache import cache_get, cache_set
 
 DEFAULT_SAMPLE_DISTANCES_KM = (4.0, 9.0, 14.0, 18.0)
+VALLEY_SAMPLE_DISTANCES_KM = (2.5, 5.0, 7.5, 10.0)
 
 
 def _angular_diff(a: float, b: float) -> float:
@@ -67,12 +74,56 @@ def pick_sector_sample_points(
     return picked
 
 
+def pick_valley_sample_points(
+    elev_profile: list[dict[str, Any]],
+    *,
+    viewer_elev_m: float,
+    visible_range_km: float = 10.0,
+    min_drop_m: float = 120.0,
+    target_distances_km: tuple[float, ...] = VALLEY_SAMPLE_DISTANCES_KM,
+) -> list[dict[str, Any]]:
+    """Select low terrain cells below the viewpoint for valley-fill weather sampling."""
+    candidates = [
+        p
+        for p in elev_profile
+        if 0 < float(p.get("distance_km") or 0) <= visible_range_km
+        and float(p.get("elev_m") or viewer_elev_m) <= viewer_elev_m - min_drop_m
+    ]
+    if not candidates:
+        return []
+
+    picked: list[dict[str, Any]] = []
+    used: set[tuple[float, float]] = set()
+    for target in target_distances_km:
+        band = [
+            p
+            for p in candidates
+            if abs(float(p.get("distance_km") or 0) - target) <= 1.4
+        ]
+        if not band:
+            continue
+        best = min(
+            band,
+            key=lambda p: (
+                float(p.get("elev_m") or viewer_elev_m),
+                abs(float(p.get("distance_km") or 0) - target),
+            ),
+        )
+        key = (round(float(best["lat"]), 5), round(float(best["lng"]), 5))
+        if key in used:
+            continue
+        used.add(key)
+        picked.append({**best, "sample_role": "valley"})
+    return picked
+
+
 async def _fetch_multi_forecast(
     lats: list[float],
     lngs: list[float],
     *,
     url: str,
     extra_params: dict[str, str],
+    include_daily: bool = True,
 ) -> list[dict[str, Any]]:
     if not lats:
         return []
@@ -80,10 +131,11 @@ async def _fetch_multi_forecast(
         "latitude": ",".join(str(x) for x in lats),
         "longitude": ",".join(str(x) for x in lngs),
         "hourly": ",".join(SECTOR_HOURLY_VARS),
-        "daily": "sunrise,sunset",
         "timezone": "Asia/Shanghai",
         **extra_params,
     }
+    if include_daily:
+        params["daily"] = "sunrise,sunset"
     try:
         data = await get_json(url, params=params, timeout=FORECAST_PRIMARY_TIMEOUT, retries=1)
     except (
@@ -163,7 +215,42 @@ async def fetch_sector_historical_multi(
             "end_date": end_date.isoformat(),
         },
     )
-    cache_set(key, data, ttl=86400 * 7)
+    if data:
+        cache_set(key, data, ttl=86400 * 7)
+    return data
+
+
+async def fetch_sector_operational_multi(
+    points: list[dict[str, Any]],
+    *,
+    target_date: date,
+) -> list[dict[str, Any]]:
+    """Fetch the same D-1 ECMWF IFS 00Z run used by the reviewed point model."""
+    if not points:
+        return []
+    lats = [float(p["lat"]) for p in points]
+    lngs = [float(p["lng"]) for p in points]
+    run = operational_single_run_initialization(target_date)
+    key = (
+        f"sector_operational:v1:{run}:"
+        f"{','.join(f'{a:.4f},{b:.4f}' for a, b in zip(lats, lngs))}"
+    )
+    cached = cache_get(key)
+    if cached:
+        return list(cached)
+    data = await _fetch_multi_forecast(
+        lats,
+        lngs,
+        url=SINGLE_RUN_FORECAST_URL,
+        extra_params={
+            "run": run,
+            "models": "ecmwf_ifs",
+            "forecast_hours": "48",
+        },
+        include_daily=False,
+    )
+    if data:
+        cache_set(key, data, ttl=86400 * 7)
     return data
 
 
@@ -218,6 +305,14 @@ def build_sector_meteo_index(
                     "lng": float(pt["lng"]),
                     "distance_km": float(pt.get("distance_km") or 0),
                     "elev_m": float(pt.get("elev_m") or 0),
+                    "model_lat": float(fc.get("latitude") or pt["lat"]),
+                    "model_lng": float(fc.get("longitude") or pt["lng"]),
+                    "model_elev_m": (
+                        float(fc["elevation"])
+                        if fc.get("elevation") is not None
+                        else None
+                    ),
+                    "sample_role": str(pt.get("sample_role") or "sector"),
                 }
             )
     return index

@@ -178,6 +178,46 @@ def test_llm_failure_does_not_expose_upstream_error(
     assert "upstream-secret-detail" not in str(result)
 
 
+def test_llm_context_contains_server_owned_geography_for_independent_assessment() -> None:
+    context = llm_advisory.build_advisory_context(
+        {
+            "location": {
+                "lat": 41.321319,
+                "lng": 125.424537,
+                "elevation": 804,
+                "name": "本溪五女山 · 点将台",
+                "spot_id": "wunvshan",
+                "viewpoint_id": "dianjiangtai",
+                "viewing_mode": "valley_fill",
+                "ml_status": {
+                    "ml_active": True,
+                    "mode": "wunvshan_model",
+                    "eligible_labels": 77,
+                },
+                "terrain": {
+                    "elev_max_5km_m": 824,
+                    "relief_5km_m": 520,
+                    "sunrise_azimuth_deg": 68,
+                },
+            },
+            "hours": [],
+            "days": [],
+        },
+        "2026-08-07",
+    )
+
+    geography = context["site_geography"]
+    assert geography["coordinates"]["map_gcj02"] == {
+        "lat": 41.321319,
+        "lng": 125.424537,
+    }
+    assert geography["coordinates"]["weather_wgs84"]["lng"] != 125.424537
+    assert geography["local_water"]["name"].startswith("桓龙湖")
+    assert geography["water_to_viewpoint_height_m"] == pytest.approx(504)
+    assert "点位地形与水体独立研判" in llm_advisory.SYSTEM_PROMPT
+    assert "不得只复述平台分数" in llm_advisory.SYSTEM_PROMPT
+
+
 def test_health_cache_status_does_not_expose_redis_url() -> None:
     assert "redis_url" not in cache_status()
 

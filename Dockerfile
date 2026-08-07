@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir --require-hashes -r requirements.lock -i "${PIP_I
 
 COPY backend/app ./app
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
-COPY scripts/train_cloudsea_model.py scripts/train_operational_model.py /app/scripts/
+COPY scripts/backfill_spatial_forecast_archive.py scripts/train_cloudsea_model.py scripts/train_operational_model.py /app/scripts/
 RUN groupadd --gid 10001 yunhai \
     && useradd --uid 10001 --gid yunhai --no-create-home --shell /usr/sbin/nologin yunhai \
     && chmod +x /app/docker-entrypoint.sh

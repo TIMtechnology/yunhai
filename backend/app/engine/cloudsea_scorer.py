@@ -108,6 +108,12 @@ def _classify_cloudsea_archetype(
             pass
         else:
             return "type_c", "峰顶俯瞰·日出扇区可观测云海"
+    if (
+        viewing_mode == "valley_fill"
+        and observable
+        and observable.get("spatial_valley_cloud")
+    ):
+        return "type_a", "观景台较晴、湖谷网格低云充填的空间差异型云海"
     if cloud_mid >= 40 and rh >= 90 and visibility is not None and visibility <= 500:
         return "fog_exclude", "中层云偏高+近饱和湿度，雾/层云型"
     if is_ground_fog_proxy(
@@ -678,7 +684,8 @@ def score_cloudsea(
             label="低云量",
             description="层云/碎层云是云海直接证据；模式低估时用能见度补偿",
             value=(
-                f"模式{cloud_low:.0f}% → 有效{effective_low:.0f}% ({vis_proxy_note})"
+                f"模式{cloud_low:.0f}% → 有效{effective_low:.0f}% ("
+                f"{archetype_note + '；' if archetype_note else ''}{vis_proxy_note})"
                 if vis_proxy_note
                 else (
                     f"{cloud_low:.0f}% · {archetype_note}"

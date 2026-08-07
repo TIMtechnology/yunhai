@@ -58,6 +58,7 @@ def save_snapshot(
     elevation: float | None,
     base: dict[str, Any],
     profiles: dict[str, list[dict[str, Any]]],
+    coord_sys: str = "WGS84",
 ) -> Path:
     path = snapshot_path(spot_id, viewpoint_id)
     payload = {
@@ -67,6 +68,7 @@ def save_snapshot(
         "lat": lat,
         "lng": lng,
         "elevation": elevation,
+        "coord_sys": coord_sys,
         "base": base,
         "profiles": profiles,
     }

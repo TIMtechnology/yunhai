@@ -84,7 +84,11 @@ def validate_safe_artifact(
         raise ArtifactValidationError("unsupported model schema_version")
     if data.get("algorithm") != SAFE_ARTIFACT_ALGORITHM:
         raise ArtifactValidationError("unsupported model algorithm")
-    if data.get("version") != "cloudsea_logreg_operational_v1":
+    version = data.get("version")
+    if version not in {
+        "cloudsea_logreg_operational_v1",
+        "cloudsea_logreg_operational_v2",
+    }:
         raise ArtifactValidationError("unsupported model version")
     try:
         trained_at = datetime.fromisoformat(str(data.get("trained_at") or ""))
@@ -134,6 +138,12 @@ def validate_safe_artifact(
     threshold = _finite_number(data.get("decision_threshold"), "decision_threshold")
     if not 0.0 < threshold < 1.0:
         raise ArtifactValidationError("decision_threshold must be between zero and one")
+    if version == "cloudsea_logreg_operational_v2" and not math.isclose(
+        threshold,
+        0.5,
+        abs_tol=1e-12,
+    ):
+        raise ArtifactValidationError("v2 decision_threshold must match the UI 0.50 threshold")
     n_days = data.get("n_days")
     if isinstance(n_days, bool) or not isinstance(n_days, int) or n_days < 30:
         raise ArtifactValidationError("n_days must meet the 30-day production minimum")
@@ -168,10 +178,31 @@ def validate_safe_artifact(
         or any(char not in "0123456789abcdef" for char in fingerprint)
     ):
         raise ArtifactValidationError("training data_sha256 is invalid")
+    if version == "cloudsea_logreg_operational_v2":
+        if training.get("calibration") != "none_ui_threshold_0_50":
+            raise ArtifactValidationError("v2 calibration policy is invalid")
+        if training.get("spatial_policy") != "exact_valley_cells_v1":
+            raise ArtifactValidationError("v2 spatial policy is invalid")
+        spatial_fingerprint = training.get("spatial_data_sha256")
+        if (
+            not isinstance(spatial_fingerprint, str)
+            or len(spatial_fingerprint) != 64
+            or any(char not in "0123456789abcdef" for char in spatial_fingerprint)
+        ):
+            raise ArtifactValidationError("v2 spatial data fingerprint is invalid")
 
     evaluation = _require_mapping(data.get("evaluation"), "evaluation")
     if evaluation.get("protocol") != SAFE_ARTIFACT_PROTOCOL:
         raise ArtifactValidationError("model lacks chronological holdout evaluation")
+    if version == "cloudsea_logreg_operational_v2":
+        if evaluation.get("production_policy") != "canonical_hourly_fusion_v1":
+            raise ArtifactValidationError("v2 production fusion policy is invalid")
+        review_threshold = _finite_number(
+            evaluation.get("review_threshold"),
+            "evaluation.review_threshold",
+        )
+        if not math.isclose(review_threshold, 0.5, abs_tol=1e-12):
+            raise ArtifactValidationError("v2 review threshold must be 0.50")
     holdout_positive = evaluation.get("positive_days")
     holdout_negative = evaluation.get("negative_days")
     if (
@@ -226,10 +257,18 @@ def validate_safe_artifact(
     )
     if not isinstance(rule_context.get("local_water"), bool):
         raise ArtifactValidationError("rule baseline local_water must be boolean")
+    if (
+        version == "cloudsea_logreg_operational_v2"
+        and rule_context.get("spatial_meteorology")
+        != "same_exact_single_run_valley_cells"
+    ):
+        raise ArtifactValidationError("v2 rule baseline lacks exact spatial weather")
 
     quality_gate = _require_mapping(evaluation.get("quality_gate"), "evaluation.quality_gate")
     checks = _require_mapping(quality_gate.get("checks"), "evaluation.quality_gate.checks")
-    required_checks = ("time_ordered", "both_classes", "beats_majority", "beats_rule")
+    required_checks = ["time_ordered", "both_classes", "beats_majority", "beats_rule"]
+    if version == "cloudsea_logreg_operational_v2":
+        required_checks.append("rolling_stability")
     if quality_gate.get("passed") is not True or any(checks.get(key) is not True for key in required_checks):
         raise ArtifactValidationError("model quality gate did not pass")
 
