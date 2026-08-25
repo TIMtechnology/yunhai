@@ -10,22 +10,22 @@
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
-    "@vueuse/core": "^14.3.0",
-    "axios": "^1.16.1",
+    "@vueuse/core": "^14.4.0",
+    "axios": "^1.19.0",
     "echarts": "^6.1.0",
-    "naive-ui": "^2.44.1",
-    "pinia": "^3.0.4",
-    "suncalc": "^1.9.0",
-    "vue": "^3.5.34"
+    "naive-ui": "^2.45.2",
+    "pinia": "^4.0.3",
+    "suncalc": "^2.0.1",
+    "vue": "^3.5.41"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/node": "^24.12.3",
-    "@vitejs/plugin-vue": "^6.0.6",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.2.0",
+    "@vitejs/plugin-vue": "^6.0.8",
     "@vue/tsconfig": "^0.9.1",
     "tailwindcss": "^4.3.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.0.12",
-    "vue-tsc": "^3.2.8"
+    "typescript": "~7.0.2",
+    "vite": "^8.2.2",
+    "vue-tsc": "^3.3.11"
   }
 }
